@@ -11,6 +11,17 @@ export const planningRateLimiter = rateLimit({
   }
 });
 
+export const chatRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 90,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too Many Requests',
+    message: 'Chat request limit reached. Please wait a few minutes and try again.'
+  }
+});
+
 export const apiRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200, // 200 requests per 15 minutes

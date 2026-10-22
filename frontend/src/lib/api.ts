@@ -1,7 +1,12 @@
 import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput } from '../types';
 import { supabase } from './supabase';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_BACKEND_API_URL ||
+  'http://localhost:5000'
+).replace(/\/api\/?$/, '').replace(/\/+$/, '');
 
 export interface PlanGenerationRequest extends TripCreateWizardInput {
   user_id?: string;
@@ -169,14 +174,16 @@ export const TripPilotAPI = {
         };
       }
       const error = await res.json().catch(() => ({}));
-      return {
-        message: error.message || `TripPilot AI request failed (${res.status}). Check the backend configuration and try again.`,
-      };
+      const message = error.message || (res.status === 429
+        ? 'The chat service is receiving too many requests. Please wait a moment and try again.'
+        : `TripPilot AI request failed (${res.status}). Check that the backend is running and the Vercel API URL points to Render.`);
+      return { message };
     } catch (e) {
-      // A local reply keeps the UI usable when the backend cannot be reached.
+      console.error('TripPilot chat backend request failed:', e);
+      return {
+        message: `I couldn't connect to the TripPilot backend at ${API_URL}. Check that the backend is running and Vercel's API URL is correct.`,
+      };
     }
-
-    return simulateNaturalLanguageModification(req);
   },
 
   /**
@@ -291,6 +298,9 @@ function mapBackendItineraryToFrontend(data: any): PlanGenerationResponse {
       longitude: a.longitude,
       estimated_cost: a.estimatedCost || 0,
       currency: a.currency || itin.currency || 'USD',
+      speciality: a.speciality,
+      dietary_tag: a.dietaryTag,
+      selected: true,
       booking_required: Boolean(a.bookingRequired),
       booking_status: a.bookingStatus || 'not_booked',
       notes: a.notes,
@@ -321,6 +331,12 @@ function mapBackendItineraryToFrontend(data: any): PlanGenerationResponse {
       'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80',
     destination_lat: itin.destinationCoordinates?.lat || 35.6762,
     destination_lng: itin.destinationCoordinates?.lng || 139.6503,
+    flight_ticket_estimate: itin.flightEstimate ? {
+      cost: itin.flightEstimate.estimatedCost,
+      currency: itin.flightEstimate.currency || itin.currency,
+      airlines: itin.flightEstimate.airlines,
+      description: itin.flightEstimate.description
+    } : undefined,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -440,14 +456,16 @@ async function simulateAgenticTripPlanning(
     // Destination-Specific High-Fidelity Places
     const isBlr = destLower.includes('bangalore') || destLower.includes('bengaluru');
     const isSaudi = destLower.includes('saudi') || destLower.includes('riyadh');
+    const dietary = (input.dietary_preference || 'veg').toLowerCase();
 
     activitiesByDay[dayId] = [
+      // 1. Morning Landmark / Royal Heritage
       {
         id: `act-${dayId}-1`,
         trip_id: tripId,
         trip_day_id: dayId,
         title: isBlr
-          ? 'Bangalore Palace & Royal Heritage Grounds'
+          ? 'Bangalore Palace & Tudor Heritage Grounds'
           : isSaudi
           ? 'Kingdom Centre Sky Bridge Observation'
           : `Morning Landmark Discovery: ${input.destination} Historic Center`,
@@ -457,8 +475,8 @@ async function simulateAgenticTripPlanning(
           ? 'Ascend 300 meters above Riyadh for sweeping 360-degree vistas across the modern capital.'
           : `Explore iconic architecture, historical landmarks, and scenic viewpoints in ${input.destination}.`,
         category: isSaudi ? 'sightseeing' : 'cultural',
-        start_time: '09:30',
-        end_time: '11:30',
+        start_time: '09:00',
+        end_time: '11:00',
         duration_minutes: 120,
         location_name: isBlr ? 'Bangalore Palace' : isSaudi ? 'Kingdom Centre Tower' : `${input.destination} Grand Plaza`,
         location_address: isBlr ? 'Vasanth Nagar, Bengaluru' : isSaudi ? 'Al Olaya, Riyadh, Saudi Arabia' : `Central District, ${input.destination}`,
@@ -466,120 +484,222 @@ async function simulateAgenticTripPlanning(
         longitude: lng + 0.004,
         estimated_cost: Math.max(0, Math.round(input.total_budget * 0.04)),
         currency: input.currency,
+        speciality: isBlr ? 'Tudor Architecture & Royal Durbar Woodcarvings' : isSaudi ? '300m Curved Glass Skybridge' : 'Heritage Architecture & Exhibits',
         booking_required: false,
         booking_status: 'not_booked',
         notes: 'Wear comfortable shoes for walking.',
         order_index: 0,
+        selected: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
+      // 2. Midday Dining Spot with Veg / Non-Veg Speciality
       {
         id: `act-${dayId}-2`,
         trip_id: tripId,
         trip_day_id: dayId,
         title: isBlr
-          ? 'Lalbagh Botanical Garden & Victorian Glass House'
+          ? dietary === 'veg'
+            ? 'Vidyarthi Bhavan - Famous Ghee Masala Dosa'
+            : 'Meghana Foods - Andhra Boneless Chicken Dum Biryani'
           : isSaudi
-          ? 'Al Masmak Palace & Historical Museum'
-          : `Artisanal Regional Lunch & Market Specialties`,
+          ? 'Najd Village Restaurant - Traditional Heritage Dining'
+          : `Artisanal Regional Dining & Local Specialities`,
         description: isBlr
-          ? 'Walk through 240 acres of rare tropical trees, serene lotus ponds, and the famed glass conservatory.'
+          ? dietary === 'veg'
+            ? 'Iconic 1943 heritage eatery famous for thick crispy butter masala dosas and authentic filter kaapi.'
+            : 'Legendary restaurant renowned for spicy Andhra-style chicken dum biryani, chilly chicken, and lemon rice.'
           : isSaudi
-          ? 'Tour the 19th-century clay and mud-brick citadel central to the foundation of modern Saudi Arabia.'
+          ? 'Authentic Najdi heritage dining courtyard serving slow-cooked kabsa, lamb hashi, and saffron tea.'
           : `Taste celebrated local dishes and specialties at a verified neighborhood eatery in ${input.destination}.`,
-        category: isBlr ? 'outdoor' : isSaudi ? 'cultural' : 'dining',
-        start_time: '12:00',
-        end_time: '13:30',
+        category: 'dining',
+        start_time: '11:30',
+        end_time: '13:00',
         duration_minutes: 90,
-        location_name: isBlr ? 'Lalbagh Botanical Garden' : isSaudi ? 'Al Masmak Palace' : `${input.destination} Gourmet Quarter`,
-        location_address: isBlr ? 'Mavalli, Bengaluru' : isSaudi ? 'Al Dirah, Riyadh, Saudi Arabia' : `Culinary Quarter, ${input.destination}`,
+        location_name: isBlr
+          ? dietary === 'veg' ? 'Vidyarthi Bhavan' : 'Meghana Foods'
+          : isSaudi ? 'Najd Village Restaurant' : `${input.destination} Gourmet Quarter`,
+        location_address: isBlr
+          ? dietary === 'veg' ? 'Gandhi Bazaar, Basavanagudi, Bengaluru' : 'Koramangala 5th Block, Bengaluru'
+          : isSaudi ? 'Al Olaya, Riyadh, Saudi Arabia' : `Culinary Quarter, ${input.destination}`,
         latitude: lat + 0.008,
         longitude: lng + 0.006,
         estimated_cost: Math.max(0, Math.round(input.total_budget * 0.05)),
         currency: input.currency,
+        dietary_tag: isBlr ? (dietary === 'veg' ? 'veg' : 'non_veg') : 'both',
+        speciality: isBlr
+          ? dietary === 'veg' ? 'Crispy Ghee Butter Dosa & Filter Kaapi' : 'Spicy Andhra Dum Biryani'
+          : isSaudi ? 'Lamb Hashi Kabsa & Cardamom Tea' : 'Authentic Regional Delicacies',
         booking_required: false,
         booking_status: 'not_booked',
-        notes: isBlr ? 'Lalbagh lake walk recommended' : 'Audio guides available on site',
+        notes: isBlr ? (dietary === 'veg' ? 'Pure vegetarian heritage' : 'Signature spicy chicken') : 'Authentic Arabic hospitality',
         order_index: 1,
+        selected: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
+      // 3. Afternoon Cultural & Nature Exploration
       {
         id: `act-${dayId}-3`,
         trip_id: tripId,
         trip_day_id: dayId,
         title: isBlr
-          ? 'Cubbon Park, State Library & Vidhana Soudha'
+          ? 'Lalbagh Botanical Garden & Victorian Glass House'
           : isSaudi
           ? 'Historic Diriyah (At-Turaif UNESCO World Heritage Site)'
           : `Iconic Museum & Cultural Exhibition`,
         description: isBlr
-          ? 'Shaded bamboo groves, colonial red terracotta libraries, and the majestic neo-Dravidian state parliament.'
+          ? 'Walk through 240 acres of rare tropical trees, serene lotus ponds, and the famed glass conservatory.'
           : isSaudi
           ? 'Walk the restored Najdi mud-brick alleys, palaces, and atmospheric desert courtyards of early Arabia.'
           : `Immerse in world-class art collections, historic artifacts, and contemporary exhibitions in ${input.destination}.`,
-        category: isSaudi ? 'cultural' : 'sightseeing',
-        start_time: '14:30',
-        end_time: '17:00',
-        duration_minutes: 150,
-        location_name: isBlr ? 'Cubbon Park & Vidhana Soudha' : isSaudi ? 'At-Turaif District, Diriyah' : `${input.destination} Museum of Art`,
-        location_address: isBlr ? 'Kasturba Road, Bengaluru' : isSaudi ? 'Diriyah, Riyadh, Saudi Arabia' : `Museum Promenade, ${input.destination}`,
+        category: isBlr ? 'outdoor' : 'cultural',
+        start_time: '13:30',
+        end_time: '15:30',
+        duration_minutes: 120,
+        location_name: isBlr ? 'Lalbagh Botanical Garden' : isSaudi ? 'At-Turaif District, Diriyah' : `${input.destination} Museum of Art`,
+        location_address: isBlr ? 'Mavalli, Bengaluru' : isSaudi ? 'Diriyah, Riyadh, Saudi Arabia' : `Museum Promenade, ${input.destination}`,
         latitude: lat - 0.003,
         longitude: lng + 0.002,
         estimated_cost: Math.max(0, Math.round(input.total_budget * 0.03)),
         currency: input.currency,
+        speciality: isBlr ? '1889 Crystal Glass House & Century-Old Trees' : isSaudi ? 'Najdi Mud-Brick Citadel & UNESCO Alleys' : 'Art Collections',
         booking_required: false,
         booking_status: 'not_booked',
-        notes: 'Photography spots highlighted.',
+        notes: isBlr ? 'Lalbagh lake walk recommended' : 'Audio guides available on site',
         order_index: 2,
+        selected: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
+      // 4. Late Afternoon Popular Local Hangout Spot
       {
         id: `act-${dayId}-4`,
         trip_id: tripId,
         trip_day_id: dayId,
         title: isBlr
-          ? 'VV Puram Food Street & Evening Culinary Tour'
+          ? 'Church Street & Blossoms Book House Cultural Hangout'
           : isSaudi
-          ? 'Boulevard Riyadh City & Dancing Fountain'
-          : `Twilight Promenade & Evening Atmosphere`,
+          ? 'Boulevard Riyadh City Dancing Fountain Promenade'
+          : `${input.destination} Popular Gathering Plaza & Cafes`,
         description: isBlr
-          ? 'Sample piping hot butter masala dosas, jalebis, paddus, and filter coffee at Bangalore legendary food street.'
+          ? 'Explore Bangalore premier walking street: browse vintage books across 3 floors at Blossoms, enjoy specialty cafes, and soak in the vibrant youth culture.'
           : isSaudi
-          ? 'Evening stroll alongside dancing fountains, open-air cafes, boutique shops, and lighted promenades.'
-          : `Wind down your day with local refreshments, ambient evening lighting, and scenic skyline views.`,
-        category: isBlr ? 'dining' : 'entertainment',
+          ? 'Modern open-air entertainment boulevard with dancing fountain shows, open-air cafes, boutique shops, and lighted walkways.'
+          : `Stroll through the city most popular meeting hub with boutique cafes and artisanal shops.`,
+        category: 'relaxation',
+        start_time: '16:00',
+        end_time: '17:30',
+        duration_minutes: 90,
+        location_name: isBlr ? 'Church Street & Blossoms' : isSaudi ? 'Boulevard Riyadh City' : `${input.destination} Central Strip`,
+        locationAddress: isBlr ? 'Church Street, Shanthala Nagar, Bengaluru' : isSaudi ? 'Hittin, Riyadh, Saudi Arabia' : `Promenade, ${input.destination}`,
+        latitude: lat + 0.003,
+        longitude: lng - 0.003,
+        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.03)),
+        currency: input.currency,
+        speciality: isBlr ? 'Vintage Books & Bangalore Indie Coffee Culture' : isSaudi ? 'Illuminated Dancing Fountains & The Groves Cafes' : 'Local Artisan Coffee',
+        booking_required: false,
+        booking_status: 'not_booked',
+        notes: 'Popular evening hangout spot with vibrant street culture.',
+        order_index: 3,
+        selected: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      // 5. Evening Culinary & Night Atmosphere
+      {
+        id: `act-${dayId}-5`,
+        trip_id: tripId,
+        trip_day_id: dayId,
+        title: isBlr
+          ? dietary === 'veg'
+            ? 'VV Puram Food Street (Thindi Beedi) Night Crawl'
+            : 'Shivaji Military Hotel - Woodfire Mutton Donne Biryani'
+          : isSaudi
+          ? 'Souq Al Zal Evening Traditional Antiques & Perfume Bazaar'
+          : `${input.destination} Evening Food Feast & Night Atmosphere`,
+        description: isBlr
+          ? dietary === 'veg'
+            ? 'Sample piping hot butter masala dosas, jalebis, paddus, Congress buns, and filter coffee at Bangalore legendary food street.'
+            : 'Savor tender mutton donne biryani cooked over woodfire charcoal with authentic Karnataka spices since 1924.'
+          : isSaudi
+          ? 'Riyadh oldest marketplace filled with fragrant oud perfumes, traditional dagger antiques, camel leather, and Arabic dates.'
+          : `Wind down your day with local culinary specialties and vibrant evening atmosphere.`,
+        category: isSaudi ? 'shopping' : 'dining',
         start_time: '18:00',
         end_time: '20:30',
         duration_minutes: 150,
-        location_name: isBlr ? 'VV Puram Food Street' : isSaudi ? 'Boulevard Riyadh City' : `${input.destination} Promenade`,
-        location_address: isBlr ? 'Sajjan Rao Circle, Bengaluru' : isSaudi ? 'Hittin, Riyadh, Saudi Arabia' : `Waterfront Boulevard, ${input.destination}`,
+        location_name: isBlr
+          ? dietary === 'veg' ? 'VV Puram Food Street' : 'Shivaji Military Hotel'
+          : isSaudi ? 'Souq Al Zal' : `${input.destination} Promenade`,
+        location_address: isBlr
+          ? dietary === 'veg' ? 'Sajjan Rao Circle, Bengaluru' : '8th Block, Jayanagar, Bengaluru'
+          : isSaudi ? 'Al Dirah, Riyadh, Saudi Arabia' : `Waterfront Boulevard, ${input.destination}`,
         latitude: lat + 0.002,
         longitude: lng - 0.005,
-        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.06)),
+        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.05)),
         currency: input.currency,
+        dietary_tag: isBlr ? (dietary === 'veg' ? 'veg' : 'non_veg') : 'both',
+        speciality: isBlr
+          ? dietary === 'veg' ? 'Hot Paddus, Congress Buns & Davangere Benne Dosa' : 'Charcoal Mutton Donne Biryani'
+          : isSaudi ? 'Authentic Oud Incense & Saudi Antiques' : 'Local Night Delicacies',
         booking_required: false,
         booking_status: 'not_booked',
-        notes: isBlr ? 'Pure vegetarian culinary delight' : 'Spectacular evening light displays',
-        order_index: 3,
+        notes: isBlr ? (dietary === 'veg' ? 'Pure vegetarian street food crawl' : 'Historic woodfire biryani') : 'Traditional evening market',
+        order_index: 4,
+        selected: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
     ];
   }
 
+  // Realistic Flight Ticket Charges Calculation
+  const origLower = (input.origin || '').toLowerCase();
+  const isSameCity =
+    origLower.includes(destLower) ||
+    destLower.includes(origLower) ||
+    (origLower.includes('bangalore') && destLower.includes('bangalore')) ||
+    (origLower.includes('bengaluru') && destLower.includes('bengaluru')) ||
+    (origLower.includes('riyadh') && destLower.includes('riyadh'));
+
+  let flightCost = 0;
+  let flightAirlines = 'Local Traveling (No Flight Needed)';
+  let flightDesc = 'Intra-city outing — zero flight charges';
+
+  if (!isSameCity) {
+    if (destLower.includes('saudi') || origLower.includes('saudi')) {
+      flightCost = input.currency === 'INR' ? 26000 : 320;
+      flightAirlines = 'Saudia / Emirates / Air India';
+      flightDesc = 'Estimated round-trip international flight fare per passenger';
+    } else if (
+      destLower.includes('paris') ||
+      destLower.includes('tokyo') ||
+      destLower.includes('new york') ||
+      destLower.includes('london')
+    ) {
+      flightCost = input.currency === 'INR' ? 62000 : 750;
+      flightAirlines = 'Commercial Airlines (Air France, ANA, British Airways)';
+      flightDesc = 'Estimated round-trip long-haul international airfare';
+    } else {
+      flightCost = input.currency === 'INR' ? 5800 : 70;
+      flightAirlines = 'IndiGo / Air India / Domestic Carrier';
+      flightDesc = 'Estimated domestic intercity round-trip airfare per person';
+    }
+  }
+
   const generatedTrip: Trip = {
     id: tripId,
     user_id: input.user_id || '00000000-0000-0000-0000-000000000001',
-    title: `${input.destination} Exploration & Adventure`,
-    description: `A customized ${numDays}-day itinerary planned for ${input.traveler_count} travelers, blending ${input.travel_style} experiences with curated local highlights.`,
+    title: `${input.destination} Exploration & Specialities`,
+    description: `A customized ${numDays}-day itinerary planned for ${input.traveler_count} traveler(s), featuring iconic highlights, authentic local specialities, and vetted hangout spots.`,
     origin: input.origin,
     destination: input.destination,
     start_date: input.start_date,
     end_date: input.end_date,
     duration_days: numDays,
     traveler_count: input.traveler_count,
+    travel_companion: input.travel_companion,
     travel_style: input.travel_style,
     interests: input.interests,
     total_budget: input.total_budget,
@@ -588,11 +708,26 @@ async function simulateAgenticTripPlanning(
     cover_image_url: coverImg,
     destination_lat: lat,
     destination_lng: lng,
-    transport_preference: input.transport_preference || 'Public Transit & Walking',
-    accommodation_preference: input.accommodation_preference || 'Boutique Hotel',
+    transport_preference: input.transport_preference || 'Traveling',
+    accommodation_preference: input.accommodation_preference || 'None (Single Day Outing)',
+    dietary_preference: input.dietary_preference || 'veg',
+    flight_ticket_estimate: {
+      cost: flightCost,
+      currency: input.currency,
+      airlines: flightAirlines,
+      description: flightDesc,
+    },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+
+  return {
+    run_id: `run-${Date.now()}`,
+    trip: generatedTrip,
+    days,
+    activities: activitiesByDay,
+  };
+}
 
   return {
     run_id: `run-${Date.now()}`,
