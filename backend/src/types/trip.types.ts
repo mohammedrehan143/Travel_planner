@@ -16,12 +16,13 @@ export interface PlanTripRequest {
   endDate: string;   // YYYY-MM-DD
   travelerCount?: number;
   travelCompanion?: 'solo' | 'couple' | 'family' | 'friends' | 'colleagues' | string;
+  dietaryPreference?: 'veg' | 'non_veg' | 'any' | string;
   budget?: number;
   currency?: string;
   travelStyle?: TravelStyle;
   interests?: string[];
-  transportPreference?: 'flight' | 'train' | 'car' | 'public_transit' | 'flexible';
-  accommodationPreference?: 'hotel' | 'hostel' | 'resort' | 'apartment' | 'villa' | 'flexible';
+  transportPreference?: 'flight' | 'train' | 'car' | 'public_transit' | 'flexible' | string;
+  accommodationPreference?: 'hotel' | 'hostel' | 'resort' | 'apartment' | 'villa' | 'flexible' | string;
   notes?: string;
   userId?: string;
   tripId?: string; // If re-planning or building into existing trip
@@ -98,6 +99,8 @@ export interface PlannedActivity {
   longitude: number;
   estimatedCost: number;
   currency: string;
+  speciality?: string;
+  dietaryTag?: 'veg' | 'non-veg' | 'both';
   bookingRequired: boolean;
   bookingUrl?: string;
   bookingStatus?: BookingStatus;
@@ -150,6 +153,12 @@ export interface CompleteItinerary {
     longitude: number;
   }>;
   budgetBreakdown: BudgetBreakdown;
+  flightEstimate?: {
+    estimatedCost: number;
+    currency: string;
+    airlines: string;
+    description: string;
+  };
   packingList?: string[];
   localTips?: string[];
 }

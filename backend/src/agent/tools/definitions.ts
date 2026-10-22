@@ -150,6 +150,8 @@ export const AGENT_TOOLS = [
           durationDays: { type: 'number' },
           travelerCount: { type: 'number' },
           travelStyle: { type: 'string' },
+          travelCompanion: { type: 'string' },
+          dietaryPreference: { type: 'string' },
           interests: { type: 'array', items: { type: 'string' } },
           totalBudget: { type: 'number' },
           currency: { type: 'string' }

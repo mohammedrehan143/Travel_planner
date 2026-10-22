@@ -1,6 +1,13 @@
 import { PlannedDay, PlannedActivity } from '../types/trip.types.js';
 import { generateWithGemini, isLLMConfigured } from './llm.client.js';
 
+export interface FlightEstimateResult {
+  estimatedCost: number;
+  currency: string;
+  airlines: string;
+  description: string;
+}
+
 interface GeminiTripParams {
   destination: string;
   origin: string;
@@ -13,12 +20,13 @@ interface GeminiTripParams {
   interests: string[];
   totalBudget: number;
   currency: string;
+  dietaryPreference?: string;
   coords: { lat: number; lng: number };
 }
 
 export async function generateItineraryWithGemini(
   params: GeminiTripParams
-): Promise<{ days: PlannedDay[]; theme: string; summary: string } | null> {
+): Promise<{ days: PlannedDay[]; theme: string; summary: string; flightEstimate?: FlightEstimateResult } | null> {
   // In test environment, skip external LLM quota consumption to prevent rate limits
   if (process.env.NODE_ENV === 'test' || !isLLMConfigured()) {
     return null;
@@ -26,38 +34,61 @@ export async function generateItineraryWithGemini(
 
   const isOneDay = params.durationDays === 1;
   const companion = params.travelCompanion || (params.travelerCount === 1 ? 'Solo' : 'Friends/Family');
+  const dietary = params.dietaryPreference || 'any';
 
-  const prompt = `You are TripPilot AI, an elite local tour guide and autonomous travel planner.
-Generate a structured, authentic day-by-day travel itinerary strictly for:
+  const prompt = `You are TripPilot AI, an elite local tour guide, flight fare analyst, and autonomous travel planner.
+Generate a rich, structured, authentic day-by-day travel itinerary strictly for:
 
 DESTINATION: ${params.destination}
+STARTING FROM (ORIGIN): ${params.origin}
 DURATION: ${params.durationDays} Day(s) (Start: ${params.startDate}, End: ${params.endDate})
 TRAVEL COMPANION: ${companion} (${params.travelerCount} person(s))
+DIETARY PREFERENCE: ${dietary} (Veg, Non-Veg, or Both)
 TRAVEL STYLE: ${params.travelStyle}
 BUDGET LIMIT: ${params.totalBudget} ${params.currency}
-INTERESTS: ${params.interests.join(', ') || 'Sightseeing, Culture, Local Cuisine'}
+INTERESTS: ${params.interests.join(', ') || 'Sightseeing, Culture, Local Cuisine, Hangout Spots'}
 
-STRICT ACCURACY RULES:
-1. DESTINATION INTEGRITY: Every single place, landmark, park, and restaurant MUST be a real-world location strictly within ${params.destination}. Under no circumstances output places from other countries or cities (e.g., if destination is Saudi Arabia, do NOT output places from Korea or Japan; if destination is Bangalore, output places exclusively in Bangalore).
-2. ${isOneDay ? 'SINGLE-DAY OUTING: This is a 1-day outing. Cover 3-5 top iconic places that a traveler can realistically visit in a single day with optimal transit and minimum expenditure (e.g. within the budget).' : 'PACING: Provide 3-4 realistic activities per day grouped logically by neighborhood.'}
-3. BUDGET CONSCIOUS: Ensure all activity costs are estimated in ${params.currency} and the sum fits comfortably within the budget limit (${params.totalBudget} ${params.currency}).
-4. OUTPUT FORMAT: Output ONLY valid JSON matching this exact structure without markdown backticks:
+STRICT ACCURACY & QUALITY RULES:
+1. DESTINATION INTEGRITY: Every single place, landmark, park, restaurant, and hangout spot MUST be a real-world location strictly within ${params.destination}. Under no circumstances output places from other countries or cities (e.g. if destination is Saudi Arabia, output Saudi landmarks in Riyadh/Jeddah/etc. only; if destination is Bangalore, output places exclusively in Bangalore).
+2. MULTIPLE PLACES PER DAY (CRUCIAL):
+   - ${isOneDay ? 'For this 1-day outing, generate AT LEAST 5 DISTINCT PLACES/ACTIVITIES covering morning landmark, lunch dining spot, afternoon cultural spot, late afternoon famous local hangout spot, and evening street food / dinner spot.' : 'Provide 4-5 high-value, realistic activities per day grouped logically by neighborhood.'}
+   - NEVER output only 1 or 2 places for a day! Provide a complete, enjoyable schedule.
+3. NO REPETITIVE "SUNRISE / SUNSET" CLICHES: Do NOT generate generic titles like "Sunrise at...", "Sunset walk at...", "Morning stroll". Instead, highlight the authentic SPECIALITY of the place (e.g., architectural masterpiece, signature dish, famous art, historic courtyard, bustling night bazaar, or popular youth hangout).
+4. LOCAL HANGOUT SPOTS: Feature genuine local hangout spots where residents and travelers spend time (e.g. vibrant cafe streets, iconic book houses, food streets, rooftop plazas, or scenic promenades).
+5. VEG / NON-VEG DIETARY COMPLIANCE:
+   - For all food & dining spots, respect DIETARY PREFERENCE: ${dietary}.
+   - If Vegetarian: recommend famous pure-veg icons and traditional vegetarian specialties.
+   - If Non-Vegetarian: recommend famous regional meat/poultry specialties and iconic biryanis/grills.
+   - Set "dietaryTag" to "veg", "non-veg", or "both" on each dining activity, and state the signature dish in "speciality".
+6. FLIGHT TICKET CHARGES ESTIMATION:
+   - Estimate realistic round-trip / one-way flight ticket fare from "${params.origin}" to "${params.destination}" in ${params.currency} based on current airline market rates (e.g. IndiGo, Air India, Saudia, Emirates).
+   - If origin and destination are in the same city or local outing (e.g. Bangalore to Bangalore), set flight cost to 0 and note "Intra-city travel - no flight required".
+7. TRANSIT: Refer to transit simply as "Traveling" (do not use "metro").
+8. OUTPUT FORMAT: Output ONLY valid JSON matching this exact structure without markdown backticks:
 {
-  "theme": "${params.destination} Discovery Experience",
+  "theme": "${params.destination} Discovery & Specialities",
   "summary": "Concise 2-sentence overview",
+  "flightEstimate": {
+    "estimatedCost": 0,
+    "currency": "${params.currency}",
+    "airlines": "Airlines or Local Transit",
+    "description": "Estimated flight or intercity fare"
+  },
   "days": [
     {
       "dayNumber": 1,
       "date": "${params.startDate}",
-      "theme": "Neighborhood or Day Theme",
+      "theme": "Day Theme & Neighborhood Highlights",
       "summary": "Day overview",
       "activities": [
         {
           "title": "Exact Real Place Name in ${params.destination}",
           "description": "2-sentence vivid description of what to see and do here.",
+          "speciality": "Authentic signature specialty or dish of this spot",
+          "dietaryTag": "veg",
           "category": "sightseeing",
-          "startTime": "09:30",
-          "endTime": "11:30",
+          "startTime": "09:00",
+          "endTime": "11:00",
           "durationMinutes": 120,
           "locationName": "Official Place Name",
           "locationAddress": "Street / Neighborhood, ${params.destination}",
@@ -72,7 +103,7 @@ STRICT ACCURACY RULES:
   try {
     const geminiCall = generateWithGemini(prompt);
     const timeoutPromise = new Promise<string>((_, reject) =>
-      setTimeout(() => reject(new Error('Gemini generation timed out after 6s')), 6000)
+      setTimeout(() => reject(new Error('Gemini generation timed out after 7s')), 7000)
     );
 
     const rawResponse = await Promise.race([geminiCall, timeoutPromise]);
@@ -98,18 +129,22 @@ STRICT ACCURACY RULES:
       const dateStr = d.date || dayDate.toISOString().split('T')[0];
 
       const acts: PlannedActivity[] = (d.activities || []).map((a: any, actIdx: number) => {
-        // Small radial displacement around destination center if exact coords not provided
-        const angle = (actIdx * 60) * (Math.PI / 180);
-        const radius = 0.008 + actIdx * 0.004;
+        // Radial distribution around destination center if exact coords not provided
+        const angle = (actIdx * 55) * (Math.PI / 180);
+        const radius = 0.006 + actIdx * 0.0035;
+
+        const specNote = a.speciality ? `Speciality: ${a.speciality}` : '';
+        const dietNote = a.dietaryTag ? `Dietary: ${a.dietaryTag}` : '';
+        const notesCombined = [specNote, dietNote].filter(Boolean).join(' • ');
 
         return {
           title: a.title || `${params.destination} Landmark ${actIdx + 1}`,
-          description: a.description || `Explore ${params.destination}.`,
+          description: a.description || `Experience ${params.destination}.`,
           category: (['sightseeing', 'dining', 'cultural', 'outdoor', 'entertainment', 'relaxation'].includes(a.category)
             ? a.category
             : 'sightseeing') as any,
-          startTime: a.startTime || `${9 + actIdx * 3}:00`,
-          endTime: a.endTime || `${11 + actIdx * 3}:00`,
+          startTime: a.startTime || `${9 + actIdx * 2}:30`,
+          endTime: a.endTime || `${11 + actIdx * 2}:30`,
           durationMinutes: a.durationMinutes || 120,
           locationName: a.locationName || a.title || `${params.destination} Attraction`,
           locationAddress: a.locationAddress || `Central District, ${params.destination}`,
@@ -119,6 +154,7 @@ STRICT ACCURACY RULES:
           currency: params.currency,
           bookingRequired: Boolean(a.bookingRequired),
           bookingStatus: 'not_booked',
+          notes: notesCombined || undefined,
           orderIndex: actIdx + 1,
           travelFromPrevious: actIdx > 0 ? {
             mode: 'transit',
@@ -131,13 +167,32 @@ STRICT ACCURACY RULES:
       return {
         dayNumber: d.dayNumber || dayIdx + 1,
         date: dateStr,
-        theme: d.theme || `Day ${dayIdx + 1}: ${params.destination} Highlights`,
-        summary: d.summary || `Curated itinerary covering top sights in ${params.destination}.`,
-        activities: acts
+        theme: d.theme || `Day ${dayIdx + 1}: ${params.destination} Highlights & Specialities`,
+        summary: d.summary || `Curated itinerary covering top sights and local specialities in ${params.destination}.`,
+        activities: acts,
+        dayEstimatedCost: acts.reduce((sum, act) => sum + (act.estimatedCost || 0), 0)
       };
     });
 
+    const flightEstimate: FlightEstimateResult | undefined = parsed.flightEstimate ? {
+      estimatedCost: typeof parsed.flightEstimate.estimatedCost === 'number' ? parsed.flightEstimate.estimatedCost : 0,
+      currency: parsed.flightEstimate.currency || params.currency,
+      airlines: parsed.flightEstimate.airlines || 'Estimated Commercial Airlines',
+      description: parsed.flightEstimate.description || 'Estimated intercity travel fare'
+    } : undefined;
+
     return {
+      days: formattedDays,
+      theme: parsed.theme || `${params.destination} Curated Exploration`,
+      summary: parsed.summary || `Authentic ${params.durationDays}-day travel blueprint with verified local specialities.`,
+      flightEstimate
+    };
+  } catch (err) {
+    console.warn('Gemini itinerary synthesis fallback triggered:', err);
+    return null;
+  }
+}
+
       days: formattedDays,
       theme: parsed.theme || `${params.destination} Agentic Blueprint`,
       summary: parsed.summary || `Autonomous itinerary planned with Google Gemini for ${params.destination}.`

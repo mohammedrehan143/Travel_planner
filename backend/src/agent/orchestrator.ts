@@ -124,6 +124,7 @@ export class AgentOrchestrator {
         durationDays,
         travelerCount,
         travelCompanion: request.travelCompanion,
+        dietaryPreference: request.dietaryPreference,
         travelStyle,
         interests,
         totalBudget: budget,

@@ -81,6 +81,7 @@ export const generateItineraryInputSchema = z.object({
   durationDays: z.number(),
   travelerCount: z.number(),
   travelCompanion: z.string().optional(),
+  dietaryPreference: z.string().optional(),
   travelStyle: travelStyleEnum,
   interests: z.array(z.string()),
   totalBudget: z.number(),

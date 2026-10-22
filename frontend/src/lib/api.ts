@@ -1,7 +1,7 @@
 import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput } from '../types';
 import { supabase } from './supabase';
 
-const BACKEND_BASE_URL = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
 export interface PlanGenerationRequest extends TripCreateWizardInput {
   user_id?: string;
@@ -80,7 +80,7 @@ export const TripPilotAPI = {
       params.set('lat', String(location.lat));
       params.set('lng', String(location.lng));
     }
-    const response = await fetch(`${BACKEND_BASE_URL}/api/integrations/places/search?${params}`);
+    const response = await fetch(`${API_URL}/api/integrations/places/search?${params}`);
     if (!response.ok) throw new Error('Could not find nearby places right now.');
     const data = await response.json();
     return Array.isArray(data.places) ? data.places : [];
@@ -112,7 +112,7 @@ export const TripPilotAPI = {
         asyncExecution: false,
       };
 
-      const res = await fetch(`${BACKEND_BASE_URL}/api/trips/plan`, {
+      const res = await fetch(`${API_URL}/api/trips/plan`, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
@@ -138,7 +138,7 @@ export const TripPilotAPI = {
   async getAgentRunStatus(runId: string): Promise<AgentRun | null> {
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`${BACKEND_BASE_URL}/api/agent-runs/${runId}`, {
+      const res = await fetch(`${API_URL}/api/agent-runs/${runId}`, {
         headers,
       });
       if (res.ok) return await res.json();
@@ -154,7 +154,7 @@ export const TripPilotAPI = {
   async modifyItinerary(req: ModifyItineraryRequest): Promise<ModifyItineraryResponse> {
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`${BACKEND_BASE_URL}/api/agent/chat`, {
+      const res = await fetch(`${API_URL}/api/agent/chat`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -185,7 +185,7 @@ export const TripPilotAPI = {
   async regenerateDay(tripId: string, dayId: string, prompt?: string, dayNumber: number = 1): Promise<Activity[]> {
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`${BACKEND_BASE_URL}/api/trips/${tripId}/regenerate-day`, {
+      const res = await fetch(`${API_URL}/api/trips/${tripId}/regenerate-day`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -234,7 +234,7 @@ export const TripPilotAPI = {
   async validateTrip(tripId: string, trip: Trip, activities: Activity[]): Promise<ValidationResult> {
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`${BACKEND_BASE_URL}/api/trips/${tripId}/validate`, {
+      const res = await fetch(`${API_URL}/api/trips/${tripId}/validate`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ trip, activities }),
