@@ -16,7 +16,8 @@ Welcome to the comprehensive technical documentation for **TripPilot AI**.
 | 🌍 [**Free Resources Guide (Maps & Weather)**](file:///D:/skills_lab/Travel_planner/docs/FREE_RESOURCES_GUIDE.md) | How TripPilot AI uses 100% free open-source services (Open-Meteo, OpenStreetMap, OSRM, Frankfurter) requiring **NO API keys**. |
 | 🎨 [**Person 1 Frontend Handbook**](file:///D:/skills_lab/Travel_planner/docs/PERSON_1_FRONTEND_GUIDE.md) | Ready-to-copy TypeScript API client, UI tasks mapping, polling wizard status, and development bypass tokens. |
 | 🧪 [**Testing & Verification**](file:///D:/skills_lab/Travel_planner/docs/TESTING_GUIDE.md) | Vitest test suite breakdown (36 tests across 6 files), test execution commands, and coverage details. |
-| 🚀 [**Backend Quickstart**](file:///D:/skills_lab/Travel_planner/backend/README.md) | Prerequisites, environment variable configuration, development server startup, and build instructions. |
+| 🚀 [**Production Deployment Guide**](file:///D:/skills_lab/Travel_planner/docs/DEPLOYMENT_GUIDE.md) | Step-by-step instructions for deploying Backend to **Render** and Frontend to **Vercel** with full environment variable setup. |
+| 💻 [**Backend Quickstart**](file:///D:/skills_lab/Travel_planner/backend/README.md) | Prerequisites, environment variable configuration, development server startup, and build instructions. |
 
 ---
 

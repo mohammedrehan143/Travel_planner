@@ -20,8 +20,8 @@ export function createApp(): Express {
   );
   app.use(express.json({ limit: '2mb' }));
 
-  // Health Check Endpoint
-  app.get('/health', (req: Request, res: Response) => {
+  // Health Check Endpoints
+  const healthHandler = (req: Request, res: Response) => {
     res.status(200).json({
       status: 'healthy',
       service: 'TripPilot AI Backend',
@@ -29,6 +29,20 @@ export function createApp(): Express {
       timestamp: new Date().toISOString(),
       agentEngine: 'active',
       environment: env.NODE_ENV
+    });
+  };
+
+  app.get('/health', healthHandler);
+  app.get('/api/health', healthHandler);
+
+  // Root Service Status
+  app.get('/', (req: Request, res: Response) => {
+    res.status(200).json({
+      service: 'TripPilot AI Agentic Backend',
+      status: 'healthy',
+      docs: '/api/docs',
+      health: '/health',
+      timestamp: new Date().toISOString()
     });
   });
 

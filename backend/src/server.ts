@@ -4,7 +4,7 @@ import { getActiveProvider } from './agent/llm.client.js';
 
 const app = createApp();
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, '0.0.0.0', () => {
   const { provider, model } = getActiveProvider();
   console.log(`=======================================================`);
   console.log(`🚀 TripPilot AI Backend & Agentic Service`);

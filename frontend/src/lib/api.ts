@@ -1,7 +1,7 @@
 import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput } from '../types';
 import { supabase } from './supabase';
 
-const BACKEND_BASE_URL = (import.meta.env.VITE_BACKEND_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+const BACKEND_BASE_URL = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
 
 export interface PlanGenerationRequest extends TripCreateWizardInput {
   user_id?: string;
