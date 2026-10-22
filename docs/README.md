@@ -13,8 +13,9 @@ Welcome to the comprehensive technical documentation for **TripPilot AI**.
 | 🗄️ [**Database Schema & RLS**](file:///D:/skills_lab/Travel_planner/docs/DATABASE_SCHEMA.md) | Complete PostgreSQL ER diagram, table descriptions, constraints, foreign keys, triggers, and Row Level Security policies. |
 | 🤖 [**Agentic AI Specification**](file:///D:/skills_lab/Travel_planner/docs/AGENT_SPEC.md) | 10-step autonomous planning workflow, 10 callable tools, validation engine rules, auto-revision loops, and prompt injection defenses. |
 | ⚡ [**Google Gemini Setup Guide**](file:///D:/skills_lab/Travel_planner/docs/GEMINI_SETUP.md) | Step-by-step instructions for getting an API key, choosing Gemini models (`gemini-2.5-flash`), tool calling configuration, and offline fallbacks. |
-| 🎨 [**Person 1 Frontend Handbook**](file:///D:/skills_lab/Travel_planner/docs/PERSON_1_FRONTEND_GUIDE.md) | Ready-to-use TypeScript API client, UI tasks mapping, polling wizard status, and development bypass tokens. |
-| 🧪 [**Testing & Verification**](file:///D:/skills_lab/Travel_planner/docs/TESTING_GUIDE.md) | Vitest test suite breakdown (35 tests across 6 files), test execution commands, and coverage details. |
+| 🌍 [**Free Resources Guide (Maps & Weather)**](file:///D:/skills_lab/Travel_planner/docs/FREE_RESOURCES_GUIDE.md) | How TripPilot AI uses 100% free open-source services (Open-Meteo, OpenStreetMap, OSRM, Frankfurter) requiring **NO API keys**. |
+| 🎨 [**Person 1 Frontend Handbook**](file:///D:/skills_lab/Travel_planner/docs/PERSON_1_FRONTEND_GUIDE.md) | Ready-to-copy TypeScript API client, UI tasks mapping, polling wizard status, and development bypass tokens. |
+| 🧪 [**Testing & Verification**](file:///D:/skills_lab/Travel_planner/docs/TESTING_GUIDE.md) | Vitest test suite breakdown (36 tests across 6 files), test execution commands, and coverage details. |
 | 🚀 [**Backend Quickstart**](file:///D:/skills_lab/Travel_planner/backend/README.md) | Prerequisites, environment variable configuration, development server startup, and build instructions. |
 
 ---
@@ -31,8 +32,9 @@ Travel_planner/
 │   ├── DATABASE_SCHEMA.md         # PostgreSQL ERD & RLS policies
 │   ├── AGENT_SPEC.md              # 10-step planning loop & 10 tools
 │   ├── GEMINI_SETUP.md            # Google Gemini LLM setup & model guide
+│   ├── FREE_RESOURCES_GUIDE.md    # 100% Free Maps, Weather, Routing & Currency
 │   ├── PERSON_1_FRONTEND_GUIDE.md # Frontend integration handbook
-│   └── TESTING_GUIDE.md           # Vitest test suite guide (35 tests)
+│   └── TESTING_GUIDE.md           # Vitest test suite guide (36 tests)
 ├── supabase/
 │   ├── migrations/
 │   │   └── 20261022000000_init_schema.sql # 9 tables, constraints, indexes & RLS
@@ -56,5 +58,5 @@ Travel_planner/
     │   ├── routes/                # Express router endpoints
     │   ├── app.ts                 # Express application setup
     │   └── server.ts              # Server bootstrap & startup
-    └── tests/                     # 35 automated Vitest tests
+    └── tests/                     # 36 automated Vitest tests
 ```
