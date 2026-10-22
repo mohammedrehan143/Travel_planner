@@ -113,6 +113,20 @@ describe('TripPilot Backend REST API Suite', () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('success');
     expect(res.body.regeneratedDay).toBeDefined();
+    expect(res.body.day).toBeDefined();
+  });
+
+  it('POST /api/trips/:id/regenerate-day supports frontend legacy alias', async () => {
+    const res = await request(app)
+      .post('/api/trips/11111111-1111-1111-1111-111111111111/regenerate-day')
+      .send({
+        dayNumber: 1,
+        focus: 'Alternative local highlights and dining'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+    expect(res.body.day).toBeDefined();
   });
 
   it('POST /api/trips/:id/validate revalidates an existing trip', async () => {

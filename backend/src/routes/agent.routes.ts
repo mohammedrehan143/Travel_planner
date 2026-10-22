@@ -16,8 +16,9 @@ router.get('/agent-runs/:id', requireAuth, AgentController.getRunStatus);
 // POST /api/trips/:id/modify
 router.post('/trips/:id/modify', requireAuth, validateBody(modifyTripSchema), AgentController.modifyTrip);
 
-// POST /api/trips/:id/days/:dayNumber/regenerate
+// POST /api/trips/:id/days/:dayNumber/regenerate & /api/trips/:id/regenerate-day
 router.post('/trips/:id/days/:dayNumber/regenerate', requireAuth, validateBody(regenerateDaySchema), AgentController.regenerateDay);
+router.post('/trips/:id/regenerate-day', requireAuth, AgentController.regenerateDay);
 
 // POST /api/trips/:id/validate
 router.post('/trips/:id/validate', requireAuth, AgentController.validateTrip);

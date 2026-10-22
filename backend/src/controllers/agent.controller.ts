@@ -183,9 +183,12 @@ export class AgentController {
   static async regenerateDay(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const tripId = String(req.params.id);
-      const dayNumber = parseInt(String(req.params.dayNumber), 10);
+      const dayNumber = req.body.dayNumber
+        ? parseInt(String(req.body.dayNumber), 10)
+        : parseInt(String(req.params.dayNumber || '1'), 10);
       const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
-      const { customPacing, specificInterests } = req.body;
+      const customPacing = req.body.customPacing;
+      const specificInterests = req.body.specificInterests || (req.body.focus ? [req.body.focus] : undefined);
 
       const trip = await TripService.getTripById(tripId, userId);
       if (!trip) {
@@ -222,6 +225,7 @@ export class AgentController {
       res.status(200).json({
         status: 'success',
         dayNumber,
+        day: result.regeneratedDay,
         regeneratedDay: result.regeneratedDay,
         validation: result.validation
       });
