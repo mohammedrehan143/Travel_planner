@@ -1,0 +1,462 @@
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Compass,
+  Calendar,
+  Clock,
+  MapPin,
+  DollarSign,
+  Plus,
+  Sparkles,
+  Share2,
+  FileDown,
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle,
+  Sun,
+  CloudSun,
+  Cloud,
+  ChevronRight,
+  MessageSquare,
+  Users,
+  Luggage,
+  Layers,
+  Map as MapIcon,
+  PieChart as ChartIcon
+} from 'lucide-react';
+import { useTrips } from '../context/TripContext';
+import { ActivityCard } from '../components/itinerary/ActivityCard';
+import { ActivityEditModal } from '../components/itinerary/ActivityEditModal';
+import { ItineraryMap } from '../components/itinerary/ItineraryMap';
+import { BudgetTracker } from '../components/itinerary/BudgetTracker';
+import { AIChatDrawer } from '../components/itinerary/AIChatDrawer';
+import { CollaborationModal } from '../components/itinerary/CollaborationModal';
+import { PackingChecklist } from '../components/itinerary/PackingChecklist';
+import { PDFExportView } from '../components/itinerary/PDFExportView';
+import { Activity, TripDay } from '../types';
+import { TripPilotAPI } from '../lib/api';
+
+export const ItineraryPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const {
+    trips,
+    activeTripDays,
+    activeTripActivities,
+    activeAccommodations,
+    activeExpenses,
+    activeCollaborators,
+    activeChecklist,
+    setActiveTripId,
+    addActivity,
+    updateActivity,
+    deleteActivity,
+    reorderActivities,
+    regenerateDay,
+  } = useTrips();
+
+  // Find target trip
+  const trip = trips.find((t) => t.id === id) || trips[0];
+
+  // Set active trip in context if needed
+  React.useEffect(() => {
+    if (trip && trip.id !== id) {
+      setActiveTripId(trip.id);
+    }
+  }, [id, trip]);
+
+  const days = activeTripDays || [];
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
+  const currentDay = days[selectedDayIndex] || days[0];
+  const dayActivities = currentDay ? (activeTripActivities[currentDay.id] || []) : [];
+
+  // Modals & Panels State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [collabModalOpen, setCollabModalOpen] = useState(false);
+  const [pdfExportOpen, setPdfExportOpen] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationScore, setValidationScore] = useState<number | null>(96);
+
+  // Tab view: 'schedule' | 'map' | 'budget' | 'checklist'
+  const [activeTab, setActiveTab] = useState<'schedule' | 'map' | 'budget' | 'checklist'>('schedule');
+
+  if (!trip) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-4">
+        <p className="text-slate-600">Trip not found or has been removed.</p>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  // Activity reorder handlers
+  const handleMoveUp = (index: number) => {
+    if (index === 0 || !currentDay) return;
+    const items = [...dayActivities];
+    const temp = items[index];
+    items[index] = items[index - 1];
+    items[index - 1] = temp;
+    reorderActivities(currentDay.id, items);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === dayActivities.length - 1 || !currentDay) return;
+    const items = [...dayActivities];
+    const temp = items[index];
+    items[index] = items[index + 1];
+    items[index + 1] = temp;
+    reorderActivities(currentDay.id, items);
+  };
+
+  const handleRegenerateDay = async () => {
+    if (!currentDay) return;
+    setIsRegenerating(true);
+    try {
+      await regenerateDay(currentDay.id);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleValidateTrip = async () => {
+    setIsValidating(true);
+    try {
+      const res = await TripPilotAPI.validateTrip(trip.id, trip, dayActivities);
+      setValidationScore(res.score);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Hero Header Banner */}
+      <div className="relative rounded-3xl bg-slate-900 text-white overflow-hidden shadow-xl">
+        <div className="relative h-64 sm:h-80 w-full overflow-hidden">
+          <img
+            src={
+              trip.cover_image_url ||
+              'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80'
+            }
+            alt={trip.title}
+            className="w-full h-full object-cover opacity-60"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+
+          {/* Action pills top right */}
+          <div className="absolute top-4 right-4 flex flex-wrap items-center gap-2 z-10">
+            <button
+              onClick={() => setCollabModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-xs font-semibold text-white transition-colors"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Share ({activeCollaborators.length})</span>
+            </button>
+
+            <button
+              onClick={() => setPdfExportOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-xs font-semibold text-white transition-colors"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>Export PDF</span>
+            </button>
+
+            <button
+              onClick={() => setChatDrawerOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-md shadow-blue-500/30 transition-all hover:scale-105"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>AI Co-Pilot</span>
+            </button>
+          </div>
+
+          {/* Bottom Title & Details */}
+          <div className="absolute bottom-6 left-6 right-6 z-10 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-600/90 text-white backdrop-blur-sm border border-blue-400/40">
+                {trip.destination}
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-sm">
+                {trip.duration_days} Days Journey
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                Budget: ${trip.total_budget.toLocaleString()} {trip.currency}
+              </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              {trip.title}
+            </h1>
+
+            <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 max-w-2xl leading-relaxed">
+              {trip.description}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navigation Tabs: Schedule, Interactive Map, Budget, Packing */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
+          <button
+            onClick={() => setActiveTab('schedule')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+              activeTab === 'schedule'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Day Schedule</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('map')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+              activeTab === 'map'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <MapIcon className="w-4 h-4" />
+            <span>Interactive Map & Route</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('budget')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+              activeTab === 'budget'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ChartIcon className="w-4 h-4" />
+            <span>Budget Analytics</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('checklist')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+              activeTab === 'checklist'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Luggage className="w-4 h-4" />
+            <span>Packing Checklist</span>
+          </button>
+        </div>
+
+        {/* Validation Score Badge */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleValidateTrip}
+            disabled={isValidating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-xs transition-colors"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Validation Score: {validationScore}%</span>
+          </button>
+        </div>
+      </div>
+
+      {/* SCHEDULE VIEW */}
+      {activeTab === 'schedule' && (
+        <div className="space-y-6">
+          {/* Day Navigation Selector Strip */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {days.map((day, idx) => (
+              <button
+                key={day.id}
+                onClick={() => setSelectedDayIndex(idx)}
+                className={`flex-1 min-w-[140px] p-3.5 rounded-2xl border text-left transition-all ${
+                  selectedDayIndex === idx
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20 ring-2 ring-blue-400/20'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className={`font-black ${selectedDayIndex === idx ? 'text-blue-100' : 'text-slate-900'}`}>
+                    Day {day.day_number}
+                  </span>
+                  <span className={`text-[10px] ${selectedDayIndex === idx ? 'text-blue-200' : 'text-slate-400'}`}>
+                    {day.date}
+                  </span>
+                </div>
+                <p className={`text-[11px] font-medium line-clamp-1 ${selectedDayIndex === idx ? 'text-white' : 'text-slate-600'}`}>
+                  {day.theme || `Day ${day.day_number} highlights`}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {/* Current Day Header Card */}
+          {currentDay && (
+            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-black text-slate-900">
+                    Day {currentDay.day_number}: {currentDay.theme}
+                  </h2>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                  {currentDay.summary}
+                </p>
+              </div>
+
+              {/* Weather & Day Actions */}
+              <div className="flex items-center gap-3 self-end md:self-auto shrink-0">
+                {currentDay.weather_summary && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold">
+                    <Sun className="w-4 h-4 text-amber-500" />
+                    <span>{currentDay.weather_summary.temp_c}°C {currentDay.weather_summary.condition}</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleRegenerateDay}
+                  disabled={isRegenerating}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors"
+                  title="Ask AI to suggest alternative activities for this day"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isRegenerating ? 'animate-spin' : ''}`} />
+                  <span>Regenerate Day</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setEditingActivity(null);
+                    setEditModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Activity</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Activity Cards List */}
+          <div className="space-y-4">
+            {dayActivities.length > 0 ? (
+              dayActivities.map((act, index) => (
+                <ActivityCard
+                  key={act.id}
+                  activity={act}
+                  index={index}
+                  totalActivities={dayActivities.length}
+                  onEdit={(activity) => {
+                    setEditingActivity(activity);
+                    setEditModalOpen(true);
+                  }}
+                  onDelete={(activityId) => {
+                    if (confirm(`Remove "${act.title}" from Day ${currentDay?.day_number}?`)) {
+                      if (currentDay) deleteActivity(currentDay.id, activityId);
+                    }
+                  }}
+                  onMoveUp={() => handleMoveUp(index)}
+                  onMoveDown={() => handleMoveDown(index)}
+                />
+              ))
+            ) : (
+              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200/80 space-y-3">
+                <Compass className="w-8 h-8 text-slate-400 mx-auto" />
+                <h4 className="text-sm font-bold text-slate-800">No Activities Scheduled for this Day</h4>
+                <p className="text-xs text-slate-500">
+                  Click 'Add Activity' or use 'Regenerate Day' to automatically build a schedule with AI.
+                </p>
+                <button
+                  onClick={() => {
+                    setEditingActivity(null);
+                    setEditModalOpen(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                >
+                  Add First Activity
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MAP VIEW */}
+      {activeTab === 'map' && (
+        <ItineraryMap
+          trip={trip}
+          activities={dayActivities}
+          selectedDayNumber={currentDay?.day_number || 1}
+        />
+      )}
+
+      {/* BUDGET VIEW */}
+      {activeTab === 'budget' && (
+        <BudgetTracker trip={trip} expenses={activeExpenses} />
+      )}
+
+      {/* PACKING CHECKLIST VIEW */}
+      {activeTab === 'checklist' && (
+        <PackingChecklist items={activeChecklist} />
+      )}
+
+      {/* Activity Edit / Add Modal */}
+      {currentDay && (
+        <ActivityEditModal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          dayId={currentDay.id}
+          initialActivity={editingActivity}
+          onSave={(data) => {
+            if (editingActivity) {
+              updateActivity(currentDay.id, editingActivity.id, data);
+            } else {
+              addActivity(currentDay.id, {
+                ...data,
+                trip_id: trip.id,
+                trip_day_id: currentDay.id,
+                order_index: dayActivities.length,
+                currency: trip.currency,
+              } as any);
+            }
+          }}
+        />
+      )}
+
+      {/* AI Assistant Chat Drawer */}
+      <AIChatDrawer
+        isOpen={chatDrawerOpen}
+        onClose={() => setChatDrawerOpen(false)}
+        trip={trip}
+        currentDay={currentDay}
+      />
+
+      {/* Collaboration Modal */}
+      <CollaborationModal
+        isOpen={collabModalOpen}
+        onClose={() => setCollabModalOpen(false)}
+        trip={trip}
+        collaborators={activeCollaborators}
+      />
+
+      {/* PDF Export View */}
+      {pdfExportOpen && (
+        <PDFExportView
+          trip={trip}
+          days={days}
+          activitiesByDay={activeTripActivities}
+          expenses={activeExpenses}
+          onClose={() => setPdfExportOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
