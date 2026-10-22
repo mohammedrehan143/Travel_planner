@@ -176,4 +176,34 @@ describe('TripPilot Backend REST API Suite', () => {
     expect(res.body.distanceKm).toBeGreaterThan(0);
     expect(res.body.durationMinutes).toBeGreaterThan(0);
   });
+
+  it('POST /api/agent/chat provides dynamic AI conversational advice', async () => {
+    const res = await request(app)
+      .post('/api/agent/chat')
+      .send({
+        message: 'What are the top local specialities and vegetarian spots?',
+        context: { destination: 'Bangalore', currency: 'INR' }
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+    expect(res.body.message).toBeDefined();
+    expect(typeof res.body.message).toBe('string');
+  });
+
+  it('POST /api/agent/chat plans and generates a new trip when requested', async () => {
+    const res = await request(app)
+      .post('/api/agent/chat')
+      .send({
+        message: 'Plan a 3-day trip to Goa with friends',
+        context: { currency: 'INR' }
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+    expect(res.body.action).toBe('plan_new_trip');
+    expect(res.body.createdTrip).toBeDefined();
+    expect(res.body.createdTrip.destination).toBe('Goa');
+    expect(res.body.createdTrip.days.length).toBeGreaterThan(0);
+  });
 });

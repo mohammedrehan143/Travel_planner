@@ -30,6 +30,8 @@ export interface ModifyItineraryRequest {
 
 export interface ModifyItineraryResponse {
   message: string;
+  action?: 'chat' | 'plan_new_trip';
+  createdTrip?: PlanGenerationResponse;
   updated_activities?: Activity[];
   new_activity?: Activity;
   removed_activity_id?: string;
@@ -169,14 +171,25 @@ export const TripPilotAPI = {
       });
       if (res.ok) {
         const data = await res.json();
+        let createdTripPlan: PlanGenerationResponse | undefined;
+
+        if (data.createdTrip) {
+          createdTripPlan = mapBackendItineraryToFrontend({
+            itinerary: data.createdTrip,
+            runId: data.runId,
+          });
+        }
+
         return {
-          message: data.message || 'I could not generate a response.',
+          message: data.message || 'I have generated recommendations for you.',
+          action: data.action,
+          createdTrip: createdTripPlan,
         };
       }
       const error = await res.json().catch(() => ({}));
       let message = error.message;
       if (!message || message.includes('429') || res.status === 429) {
-        message = 'The AI assistant is experiencing high request volume on the free tier. Please wait a moment and try again, or ask for local dining and hangout spots!';
+        message = 'The AI assistant is experiencing high request volume on the free tier. Please wait a moment and try again.';
       } else if (res.status >= 500) {
         message = 'TripPilot AI service is momentarily busy. Please try again in a few seconds.';
       }
@@ -260,7 +273,7 @@ export const TripPilotAPI = {
 
 function mapBackendItineraryToFrontend(data: any): PlanGenerationResponse {
   const itin = data.itinerary;
-  const tripId = `trip-${Date.now()}`;
+  const tripId = itin.tripId || itin.id || `trip-${Date.now()}`;
   const days: TripDay[] = [];
   const activitiesByDay: Record<string, Activity[]> = {};
 

@@ -333,37 +333,41 @@ BEGIN
         TRUE
     );
 
-    INSERT INTO public.profiles (
-        id,
-        phone,
-        mobile_number,
-        email,
-        full_name,
-        preferred_currency,
-        terms_accepted,
-        terms_accepted_at,
-        created_at,
-        updated_at
-    )
-    VALUES (
-        NEW.id,
-        extracted_phone,
-        extracted_phone,
-        COALESCE(new_json->>'email', extracted_phone || '@phone.trippilot.com'),
-        extracted_full_name,
-        COALESCE(NEW.raw_user_meta_data->>'preferred_currency', 'INR'),
-        extracted_terms,
-        now(),
-        now(),
-        now()
-    )
-    ON CONFLICT (id) DO UPDATE SET
-        phone = COALESCE(EXCLUDED.phone, public.profiles.phone),
-        mobile_number = COALESCE(EXCLUDED.mobile_number, public.profiles.mobile_number),
-        email = COALESCE(EXCLUDED.email, public.profiles.email),
-        full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
-        terms_accepted = EXCLUDED.terms_accepted,
-        updated_at = now();
+    BEGIN
+        INSERT INTO public.profiles (
+            id,
+            phone,
+            mobile_number,
+            email,
+            full_name,
+            preferred_currency,
+            terms_accepted,
+            terms_accepted_at,
+            created_at,
+            updated_at
+        )
+        VALUES (
+            NEW.id,
+            extracted_phone,
+            extracted_phone,
+            COALESCE(new_json->>'email', extracted_phone || '@phone.trippilot.com'),
+            extracted_full_name,
+            COALESCE(NEW.raw_user_meta_data->>'preferred_currency', 'INR'),
+            extracted_terms,
+            now(),
+            now(),
+            now()
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            phone = COALESCE(EXCLUDED.phone, public.profiles.phone),
+            mobile_number = COALESCE(EXCLUDED.mobile_number, public.profiles.mobile_number),
+            email = COALESCE(EXCLUDED.email, public.profiles.email),
+            full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
+            terms_accepted = EXCLUDED.terms_accepted,
+            updated_at = now();
+    EXCEPTION WHEN OTHERS THEN
+        RAISE WARNING 'handle_new_auth_user warning: %', SQLERRM;
+    END;
 
     RETURN NEW;
 END;
@@ -371,7 +375,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
-    AFTER INSERT OR UPDATE ON auth.users
+    AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
 
 -- ---------------------------------------------------------------------

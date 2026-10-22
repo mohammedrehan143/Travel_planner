@@ -103,7 +103,7 @@ STRICT ACCURACY & QUALITY RULES:
   try {
     const geminiCall = generateWithGemini(prompt);
     const timeoutPromise = new Promise<string>((_, reject) =>
-      setTimeout(() => reject(new Error('Gemini generation timed out after 7s')), 7000)
+      setTimeout(() => reject(new Error('Gemini generation timed out after 15s')), 15000)
     );
 
     const rawResponse = await Promise.race([geminiCall, timeoutPromise]);

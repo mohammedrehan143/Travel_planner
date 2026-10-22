@@ -38,6 +38,7 @@ interface TripContextType {
   deleteTrip: (tripId: string) => Promise<void>;
   addActivity: (dayId: string, activity: Omit<Activity, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   addHangoutPlan: (trip: Trip, day: TripDay, activities: Activity[]) => void;
+  addPlannedTrip: (plan: { trip: Trip; days: TripDay[]; activities: Record<string, Activity[]> }) => Trip;
   updateActivity: (dayId: string, activityId: string, updates: Partial<Activity>) => Promise<void>;
   deleteActivity: (dayId: string, activityId: string) => Promise<void>;
   reorderActivities: (dayId: string, orderedActivities: Activity[]) => Promise<void>;
@@ -439,6 +440,95 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addPlannedTrip = (plan: { trip: Trip; days: TripDay[]; activities: Record<string, Activity[]> }): Trip => {
+    const { trip, days, activities: planActs } = plan;
+
+    const nextTrips = [trip, ...trips.filter((t) => t.id !== trip.id)];
+    const nextDays = { ...tripDays, [trip.id]: days };
+    const nextActivities = { ...activities, ...planActs };
+
+    setTrips(nextTrips);
+    setTripDays(nextDays);
+    setActivities(nextActivities);
+    setActiveTripIdState(trip.id);
+
+    LocalStore.saveTrips(nextTrips);
+    LocalStore.saveTripDays(nextDays);
+    LocalStore.saveActivities(nextActivities);
+
+    if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
+      (async () => {
+        try {
+          await supabase.from('trips').upsert({
+            id: trip.id,
+            user_id: user.id,
+            user_phone: profile?.phone || profile?.mobile_number || null,
+            title: trip.title,
+            description: trip.description,
+            origin: trip.origin,
+            destination: trip.destination,
+            start_date: trip.start_date,
+            end_date: trip.end_date,
+            duration_days: trip.duration_days,
+            traveler_count: trip.traveler_count,
+            travel_companion: trip.travel_companion,
+            travel_style: trip.travel_style,
+            interests: trip.interests,
+            total_budget: trip.total_budget,
+            currency: trip.currency,
+            status: trip.status || 'planning',
+            cover_image_url: trip.cover_image_url,
+            destination_lat: trip.destination_lat,
+            destination_lng: trip.destination_lng,
+            flight_ticket_estimate: trip.flight_ticket_estimate,
+          });
+
+          for (const day of days) {
+            await supabase.from('trip_days').upsert({
+              id: day.id,
+              trip_id: trip.id,
+              day_number: day.day_number,
+              date: day.date,
+              theme: day.theme,
+              summary: day.summary,
+              weather_summary: day.weather_summary,
+            });
+
+            const dayActs = planActs[day.id] || [];
+            if (dayActs.length > 0) {
+              await supabase.from('activities').upsert(
+                dayActs.map((act, idx) => ({
+                  id: act.id,
+                  trip_id: trip.id,
+                  trip_day_id: day.id,
+                  title: act.title,
+                  description: act.description,
+                  category: act.category,
+                  start_time: act.start_time,
+                  end_time: act.end_time,
+                  duration_minutes: act.duration_minutes,
+                  location_name: act.location_name,
+                  location_address: act.location_address,
+                  latitude: act.latitude,
+                  longitude: act.longitude,
+                  estimated_cost: act.estimated_cost,
+                  currency: act.currency,
+                  speciality: act.speciality,
+                  dietary_tag: act.dietary_tag,
+                  order_index: idx,
+                }))
+              );
+            }
+          }
+        } catch (err: any) {
+          console.warn('Could not sync planned trip to Supabase:', err);
+        }
+      })();
+    }
+
+    return trip;
+  };
+
   const addHangoutPlan = (trip: Trip, day: TripDay, dayActivities: Activity[]) => {
     const nextTrips = [trip, ...trips];
     const nextDays = { ...tripDays, [trip.id]: [day] };
@@ -632,6 +722,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteTrip,
         addActivity,
         addHangoutPlan,
+        addPlannedTrip,
         updateActivity,
         deleteActivity,
         reorderActivities,

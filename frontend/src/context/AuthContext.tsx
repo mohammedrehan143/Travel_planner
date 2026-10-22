@@ -27,7 +27,7 @@ interface AuthContextType {
 
 const DEMO_PROFILES: Record<string, UserProfile> = {
   alice: {
-    id: '00000000-0000-0000-0000-000000000001',
+    id: 'ae1f44dd-ce9b-44bb-a59b-ea089cc1fd81',
     email: 'alice@trippilot.test',
     phone: '+919876543210',
     mobile_number: '+919876543210',
@@ -40,7 +40,7 @@ const DEMO_PROFILES: Record<string, UserProfile> = {
     updated_at: new Date().toISOString(),
   },
   bob: {
-    id: '00000000-0000-0000-0000-000000000002',
+    id: 'aa3dbd12-4e7a-4f86-aff1-bf2a26941045',
     email: 'bob@trippilot.test',
     phone: '+919876543211',
     mobile_number: '+919876543211',
