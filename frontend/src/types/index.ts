@@ -10,9 +10,13 @@ export type AgentRunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'c
 export interface UserProfile {
   id: string;
   email: string;
+  phone?: string;
+  mobile_number?: string;
   full_name?: string;
   avatar_url?: string;
   preferred_currency: string;
+  terms_accepted?: boolean;
+  terms_accepted_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -20,6 +24,7 @@ export interface UserProfile {
 export interface Trip {
   id: string;
   user_id: string;
+  user_phone?: string;
   title: string;
   description?: string;
   origin: string;
@@ -39,6 +44,13 @@ export interface Trip {
   destination_lng?: number;
   transport_preference?: string;
   accommodation_preference?: string;
+  dietary_preference?: string;
+  flight_ticket_estimate?: {
+    cost: number;
+    currency: string;
+    airlines?: string;
+    description?: string;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +88,9 @@ export interface Activity {
   longitude?: number;
   estimated_cost: number;
   currency: string;
+  speciality?: string;
+  dietary_tag?: 'veg' | 'non_veg' | 'both' | 'none';
+  selected?: boolean;
   booking_required: boolean;
   booking_url?: string;
   booking_status: BookingStatus;
@@ -174,6 +189,7 @@ export interface TripCreateWizardInput {
   currency: string;
   travel_style: TravelStyle;
   interests: string[];
+  dietary_preference?: 'veg' | 'non_veg' | 'any' | string;
   transport_preference?: string;
   accommodation_preference?: string;
 }
