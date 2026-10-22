@@ -14,7 +14,10 @@ import {
   BookmarkCheck,
   CheckCircle2,
   SlidersHorizontal,
-  Luggage
+  Luggage,
+  Database,
+  CloudUpload,
+  RefreshCw
 } from 'lucide-react';
 import { useTrips } from '../context/TripContext';
 import { useAuth } from '../context/AuthContext';
@@ -23,10 +26,26 @@ import { formatCurrency } from '../lib/currency';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { trips, deleteTrip, setActiveTripId } = useTrips();
+  const { trips, deleteTrip, setActiveTripId, isCloudSynced, syncCurrentTripsToSupabase, refreshData } = useTrips();
   const { profile, user } = useAuth();
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
+
+  const handleCloudSync = async () => {
+    setIsSyncing(true);
+    setSyncMsg('');
+    const res = await syncCurrentTripsToSupabase();
+    setIsSyncing(false);
+    if (res.success) {
+      setSyncMsg(`Successfully synced ${res.count} trip(s) directly to Supabase under ${profile?.phone || 'your account'}!`);
+      setTimeout(() => setSyncMsg(''), 5000);
+    } else {
+      setSyncMsg(res.error || 'Sync failed.');
+      setTimeout(() => setSyncMsg(''), 5000);
+    }
+  };
 
   const filteredTrips = trips.filter((t) => {
     const matchesFilter = filter === 'all' || t.status === filter;
@@ -59,17 +78,34 @@ export const DashboardPage: React.FC = () => {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>TripPilot Workspace • Supabase Synchronized</span>
+              <span>
+                {isCloudSynced ? '● Live Supabase Connected' : 'TripPilot Workspace • Local Cache'}
+              </span>
+              {profile?.phone && (
+                <span className="text-[10px] bg-blue-400/20 text-blue-200 px-2 py-0.5 rounded-full ml-1">
+                  ID: {profile.phone}
+                </span>
+              )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black">
               Welcome back, {profile?.full_name || 'Traveler'}!
             </h1>
             <p className="text-sm text-slate-300 max-w-xl">
-              You have {upcomingCount} upcoming adventure{upcomingCount === 1 ? '' : 's'} scheduled. Your AI agent has organized your attractions and budget allocations.
+              You have {upcomingCount} upcoming adventure{upcomingCount === 1 ? '' : 's'} scheduled. All trips, days, and budget activities are linked to your mobile identity.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleCloudSync}
+              disabled={isSyncing}
+              className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs flex items-center gap-2 transition-all disabled:opacity-50"
+              title="Push all trips to Supabase database"
+            >
+              <CloudUpload className={`w-4 h-4 ${isSyncing ? 'animate-bounce text-amber-400' : 'text-blue-300'}`} />
+              <span>{isSyncing ? 'Syncing...' : 'Sync to Cloud DB'}</span>
+            </button>
             <Link
               to="/wizard"
               className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-all"
@@ -79,6 +115,13 @@ export const DashboardPage: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {syncMsg && (
+          <div className="relative z-10 mt-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-300" />
+            <span>{syncMsg}</span>
+          </div>
+        )}
 
         {/* Subtle decorative circles */}
         <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 w-64 h-64 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
