@@ -174,9 +174,12 @@ export const TripPilotAPI = {
         };
       }
       const error = await res.json().catch(() => ({}));
-      const message = error.message || (res.status === 429
-        ? 'The chat service is receiving too many requests. Please wait a moment and try again.'
-        : `TripPilot AI request failed (${res.status}). Check that the backend is running and the Vercel API URL points to Render.`);
+      let message = error.message;
+      if (!message || message.includes('429') || res.status === 429) {
+        message = 'The AI assistant is experiencing high request volume on the free tier. Please wait a moment and try again, or ask for local dining and hangout spots!';
+      } else if (res.status >= 500) {
+        message = 'TripPilot AI service is momentarily busy. Please try again in a few seconds.';
+      }
       return { message };
     } catch (e) {
       console.error('TripPilot chat backend request failed:', e);

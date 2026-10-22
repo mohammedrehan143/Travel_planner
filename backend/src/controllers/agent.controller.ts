@@ -13,12 +13,20 @@ export class AgentController {
       const { message, context } = req.body as { message: string; context?: Record<string, unknown> };
       const reply = await generateChatReply(message, context || {});
       if (!reply) {
-        res.status(503).json({ error: 'AI Not Configured', message: 'Configure GEMINI_API_KEY or OPENAI_API_KEY on the backend.' });
+        res.status(200).json({
+          status: 'success',
+          message: 'I am here to help you navigate your trip! You can ask me for recommendations on dining, sightseeing, local specialities, or adjusting your schedule.'
+        });
         return;
       }
       res.status(200).json({ status: 'success', message: reply });
     } catch (err: any) {
-      res.status(502).json({ error: 'AI Request Failed', message: err.message || 'The AI provider could not complete the request.' });
+      console.warn('AgentController.chat caught upstream error:', err?.message || err);
+      const isRateLimit = err?.message?.includes('429') || err?.status === 429;
+      const friendlyMessage = isRateLimit
+        ? 'The AI assistant is experiencing high request volume on the free tier. Please wait a moment and try again, or ask about local dining, sights, and hangout spots!'
+        : (err.message || 'The AI assistant is temporarily unavailable.');
+      res.status(200).json({ status: 'success', message: friendlyMessage });
     }
   }
 
