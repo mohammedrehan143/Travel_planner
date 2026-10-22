@@ -48,6 +48,7 @@ export const planTripSchema = z.object({
   startDate: z.string().regex(dateRegex, 'startDate must be formatted as YYYY-MM-DD'),
   endDate: z.string().regex(dateRegex, 'endDate must be formatted as YYYY-MM-DD'),
   travelerCount: z.number().int().min(1).max(50).default(1),
+  travelCompanion: z.string().optional(),
   budget: z.number().nonnegative().optional().default(2000),
   currency: z.string().length(3).default('USD'),
   travelStyle: travelStyleEnum.default('balanced'),

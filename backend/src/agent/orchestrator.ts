@@ -10,7 +10,7 @@ import { executeAgentTool } from './tools/index.js';
 import { AgentRunService } from '../services/agentRun.service.js';
 import { ItineraryValidator } from './validator.js';
 import { sanitizeUserInput } from './prompts.js';
-import { isLLMConfigured, callLLMWithTools, ChatMessage } from './llm.client.js';
+import { isLLMConfigured, callLLMWithTools, ChatMessage, generateChatReply } from './llm.client.js';
 
 export class AgentOrchestrator {
   /**
@@ -110,10 +110,10 @@ export class AgentOrchestrator {
       // -------------------------------------------------------------
       await logStep(
         'generate_itinerary',
-        `Organizing attractions into geographic clusters and synthesizing day schedules.`,
+        `Synthesizing geographically clustered day schedules for ${sanitizedDest} via Agentic AI.`,
         65,
         'generate_itinerary',
-        { destination: sanitizedDest, durationDays, travelerCount, travelStyle }
+        { destination: sanitizedDest, durationDays, travelerCount, travelStyle, travelCompanion: request.travelCompanion }
       );
 
       let itinerary: CompleteItinerary = await executeAgentTool('generate_itinerary', {
@@ -123,6 +123,7 @@ export class AgentOrchestrator {
         endDate: request.endDate,
         durationDays,
         travelerCount,
+        travelCompanion: request.travelCompanion,
         travelStyle,
         interests,
         totalBudget: budget,
@@ -207,9 +208,30 @@ export class AgentOrchestrator {
     itinerary: CompleteItinerary,
     request: ModifyItineraryRequest
   ): Promise<{ modifiedItinerary: CompleteItinerary; validation: ValidationReport; changeSummary: string }> {
-    const instructions = sanitizeUserInput(request.instructions).toLowerCase();
+    const cleanInstructions = sanitizeUserInput(request.instructions);
+    const instructions = cleanInstructions.toLowerCase();
     const targetDayNum = request.targetDay || 1;
     const targetDay = itinerary.days.find(d => d.dayNumber === targetDayNum) || itinerary.days[0];
+
+    // Questions and planning advice should be answered by the configured LLM;
+    // only concrete edit requests should enter the itinerary mutation path.
+    const isEditRequest = /\b(add|remove|delete|replace|swap|change|move|reschedule|make|slow|relax|shorten|extend|include|insert)\b/i.test(instructions);
+    if (!isEditRequest) {
+      const reply = await generateChatReply(cleanInstructions, {
+        destination: itinerary.destination,
+        dates: `${itinerary.startDate} to ${itinerary.endDate}`,
+        budget: itinerary.totalBudget,
+        currency: itinerary.currency,
+        day: targetDay ? { dayNumber: targetDay.dayNumber, date: targetDay.date, activities: targetDay.activities } : undefined
+      });
+      if (reply) {
+        return {
+          modifiedItinerary: itinerary,
+          validation: ItineraryValidator.validate(itinerary.days, itinerary.totalBudget, itinerary.budgetBreakdown.estimatedTotalCost),
+          changeSummary: reply
+        };
+      }
+    }
 
     let changeSummary = '';
 

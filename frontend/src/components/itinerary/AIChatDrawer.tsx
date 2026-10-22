@@ -28,7 +28,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   trip,
   currentDay,
 }) => {
-  const { addActivity } = useTrips();
+  const { addActivity, activeTripActivities } = useTrips();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -75,7 +75,22 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       const response = await TripPilotAPI.modifyItinerary({
         trip_id: trip.id,
         day_id: currentDay?.id,
+        day_number: currentDay?.day_number,
         user_prompt: prompt,
+        context: {
+          destination: trip.destination,
+          origin: trip.origin,
+          dates: `${trip.start_date} to ${trip.end_date}`,
+          travelStyle: trip.travel_style,
+          interests: trip.interests,
+          budget: trip.total_budget,
+          currency: trip.currency,
+          selectedDay: currentDay ? {
+            dayNumber: currentDay.day_number,
+            date: currentDay.date,
+            activities: activeTripActivities[currentDay.id] || [],
+          } : undefined,
+        },
       });
 
       // If response generated an activity, automatically add it or show apply button

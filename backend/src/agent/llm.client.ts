@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { AGENT_TOOLS } from './tools/definitions.js';
 
 let openaiClient: OpenAI | null = null;
+let openaiClientConfig = '';
 let googleGenAIClient: GoogleGenAI | null = null;
 
 export type SupportedAIProvider = 'gemini' | 'openai' | 'none';
@@ -66,21 +67,41 @@ export function getLLMClient(): { client: OpenAI; model: string; provider: Suppo
     return null;
   }
 
-  if (!openaiClient) {
-    if (provider === 'gemini') {
-      openaiClient = new OpenAI({
-        apiKey: env.GEMINI_API_KEY,
-        baseURL: env.OPENAI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/'
-      });
-    } else {
-      openaiClient = new OpenAI({
-        apiKey: env.OPENAI_API_KEY,
-        baseURL: env.OPENAI_BASE_URL || undefined
-      });
-    }
+  const apiKey = provider === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_API_KEY;
+  const baseURL = provider === 'gemini'
+    ? 'https://generativelanguage.googleapis.com/v1beta/openai/'
+    : env.OPENAI_BASE_URL;
+  const clientConfig = `${provider}:${apiKey}:${baseURL || ''}`;
+
+  if (!openaiClient || openaiClientConfig !== clientConfig) {
+    openaiClient = new OpenAI({ apiKey, baseURL: baseURL || undefined });
+    openaiClientConfig = clientConfig;
   }
 
   return { client: openaiClient, model, provider };
+}
+
+/** Generate a conversational answer using the selected configured provider. */
+export async function generateChatReply(prompt: string, context: Record<string, unknown>): Promise<string | null> {
+  const config = getLLMClient();
+  if (!config) return null;
+
+  const response = await config.client.chat.completions.create({
+    model: config.model,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are TripPilot, a concise and practical travel planning assistant. Answer using the supplied trip context. Do not claim that you changed or booked anything; provide suggestions only.'
+      },
+      {
+        role: 'user',
+        content: `Trip context:\n${JSON.stringify(context)}\n\nTraveler request: ${prompt}`
+      }
+    ],
+    temperature: 0.4
+  });
+
+  return response.choices[0]?.message?.content?.trim() || null;
 }
 
 export interface ChatMessage {

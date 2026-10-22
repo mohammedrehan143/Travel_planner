@@ -15,6 +15,7 @@ export interface PlanTripRequest {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
   travelerCount?: number;
+  travelCompanion?: 'solo' | 'couple' | 'family' | 'friends' | 'colleagues' | string;
   budget?: number;
   currency?: string;
   travelStyle?: TravelStyle;

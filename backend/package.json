@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "prestart": "node scripts/ensure-build.js",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -21,25 +22,28 @@
   ],
   "author": "Person 2 - Backend & Agentic AI Lead",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@google/genai": "^2.30.0",
     "@supabase/supabase-js": "^2.49.1",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "openai": "^4.86.0",
+    "typescript": "^5.7.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.13.9",
     "@types/supertest": "^6.0.2",
     "supertest": "^7.0.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.3",
     "vitest": "^3.0.7"
   }
 }

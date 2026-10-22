@@ -37,6 +37,7 @@ export function buildPlanningGoalPrompt(params: {
   startDate: string;
   endDate: string;
   travelerCount: number;
+  travelCompanion?: string;
   travelStyle: string;
   budget: number;
   currency: string;
@@ -48,7 +49,7 @@ export function buildPlanningGoalPrompt(params: {
 Origin: ${params.origin}
 Destination: ${params.destination}
 Dates: ${params.startDate} to ${params.endDate}
-Travelers: ${params.travelerCount}
+Travelers: ${params.travelerCount} ${params.travelCompanion ? `(${params.travelCompanion})` : ''}
 Travel Style: ${params.travelStyle}
 Total Budget: ${params.budget} ${params.currency}
 Interests: ${params.interests.join(', ') || 'General sightseeing'}

@@ -28,6 +28,7 @@ export interface Trip {
   end_date: string;
   duration_days: number;
   traveler_count: number;
+  travel_companion?: 'solo' | 'couple' | 'family' | 'friends' | 'colleagues' | string;
   travel_style: TravelStyle;
   interests: string[];
   total_budget: number;
@@ -168,6 +169,7 @@ export interface TripCreateWizardInput {
   start_date: string;
   end_date: string;
   traveler_count: number;
+  travel_companion?: 'solo' | 'couple' | 'family' | 'friends' | 'colleagues' | string;
   total_budget: number;
   currency: string;
   travel_style: TravelStyle;

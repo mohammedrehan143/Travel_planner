@@ -3,6 +3,7 @@ import { WeatherAdapter } from '../../integrations/weather.adapter.js';
 import { RoutesAdapter } from '../../integrations/routes.adapter.js';
 import { AccommodationAdapter } from '../../integrations/accommodation.adapter.js';
 import { CurrencyAdapter } from '../../integrations/currency.adapter.js';
+import { generateItineraryWithGemini } from '../gemini.generator.js';
 import { ItineraryValidator } from '../validator.js';
 import { getAdminSupabase } from '../../db/supabase.js';
 import {
@@ -117,15 +118,19 @@ export class ToolHandlers {
     const curr = (params.currency || 'USD').toUpperCase();
     const travelers = Math.max(1, params.travelerCount);
     const days = Math.max(1, params.durationDays);
-    const nights = Math.max(1, days - 1);
+    const nights = days <= 1 ? 0 : days - 1;
 
     // Baseline daily cost per person by style
-    let nightlyAccommodationPerRoom = 130;
+    let nightlyAccommodationPerRoom = nights > 0 ? 130 : 0;
     let dailyFoodPerPerson = 50;
     let dailyActivitiesPerPerson = 40;
     let dailyTransitPerPerson = 15;
 
-    if (params.travelStyle === 'budget' || params.travelStyle === 'backpacking') {
+    if (days === 1) {
+      dailyFoodPerPerson = 15;
+      dailyActivitiesPerPerson = 10;
+      dailyTransitPerPerson = 5;
+    } else if (params.travelStyle === 'budget' || params.travelStyle === 'backpacking') {
       nightlyAccommodationPerRoom = 45;
       dailyFoodPerPerson = 25;
       dailyActivitiesPerPerson = 20;
@@ -202,15 +207,17 @@ export class ToolHandlers {
     endDate: string;
     durationDays: number;
     travelerCount: number;
+    travelCompanion?: string;
     travelStyle: string;
     interests: string[];
     totalBudget: number;
     currency: string;
   }): Promise<CompleteItinerary> {
     const coords = await PlacesAdapter.getDestinationCoordinates(params.destination);
-    const { places } = await PlacesAdapter.searchPlaces('top attractions and restaurants', params.destination, undefined, 20);
-    const { forecast } = await WeatherAdapter.getForecast(params.destination, params.startDate, params.endDate, coords.lat, coords.lng);
-    const lodging = await AccommodationAdapter.searchLodging(params.destination, Math.max(1, params.durationDays - 1), params.travelStyle, params.currency);
+    const nights = params.durationDays <= 1 ? 0 : params.durationDays - 1;
+    const lodging = nights > 0
+      ? await AccommodationAdapter.searchLodging(params.destination, nights, params.travelStyle, params.currency)
+      : [];
     const budget = await this.estimateTripBudget({
       destination: params.destination,
       durationDays: params.durationDays,
@@ -219,6 +226,71 @@ export class ToolHandlers {
       totalBudget: params.totalBudget,
       currency: params.currency
     });
+
+    // 1. Attempt Gemini Generation First for Authentic Real-World Places in the Requested Destination
+    try {
+      const geminiResult = await generateItineraryWithGemini({
+        destination: params.destination,
+        origin: params.origin,
+        startDate: params.startDate,
+        endDate: params.endDate,
+        durationDays: params.durationDays,
+        travelerCount: params.travelerCount,
+        travelCompanion: params.travelCompanion,
+        travelStyle: params.travelStyle,
+        interests: params.interests,
+        totalBudget: params.totalBudget,
+        currency: params.currency,
+        coords
+      });
+
+      if (geminiResult && geminiResult.days && geminiResult.days.length > 0) {
+        return {
+          title: geminiResult.theme ? `${params.destination}: ${geminiResult.theme}` : `${params.destination} Agentic Blueprint`,
+          description: geminiResult.summary || `Curated itinerary planned with Google Gemini for ${params.destination}.`,
+          destination: params.destination,
+          origin: params.origin,
+          startDate: params.startDate,
+          endDate: params.endDate,
+          durationDays: params.durationDays,
+          travelerCount: params.travelerCount,
+          travelStyle: params.travelStyle as any,
+          interests: params.interests,
+          totalBudget: params.totalBudget,
+          currency: params.currency,
+          destinationCoordinates: coords,
+          days: geminiResult.days,
+          accommodationSuggestions: lodging.map(l => ({
+            name: l.name,
+            type: l.type,
+            address: l.address,
+            estimatedNightlyRate: l.nightlyRate,
+            totalPrice: l.totalPrice,
+            rating: l.rating,
+            latitude: l.latitude,
+            longitude: l.longitude
+          })),
+          budgetBreakdown: budget,
+          packingList: [
+            'Comfortable walking shoes',
+            'Universal power adapter and power bank',
+            'Lightweight weather-proof jacket',
+            'Reusable water bottle',
+            'Transit pass or local navigation app'
+          ],
+          localTips: [
+            `Verify opening hours and booking availability for popular sites in ${params.destination}.`,
+            `Keep local emergency contacts and offline maps downloaded.`,
+            `Use recommended digital payment cards or modest amounts of cash in ${params.currency}.`
+          ]
+        };
+      }
+    } catch (err) {
+      console.warn('Gemini itinerary generation fallback to heuristic places adapter:', err);
+    }
+
+    const { places } = await PlacesAdapter.searchPlaces('attractions', params.destination, undefined, 20);
+    const { forecast } = await WeatherAdapter.getForecast(params.destination, params.startDate, params.endDate, coords.lat, coords.lng);
 
     const currUpper = (params.currency || 'USD').toUpperCase();
     let currencyRate = 1.0;

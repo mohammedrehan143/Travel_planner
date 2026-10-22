@@ -4,8 +4,24 @@ import { AgentOrchestrator } from '../agent/orchestrator.js';
 import { AgentRunService } from '../services/agentRun.service.js';
 import { TripService } from '../services/trip.service.js';
 import { PlanTripRequest } from '../types/trip.types.js';
+import { generateChatReply } from '../agent/llm.client.js';
 
 export class AgentController {
+  /** POST /api/agent/chat — conversational endpoint usable with local or saved trips. */
+  static async chat(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { message, context } = req.body as { message: string; context?: Record<string, unknown> };
+      const reply = await generateChatReply(message, context || {});
+      if (!reply) {
+        res.status(503).json({ error: 'AI Not Configured', message: 'Configure GEMINI_API_KEY or OPENAI_API_KEY on the backend.' });
+        return;
+      }
+      res.status(200).json({ status: 'success', message: reply });
+    } catch (err: any) {
+      res.status(502).json({ error: 'AI Request Failed', message: err.message || 'The AI provider could not complete the request.' });
+    }
+  }
+
   /**
    * POST /api/trips/plan
    * Start a trip planning run (supports async background tracking or synchronous return)

@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "TripPilot AI - Agentic Travel Planning Platform (Frontend + Backend)",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "build": "npm --prefix backend run build",
     "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build",
+    "build:all": "npm --prefix backend run build && npm --prefix frontend run build",
     "start": "npm --prefix backend start",
     "start:backend": "npm --prefix backend start",
     "start:frontend": "npm --prefix frontend run dev",

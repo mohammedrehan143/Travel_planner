@@ -4,8 +4,14 @@ import { requireAuth } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateRequest.js';
 import { planTripSchema, modifyTripSchema, regenerateDaySchema } from '../schemas/trip.schema.js';
 import { planningRateLimiter } from '../middleware/rateLimiter.js';
+import { z } from 'zod';
 
 const router = Router();
+
+router.post('/agent/chat', planningRateLimiter, requireAuth, validateBody(z.object({
+  message: z.string().trim().min(1).max(4000),
+  context: z.record(z.string(), z.unknown()).optional()
+})), AgentController.chat);
 
 // POST /api/trips/plan
 router.post('/trips/plan', planningRateLimiter, requireAuth, validateBody(planTripSchema), AgentController.planTrip);

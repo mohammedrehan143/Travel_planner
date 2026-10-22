@@ -6,6 +6,7 @@ import tripRoutes from './routes/trip.routes.js';
 import integrationRoutes from './routes/integration.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { env } from './config/env.js';
+import { getActiveProvider, isLLMConfigured } from './agent/llm.client.js';
 
 export function createApp(): Express {
   const app = express();
@@ -28,6 +29,8 @@ export function createApp(): Express {
       version: '1.0.0',
       timestamp: new Date().toISOString(),
       agentEngine: 'active',
+      aiProvider: getActiveProvider().provider,
+      aiConfigured: isLLMConfigured(),
       environment: env.NODE_ENV
     });
   };

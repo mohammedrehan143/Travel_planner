@@ -20,6 +20,7 @@ export interface ModifyItineraryRequest {
   day_id?: string;
   day_number?: number;
   user_prompt: string;
+  context?: Record<string, unknown>;
 }
 
 export interface ModifyItineraryResponse {
@@ -75,6 +76,7 @@ export const TripPilotAPI = {
         startDate: input.start_date,
         endDate: input.end_date,
         travelerCount: input.traveler_count,
+        travelCompanion: input.travel_companion,
         budget: input.total_budget,
         currency: input.currency,
         travelStyle: input.travel_style,
@@ -127,22 +129,26 @@ export const TripPilotAPI = {
   async modifyItinerary(req: ModifyItineraryRequest): Promise<ModifyItineraryResponse> {
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`${BACKEND_BASE_URL}/api/trips/${req.trip_id}/modify`, {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/agent/chat`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          instructions: req.user_prompt,
-          targetDay: req.day_number || 1,
+          message: req.user_prompt,
+          context: req.context || { destination: req.trip_id, dayNumber: req.day_number || 1 },
         }),
       });
       if (res.ok) {
         const data = await res.json();
         return {
-          message: data.changeSummary || 'Successfully modified your itinerary schedule!',
+          message: data.message || 'I could not generate a response.',
         };
       }
+      const error = await res.json().catch(() => ({}));
+      return {
+        message: error.message || `TripPilot AI request failed (${res.status}). Check the backend configuration and try again.`,
+      };
     } catch (e) {
-      // fallback
+      // A local reply keeps the UI usable when the backend cannot be reached.
     }
 
     return simulateNaturalLanguageModification(req);
@@ -324,20 +330,40 @@ async function simulateAgenticTripPlanning(
   }
 
   const startDate = new Date(input.start_date || '2026-11-01');
-  const endDate = new Date(input.end_date || '2026-11-04');
-  const diffTime = Math.max(1, Math.abs(endDate.getTime() - startDate.getTime()));
-  const numDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))) || 3;
+  const endDate = new Date(input.end_date || input.start_date || '2026-11-01');
+  const diffDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const numDays = Math.max(1, diffDays);
 
   const tripId = `trip-${Date.now()}`;
   const days: TripDay[] = [];
   const activitiesByDay: Record<string, Activity[]> = {};
 
   const destLower = input.destination.toLowerCase();
-  let lat = 35.6762;
-  let lng = 139.6503;
+  let lat = 12.9716;
+  let lng = 77.5946;
   let coverImg = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80';
 
-  if (destLower.includes('paris')) {
+  if (destLower.includes('bangalore') || destLower.includes('bengaluru')) {
+    lat = 12.9716;
+    lng = 77.5946;
+    coverImg = 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('saudi') || destLower.includes('riyadh')) {
+    lat = 24.7136;
+    lng = 46.6753;
+    coverImg = 'https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('jeddah')) {
+    lat = 21.5433;
+    lng = 39.1728;
+    coverImg = 'https://images.unsplash.com/photo-1578895101407-160a2b535ffb?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('delhi')) {
+    lat = 28.6139;
+    lng = 77.2090;
+    coverImg = 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('dubai')) {
+    lat = 25.2048;
+    lng = 55.2708;
+    coverImg = 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('paris')) {
     lat = 48.8566;
     lng = 2.3522;
     coverImg = 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80';
@@ -386,22 +412,34 @@ async function simulateAgenticTripPlanning(
       updated_at: new Date().toISOString(),
     });
 
+    // Destination-Specific High-Fidelity Places
+    const isBlr = destLower.includes('bangalore') || destLower.includes('bengaluru');
+    const isSaudi = destLower.includes('saudi') || destLower.includes('riyadh');
+
     activitiesByDay[dayId] = [
       {
         id: `act-${dayId}-1`,
         trip_id: tripId,
         trip_day_id: dayId,
-        title: `Morning Landmark Discovery: ${input.destination} Historic Center`,
-        description: `Explore iconic architecture, historical landmarks, and scenic viewpoints guided by local heritage insights.`,
-        category: 'cultural',
-        start_time: '09:00',
+        title: isBlr
+          ? 'Bangalore Palace & Royal Heritage Grounds'
+          : isSaudi
+          ? 'Kingdom Centre Sky Bridge Observation'
+          : `Morning Landmark Discovery: ${input.destination} Historic Center`,
+        description: isBlr
+          ? 'Explore Tudor-style royal palace architecture, vintage woodcarvings, and sprawling heritage grounds.'
+          : isSaudi
+          ? 'Ascend 300 meters above Riyadh for sweeping 360-degree vistas across the modern capital.'
+          : `Explore iconic architecture, historical landmarks, and scenic viewpoints in ${input.destination}.`,
+        category: isSaudi ? 'sightseeing' : 'cultural',
+        start_time: '09:30',
         end_time: '11:30',
-        duration_minutes: 150,
-        location_name: `${input.destination} Grand Plaza`,
-        location_address: `Central District, ${input.destination}`,
+        duration_minutes: 120,
+        location_name: isBlr ? 'Bangalore Palace' : isSaudi ? 'Kingdom Centre Tower' : `${input.destination} Grand Plaza`,
+        location_address: isBlr ? 'Vasanth Nagar, Bengaluru' : isSaudi ? 'Al Olaya, Riyadh, Saudi Arabia' : `Central District, ${input.destination}`,
         latitude: lat + 0.005,
         longitude: lng + 0.004,
-        estimated_cost: Math.round(input.total_budget * 0.03),
+        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.04)),
         currency: input.currency,
         booking_required: false,
         booking_status: 'not_booked',
@@ -414,21 +452,29 @@ async function simulateAgenticTripPlanning(
         id: `act-${dayId}-2`,
         trip_id: tripId,
         trip_day_id: dayId,
-        title: `Artisanal Lunch & Regional Specialties`,
-        description: `Taste celebrated local dishes at a verified top-rated bistro loved by locals.`,
-        category: 'dining',
+        title: isBlr
+          ? 'Lalbagh Botanical Garden & Victorian Glass House'
+          : isSaudi
+          ? 'Al Masmak Palace & Historical Museum'
+          : `Artisanal Regional Lunch & Market Specialties`,
+        description: isBlr
+          ? 'Walk through 240 acres of rare tropical trees, serene lotus ponds, and the famed glass conservatory.'
+          : isSaudi
+          ? 'Tour the 19th-century clay and mud-brick citadel central to the foundation of modern Saudi Arabia.'
+          : `Taste celebrated local dishes and specialties at a verified neighborhood eatery in ${input.destination}.`,
+        category: isBlr ? 'outdoor' : isSaudi ? 'cultural' : 'dining',
         start_time: '12:00',
         end_time: '13:30',
         duration_minutes: 90,
-        location_name: `Bistrot Gourmet ${input.destination}`,
-        location_address: `Rue de Gastronomie, ${input.destination}`,
+        location_name: isBlr ? 'Lalbagh Botanical Garden' : isSaudi ? 'Al Masmak Palace' : `${input.destination} Gourmet Quarter`,
+        location_address: isBlr ? 'Mavalli, Bengaluru' : isSaudi ? 'Al Dirah, Riyadh, Saudi Arabia' : `Culinary Quarter, ${input.destination}`,
         latitude: lat + 0.008,
         longitude: lng + 0.006,
-        estimated_cost: Math.round(input.total_budget * 0.05),
+        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.05)),
         currency: input.currency,
         booking_required: false,
         booking_status: 'not_booked',
-        notes: 'Vegetarian and chef tasting menu available.',
+        notes: isBlr ? 'Lalbagh lake walk recommended' : 'Audio guides available on site',
         order_index: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -437,21 +483,29 @@ async function simulateAgenticTripPlanning(
         id: `act-${dayId}-3`,
         trip_id: tripId,
         trip_day_id: dayId,
-        title: `Iconic Museum & Cultural Exhibition`,
-        description: `Immerse in world-class art collections, historic artifacts, and contemporary exhibitions.`,
-        category: 'sightseeing',
+        title: isBlr
+          ? 'Cubbon Park, State Library & Vidhana Soudha'
+          : isSaudi
+          ? 'Historic Diriyah (At-Turaif UNESCO World Heritage Site)'
+          : `Iconic Museum & Cultural Exhibition`,
+        description: isBlr
+          ? 'Shaded bamboo groves, colonial red terracotta libraries, and the majestic neo-Dravidian state parliament.'
+          : isSaudi
+          ? 'Walk the restored Najdi mud-brick alleys, palaces, and atmospheric desert courtyards of early Arabia.'
+          : `Immerse in world-class art collections, historic artifacts, and contemporary exhibitions in ${input.destination}.`,
+        category: isSaudi ? 'cultural' : 'sightseeing',
         start_time: '14:30',
         end_time: '17:00',
         duration_minutes: 150,
-        location_name: `${input.destination} Museum of Fine Art`,
-        location_address: `Avenue des Arts, ${input.destination}`,
+        location_name: isBlr ? 'Cubbon Park & Vidhana Soudha' : isSaudi ? 'At-Turaif District, Diriyah' : `${input.destination} Museum of Art`,
+        location_address: isBlr ? 'Kasturba Road, Bengaluru' : isSaudi ? 'Diriyah, Riyadh, Saudi Arabia' : `Museum Promenade, ${input.destination}`,
         latitude: lat - 0.003,
         longitude: lng + 0.002,
-        estimated_cost: Math.round(input.total_budget * 0.04),
+        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.03)),
         currency: input.currency,
-        booking_required: true,
-        booking_status: 'booked',
-        notes: 'Priority skip-the-line entrance reserved.',
+        booking_required: false,
+        booking_status: 'not_booked',
+        notes: 'Photography spots highlighted.',
         order_index: 2,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -460,24 +514,33 @@ async function simulateAgenticTripPlanning(
         id: `act-${dayId}-4`,
         trip_id: tripId,
         trip_day_id: dayId,
-        title: `Sunset Viewpoint & Evening Atmosphere`,
-        description: `Experience the city skyline bathed in golden hour glow followed by a relaxing evening walk.`,
-        category: 'outdoor',
+        title: isBlr
+          ? 'VV Puram Food Street & Evening Culinary Tour'
+          : isSaudi
+          ? 'Boulevard Riyadh City & Dancing Fountain'
+          : `Twilight Promenade & Evening Atmosphere`,
+        description: isBlr
+          ? 'Sample piping hot butter masala dosas, jalebis, paddus, and filter coffee at Bangalore legendary food street.'
+          : isSaudi
+          ? 'Evening stroll alongside dancing fountains, open-air cafes, boutique shops, and lighted promenades.'
+          : `Wind down your day with local refreshments, ambient evening lighting, and scenic skyline views.`,
+        category: isBlr ? 'dining' : 'entertainment',
         start_time: '18:00',
-        end_time: '19:45',
-        duration_minutes: 105,
-        location_name: `Belvedere Lookout Point`,
-        location_address: `Panoramic Terrace, ${input.destination}`,
-        latitude: lat - 0.006,
+        end_time: '20:30',
+        duration_minutes: 150,
+        location_name: isBlr ? 'VV Puram Food Street' : isSaudi ? 'Boulevard Riyadh City' : `${input.destination} Promenade`,
+        location_address: isBlr ? 'Sajjan Rao Circle, Bengaluru' : isSaudi ? 'Hittin, Riyadh, Saudi Arabia' : `Waterfront Boulevard, ${input.destination}`,
+        latitude: lat + 0.002,
         longitude: lng - 0.005,
-        estimated_cost: 0,
+        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.06)),
         currency: input.currency,
         booking_required: false,
         booking_status: 'not_booked',
+        notes: isBlr ? 'Pure vegetarian culinary delight' : 'Spectacular evening light displays',
         order_index: 3,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }
+      },
     ];
   }
 

@@ -31,21 +31,43 @@ export const TripWizardPage: React.FC = () => {
   const [agentLogs, setAgentLogs] = useState<string[]>([]);
 
   // Wizard state
-  const [origin, setOrigin] = useState('San Francisco, CA');
-  const [destination, setDestination] = useState('Kyoto & Osaka, Japan');
+  const [origin, setOrigin] = useState('Bangalore, India');
+  const [destination, setDestination] = useState('Bangalore, Karnataka');
   const [startDate, setStartDate] = useState('2026-11-10');
-  const [endDate, setEndDate] = useState('2026-11-15');
-  const [travelerCount, setTravelerCount] = useState<number>(2);
-  const [totalBudget, setTotalBudget] = useState<number>(3200);
-  const [currency, setCurrency] = useState('USD');
+  const [endDate, setEndDate] = useState('2026-11-10');
+  const [travelerCount, setTravelerCount] = useState<number>(1);
+  const [travelCompanion, setTravelCompanion] = useState<string>('solo');
+  const [totalBudget, setTotalBudget] = useState<number>(500);
+  const [currency, setCurrency] = useState('INR');
   const [travelStyle, setTravelStyle] = useState<TravelStyle>('balanced');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([
     'culinary',
     'cultural',
-    'photography',
+    'sightseeing',
   ]);
-  const [transportPreference, setTransportPreference] = useState('Bullet Train & Metro');
-  const [accommodationPreference, setAccommodationPreference] = useState('Traditional Ryokan & Boutique Hotel');
+  const [transportPreference, setTransportPreference] = useState('Metro & Walking');
+  const [accommodationPreference, setAccommodationPreference] = useState('None (Single Day Outing)');
+
+  const isOneDay = startDate === endDate;
+
+  const setDurationDays = (days: number) => {
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + (days - 1));
+    setEndDate(end.toISOString().split('T')[0]);
+    if (days === 1) {
+      if (currency === 'INR') setTotalBudget(500);
+      setAccommodationPreference('None (Single Day Outing)');
+    }
+  };
+
+  const COMPANIONS = [
+    { id: 'solo', label: 'Solo', desc: 'Traveling alone / Solo explorer', defaultTravelers: 1, icon: '🚶' },
+    { id: 'couple', label: 'Couple', desc: 'Partner / Romantic travel', defaultTravelers: 2, icon: '💑' },
+    { id: 'friends', label: 'Friends', desc: 'Friends group / Fun outings', defaultTravelers: 3, icon: '🎒' },
+    { id: 'family', label: 'Family', desc: 'Family with kids / Relaxed', defaultTravelers: 4, icon: '👨‍👩‍👧‍👦' },
+    { id: 'colleagues', label: 'Colleagues', desc: 'Business trip / Co-workers', defaultTravelers: 2, icon: '💼' }
+  ];
 
   const TRAVEL_STYLES: { id: TravelStyle; label: string; desc: string }[] = [
     { id: 'balanced', label: 'Balanced', desc: 'Mix of highlights, downtime, and quality dining' },
@@ -86,6 +108,7 @@ export const TripWizardPage: React.FC = () => {
       start_date: startDate,
       end_date: endDate,
       traveler_count: travelerCount,
+      travel_companion: travelCompanion,
       total_budget: totalBudget,
       currency,
       travel_style: travelStyle,
@@ -279,6 +302,52 @@ export const TripWizardPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="space-y-2 pt-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Quick Duration Preset
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDurationDays(1)}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
+                        isOneDay
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      ⚡ 1-Day Outing
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDurationDays(2)}
+                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 transition-all text-center"
+                    >
+                      Weekend (2D)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDurationDays(3)}
+                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 transition-all text-center"
+                    >
+                      3 Days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDurationDays(5)}
+                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 transition-all text-center"
+                    >
+                      5 Days
+                    </button>
+                  </div>
+                  {isOneDay && (
+                    <div className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2">
+                      <span className="font-bold text-emerald-600">⚡ Single-Day Outing active:</span>
+                      <span>Optimized to cover maximum top attractions in 1 day with zero lodging expenses.</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -288,6 +357,34 @@ export const TripWizardPage: React.FC = () => {
                 <h3 className="text-base font-bold text-slate-900">Travelers & Budget Parameters</h3>
 
                 <div className="space-y-4">
+                  {/* Travel Companion / With whom */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      With Whom Are You Traveling?
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                      {COMPANIONS.map((comp) => (
+                        <button
+                          key={comp.id}
+                          type="button"
+                          onClick={() => {
+                            setTravelCompanion(comp.id);
+                            setTravelerCount(comp.defaultTravelers);
+                          }}
+                          className={`p-3 rounded-2xl border text-left transition-all ${
+                            travelCompanion === comp.id
+                              ? 'bg-blue-50/80 border-blue-600 ring-2 ring-blue-500/20 shadow-xs'
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="text-xl block mb-1">{comp.icon}</span>
+                          <p className="text-xs font-bold text-slate-900">{comp.label}</p>
+                          <p className="text-[10px] text-slate-500 line-clamp-1">{comp.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                       Number of Travelers
@@ -313,7 +410,7 @@ export const TripWizardPage: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Total Planned Budget
+                        Total Planned Budget (Min: 500)
                       </label>
                       <div className="relative">
                         <span className="w-5 text-center font-bold text-sm text-emerald-600 absolute left-3 top-2.5 select-none">
@@ -321,12 +418,25 @@ export const TripWizardPage: React.FC = () => {
                         </span>
                         <input
                           type="number"
-                          min="100"
-                          step="50"
+                          min="500"
+                          step="100"
                           value={totalBudget}
                           onChange={(e) => setTotalBudget(Number(e.target.value))}
                           className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
                         />
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="text-[10px] font-semibold text-slate-400">Presets:</span>
+                        {[500, 1500, 5000, 15000].map((amt) => (
+                          <button
+                            key={amt}
+                            type="button"
+                            onClick={() => setTotalBudget(amt)}
+                            className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                          >
+                            {getCurrencySymbol(currency)}{amt.toLocaleString()}
+                          </button>
+                        ))}
                       </div>
                     </div>
 
@@ -457,8 +567,8 @@ export const TripWizardPage: React.FC = () => {
                     <span className="font-bold text-blue-600">{destination}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-slate-600 pt-1">
-                    <p><span className="font-semibold text-slate-900">Dates:</span> {startDate} to {endDate}</p>
-                    <p><span className="font-semibold text-slate-900">Travelers:</span> {travelerCount} Person(s)</p>
+                    <p><span className="font-semibold text-slate-900">Dates:</span> {startDate} to {endDate} ({isOneDay ? '⚡ 1-Day Outing' : `${Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)} Days`})</p>
+                    <p><span className="font-semibold text-slate-900">Party:</span> {travelerCount} Person(s) • <span className="capitalize">{travelCompanion}</span></p>
                     <p><span className="font-semibold text-slate-900">Budget:</span> {formatCurrency(totalBudget, currency, true)}</p>
                     <p><span className="font-semibold text-slate-900">Style:</span> {travelStyle}</p>
                   </div>
