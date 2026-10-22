@@ -362,7 +362,7 @@ BEGIN
         mobile_number = COALESCE(EXCLUDED.mobile_number, public.profiles.mobile_number),
         email = COALESCE(EXCLUDED.email, public.profiles.email),
         full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
-        terms_accepted = COCLUDED.terms_accepted,
+        terms_accepted = EXCLUDED.terms_accepted,
         updated_at = now();
 
     RETURN NEW;
@@ -477,6 +477,54 @@ CREATE POLICY "Users can delete trips"
     ON public.trips FOR DELETE
     TO authenticated
     USING (user_id = auth.uid());
+
+-- Trip Days Policies
+DROP POLICY IF EXISTS "Trip days accessible by trip members" ON public.trip_days;
+CREATE POLICY "Trip days accessible by trip members"
+    ON public.trip_days FOR ALL
+    TO authenticated
+    USING (public.is_trip_member(trip_id, auth.uid()))
+    WITH CHECK (public.is_trip_member(trip_id, auth.uid()));
+
+-- Activities Policies
+DROP POLICY IF EXISTS "Activities accessible by trip members" ON public.activities;
+CREATE POLICY "Activities accessible by trip members"
+    ON public.activities FOR ALL
+    TO authenticated
+    USING (public.is_trip_member(trip_id, auth.uid()))
+    WITH CHECK (public.is_trip_member(trip_id, auth.uid()));
+
+-- Accommodations Policies
+DROP POLICY IF EXISTS "Accommodations accessible by trip members" ON public.accommodations;
+CREATE POLICY "Accommodations accessible by trip members"
+    ON public.accommodations FOR ALL
+    TO authenticated
+    USING (public.is_trip_member(trip_id, auth.uid()))
+    WITH CHECK (public.is_trip_member(trip_id, auth.uid()));
+
+-- Trip Expenses Policies
+DROP POLICY IF EXISTS "Trip expenses accessible by trip members" ON public.trip_expenses;
+CREATE POLICY "Trip expenses accessible by trip members"
+    ON public.trip_expenses FOR ALL
+    TO authenticated
+    USING (public.is_trip_member(trip_id, auth.uid()))
+    WITH CHECK (public.is_trip_member(trip_id, auth.uid()));
+
+-- Saved Places Policies
+DROP POLICY IF EXISTS "Saved places accessible by owner" ON public.saved_places;
+CREATE POLICY "Saved places accessible by owner"
+    ON public.saved_places FOR ALL
+    TO authenticated
+    USING (user_id = auth.uid())
+    WITH CHECK (user_id = auth.uid());
+
+-- Agent Runs Policies
+DROP POLICY IF EXISTS "Agent runs accessible by owner" ON public.agent_runs;
+CREATE POLICY "Agent runs accessible by owner"
+    ON public.agent_runs FOR ALL
+    TO authenticated
+    USING (user_id = auth.uid())
+    WITH CHECK (user_id = auth.uid());
 
 -- ---------------------------------------------------------------------
 -- 14. RELOAD POSTGREST SCHEMA CACHE
