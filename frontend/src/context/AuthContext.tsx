@@ -211,22 +211,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isPhone) {
       // Lookup profile email for this phone if using email auth, or sign in with phone
       const formattedPhone = cleanId.startsWith('+') ? cleanId.replace(/\s+/g, '') : `+91${cleanId.replace(/\D/g, '')}`;
-      const { data: profileMatch } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('phone', formattedPhone)
-        .maybeSingle();
+      try {
+        const { data: profileMatch, error: lookupErr } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('phone', formattedPhone)
+          .maybeSingle();
 
-      if (profileMatch?.email) {
-        authEmail = profileMatch.email;
-      } else {
-        // Attempt native Supabase phone login
-        const { error: phoneErr } = await supabase.auth.signInWithPassword({
-          phone: formattedPhone,
-          password,
-        });
-        if (phoneErr) return { error: phoneErr.message };
-        return {};
+        if (!lookupErr && profileMatch?.email) {
+          authEmail = profileMatch.email;
+        } else {
+          // Check demo profile match
+          const demoMatch = Object.values(DEMO_PROFILES).find((p) => p.phone === formattedPhone);
+          if (demoMatch) {
+            await signInWithDemo(demoMatch.full_name?.includes('Bob') ? 'bob' : 'alice');
+            return {};
+          }
+          // Attempt native Supabase phone login
+          const { error: phoneErr } = await supabase.auth.signInWithPassword({
+            phone: formattedPhone,
+            password,
+          });
+          if (!phoneErr) return {};
+          authEmail = `${formattedPhone.replace(/\D/g, '')}@phone.trippilot.com`;
+        }
+      } catch {
+        authEmail = `${formattedPhone.replace(/\D/g, '')}@phone.trippilot.com`;
       }
     }
 
@@ -292,15 +302,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Direct upsert to ensure profile row with phone is established immediately
     if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        phone: formattedPhone,
-        email: email.trim().toLowerCase(),
-        full_name: fullName.trim(),
-        terms_accepted: termsAccepted,
-        terms_accepted_at: new Date().toISOString(),
-        preferred_currency: 'INR',
-      });
+      try {
+        const { error: upsertErr } = await supabase.from('profiles').upsert({
+          id: data.user.id,
+          phone: formattedPhone,
+          mobile_number: formattedPhone,
+          email: email.trim().toLowerCase(),
+          full_name: fullName.trim(),
+          terms_accepted: termsAccepted,
+          terms_accepted_at: new Date().toISOString(),
+          preferred_currency: 'INR',
+        });
+        if (upsertErr) {
+          console.warn('Upsert with phone column failed, retrying without phone column:', upsertErr.message);
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email: email.trim().toLowerCase(),
+            full_name: fullName.trim(),
+            preferred_currency: 'INR',
+          });
+        }
+      } catch (upsertCatch) {
+        console.warn('Profile upsert fallback triggered:', upsertCatch);
+      }
     }
 
     return {};

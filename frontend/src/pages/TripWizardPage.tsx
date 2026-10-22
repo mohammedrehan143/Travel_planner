@@ -19,6 +19,7 @@ import {
 import { useTrips } from '../context/TripContext';
 import { TravelStyle, TripCreateWizardInput } from '../types';
 import { getCurrencySymbol, formatCurrency, SUPPORTED_CURRENCIES } from '../lib/currency';
+import { PlaceAutocomplete } from '../components/common/PlaceAutocomplete';
 
 export const TripWizardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ export const TripWizardPage: React.FC = () => {
   const [endDate, setEndDate] = useState('2026-11-10');
   const [travelerCount, setTravelerCount] = useState<number>(1);
   const [travelCompanion, setTravelCompanion] = useState<string>('solo');
+  const [dietaryPreference, setDietaryPreference] = useState<string>('veg');
   const [totalBudget, setTotalBudget] = useState<number>(500);
   const [currency, setCurrency] = useState('INR');
   const [travelStyle, setTravelStyle] = useState<TravelStyle>('balanced');
@@ -45,7 +47,7 @@ export const TripWizardPage: React.FC = () => {
     'cultural',
     'sightseeing',
   ]);
-  const [transportPreference, setTransportPreference] = useState('Metro & Walking');
+  const [transportPreference, setTransportPreference] = useState('Traveling');
   const [accommodationPreference, setAccommodationPreference] = useState('None (Single Day Outing)');
 
   const isOneDay = startDate === endDate;
@@ -67,6 +69,12 @@ export const TripWizardPage: React.FC = () => {
     { id: 'friends', label: 'Friends', desc: 'Friends group / Fun outings', defaultTravelers: 3, icon: '🎒' },
     { id: 'family', label: 'Family', desc: 'Family with kids / Relaxed', defaultTravelers: 4, icon: '👨‍👩‍👧‍👦' },
     { id: 'colleagues', label: 'Colleagues', desc: 'Business trip / Co-workers', defaultTravelers: 2, icon: '💼' }
+  ];
+
+  const DIETARY_OPTIONS = [
+    { id: 'veg', label: 'Vegetarian', desc: 'Pure veg dining & local plant-based specialities', icon: '🥬' },
+    { id: 'non_veg', label: 'Non-Vegetarian', desc: 'Authentic regional meat, biryanis & seafood grills', icon: '🍗' },
+    { id: 'any', label: 'Both / Any', desc: 'No restrictions, explore all regional cuisine', icon: '🥗' }
   ];
 
   const TRAVEL_STYLES: { id: TravelStyle; label: string; desc: string }[] = [
@@ -109,6 +117,7 @@ export const TripWizardPage: React.FC = () => {
       end_date: endDate,
       traveler_count: travelerCount,
       travel_companion: travelCompanion,
+      dietary_preference: dietaryPreference,
       total_budget: totalBudget,
       currency,
       travel_style: travelStyle,
@@ -234,39 +243,23 @@ export const TripWizardPage: React.FC = () => {
                 <h3 className="text-base font-bold text-slate-900">Where and when are you traveling?</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Starting City (Origin)
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                      <input
-                        type="text"
-                        required
-                        value={origin}
-                        onChange={(e) => setOrigin(e.target.value)}
-                        placeholder="e.g. San Francisco, CA"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
+                  <PlaceAutocomplete
+                    label="Starting City (Origin)"
+                    value={origin}
+                    onChange={setOrigin}
+                    placeholder="e.g. Bangalore, India"
+                    icon={<MapPin className="w-4 h-4 text-slate-400" />}
+                    required
+                  />
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Target Destination
-                    </label>
-                    <div className="relative">
-                      <Compass className="w-4 h-4 text-blue-600 absolute left-3.5 top-3" />
-                      <input
-                        type="text"
-                        required
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        placeholder="e.g. Tokyo, Japan"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
+                  <PlaceAutocomplete
+                    label="Target Destination"
+                    value={destination}
+                    onChange={setDestination}
+                    placeholder="e.g. Saudi Arabia, Bangalore, Dubai"
+                    icon={<Compass className="w-4 h-4 text-blue-600" />}
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -380,6 +373,33 @@ export const TripWizardPage: React.FC = () => {
                           <span className="text-xl block mb-1">{comp.icon}</span>
                           <p className="text-xs font-bold text-slate-900">{comp.label}</p>
                           <p className="text-[10px] text-slate-500 line-clamp-1">{comp.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dietary Preference (Veg / Non-Veg / Both) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      Food & Dietary Preference
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {DIETARY_OPTIONS.map((diet) => (
+                        <button
+                          key={diet.id}
+                          type="button"
+                          onClick={() => setDietaryPreference(diet.id)}
+                          className={`p-3 rounded-2xl border text-left transition-all ${
+                            dietaryPreference === diet.id
+                              ? 'bg-emerald-50 border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs'
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xl">{diet.icon}</span>
+                            <p className="text-xs font-bold text-slate-900">{diet.label}</p>
+                          </div>
+                          <p className="text-[10px] text-slate-500 leading-tight">{diet.desc}</p>
                         </button>
                       ))}
                     </div>
@@ -537,7 +557,7 @@ export const TripWizardPage: React.FC = () => {
                         type="text"
                         value={transportPreference}
                         onChange={(e) => setTransportPreference(e.target.value)}
-                        placeholder="e.g. Bullet Train, Metro, Rental Car"
+                        placeholder="e.g. Traveling, Train, Flight, Private Cab"
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -553,7 +573,7 @@ export const TripWizardPage: React.FC = () => {
                         type="text"
                         value={accommodationPreference}
                         onChange={(e) => setAccommodationPreference(e.target.value)}
-                        placeholder="e.g. Boutique Hotel, Ryokan, Airbnb"
+                        placeholder="e.g. Boutique Hotel, Resort, Airbnb"
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -569,8 +589,10 @@ export const TripWizardPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2 text-slate-600 pt-1">
                     <p><span className="font-semibold text-slate-900">Dates:</span> {startDate} to {endDate} ({isOneDay ? '⚡ 1-Day Outing' : `${Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)} Days`})</p>
                     <p><span className="font-semibold text-slate-900">Party:</span> {travelerCount} Person(s) • <span className="capitalize">{travelCompanion}</span></p>
+                    <p><span className="font-semibold text-slate-900">Dietary:</span> <span className="capitalize font-semibold text-slate-800">{dietaryPreference === 'veg' ? '🥬 Pure Vegetarian' : dietaryPreference === 'non_veg' ? '🍗 Non-Vegetarian' : '🥗 Veg & Non-Veg'}</span></p>
                     <p><span className="font-semibold text-slate-900">Budget:</span> {formatCurrency(totalBudget, currency, true)}</p>
                     <p><span className="font-semibold text-slate-900">Style:</span> {travelStyle}</p>
+                    <p><span className="font-semibold text-slate-900">Transit:</span> {transportPreference}</p>
                   </div>
                 </div>
               </div>

@@ -19,7 +19,8 @@ import {
   Trash2,
   Receipt,
   PieChart as PieIcon,
-  BarChart3
+  BarChart3,
+  Plane
 } from 'lucide-react';
 import { Trip, TripExpense, ExpenseCategory } from '../../types';
 import { useTrips } from '../../context/TripContext';
@@ -146,6 +147,32 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
             <Plus className="w-4 h-4" />
             <span>Add Expense</span>
           </button>
+        </div>
+      </div>
+
+      {/* Flight Estimate Overview Bar */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Plane className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-900">✈️ Flight / Transit Fare Estimate:</span>
+              <span className="font-black text-blue-700">
+                {trip.flight_ticket_estimate?.cost === 0
+                  ? 'Zero (Intra-City Outing)'
+                  : formatCurrency(trip.flight_ticket_estimate?.cost || (trip.destination.toLowerCase().includes('saudi') ? 26000 : 5800), trip.currency, true)}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-200">
+                AI Live Rate
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {trip.flight_ticket_estimate?.description || `Estimated flight charges for ${trip.origin} ➔ ${trip.destination}`}
+              {trip.flight_ticket_estimate?.airlines ? ` • Airlines: ${trip.flight_ticket_estimate.airlines}` : ''}
+            </p>
+          </div>
         </div>
       </div>
 

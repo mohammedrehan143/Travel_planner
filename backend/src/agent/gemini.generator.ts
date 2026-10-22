@@ -192,13 +192,3 @@ STRICT ACCURACY & QUALITY RULES:
     return null;
   }
 }
-
-      days: formattedDays,
-      theme: parsed.theme || `${params.destination} Agentic Blueprint`,
-      summary: parsed.summary || `Autonomous itinerary planned with Google Gemini for ${params.destination}.`
-    };
-  } catch (err) {
-    console.warn('Gemini itinerary generation fallback to heuristic adapter:', err);
-    return null;
-  }
-}

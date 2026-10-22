@@ -19,6 +19,8 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [speciality, setSpeciality] = useState('');
+  const [dietaryTag, setDietaryTag] = useState<'veg' | 'non_veg' | 'both' | 'none'>('none');
   const [category, setCategory] = useState<ActivityCategory>('sightseeing');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('12:00');
@@ -33,6 +35,8 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
     if (initialActivity) {
       setTitle(initialActivity.title);
       setDescription(initialActivity.description || '');
+      setSpeciality(initialActivity.speciality || '');
+      setDietaryTag(initialActivity.dietary_tag || 'none');
       setCategory(initialActivity.category);
       setStartTime(initialActivity.start_time);
       setEndTime(initialActivity.end_time);
@@ -45,6 +49,8 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
     } else {
       setTitle('');
       setDescription('');
+      setSpeciality('');
+      setDietaryTag('none');
       setCategory('sightseeing');
       setStartTime('10:00');
       setEndTime('12:00');
@@ -69,6 +75,8 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
     onSave({
       title,
       description,
+      speciality: speciality.trim() || undefined,
+      dietary_tag: dietaryTag !== 'none' ? dietaryTag : undefined,
       category,
       start_time: startTime,
       end_time: endTime,
@@ -125,14 +133,14 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               <option value="outdoor">Outdoor</option>
               <option value="entertainment">Entertainment</option>
               <option value="shopping">Shopping</option>
-              <option value="relaxation">Relaxation</option>
-              <option value="transit">Transit</option>
+              <option value="relaxation">Hangout & Relaxation</option>
+              <option value="transit">Traveling</option>
             </select>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Estimated Cost ($)
+              Estimated Cost
             </label>
             <input
               type="number"
@@ -141,6 +149,38 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               onChange={(e) => setEstimatedCost(Number(e.target.value))}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+        </div>
+
+        {/* Speciality of the Place & Dietary Preference */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              ✨ Speciality of the Place
+            </label>
+            <input
+              type="text"
+              value={speciality}
+              onChange={(e) => setSpeciality(e.target.value)}
+              placeholder="e.g. Crispy Ghee Masala Dosa, 300m Skybridge"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              Dietary Food Tag
+            </label>
+            <select
+              value={dietaryTag}
+              onChange={(e) => setDietaryTag(e.target.value as any)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="none">Not Applicable / None</option>
+              <option value="veg">🥬 Pure Vegetarian (Veg)</option>
+              <option value="non_veg">🍗 Non-Vegetarian</option>
+              <option value="both">🥗 Veg & Non-Veg Friendly</option>
+            </select>
           </div>
         </div>
 

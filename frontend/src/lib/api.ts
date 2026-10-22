@@ -592,7 +592,7 @@ async function simulateAgenticTripPlanning(
         end_time: '17:30',
         duration_minutes: 90,
         location_name: isBlr ? 'Church Street & Blossoms' : isSaudi ? 'Boulevard Riyadh City' : `${input.destination} Central Strip`,
-        locationAddress: isBlr ? 'Church Street, Shanthala Nagar, Bengaluru' : isSaudi ? 'Hittin, Riyadh, Saudi Arabia' : `Promenade, ${input.destination}`,
+        location_address: isBlr ? 'Church Street, Shanthala Nagar, Bengaluru' : isSaudi ? 'Hittin, Riyadh, Saudi Arabia' : `Promenade, ${input.destination}`,
         latitude: lat + 0.003,
         longitude: lng - 0.003,
         estimated_cost: Math.max(0, Math.round(input.total_budget * 0.03)),
@@ -720,14 +720,6 @@ async function simulateAgenticTripPlanning(
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-
-  return {
-    run_id: `run-${Date.now()}`,
-    trip: generatedTrip,
-    days,
-    activities: activitiesByDay,
-  };
-}
 
   return {
     run_id: `run-${Date.now()}`,

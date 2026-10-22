@@ -1,8 +1,7 @@
 -- =====================================================================
--- TripPilot AI - Production Database Schema (Mobile Number First)
--- Description: Users stored under mobile number, email, full name, 
---              Terms & Conditions compliance, trips indexed by phone,
---              Row Level Security (RLS), and automatic Supabase Auth triggers.
+-- TripPilot AI - Complete Production Schema & Migration (Phone-First)
+-- Safe for FRESH databases AND EXISTING databases.
+-- Stores and indexes all user data & trips under Mobile Number.
 -- =====================================================================
 
 -- 0. EXTENSIONS
@@ -10,34 +9,54 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ---------------------------------------------------------------------
--- 1. PROFILES TABLE (Stores user under Unique Mobile Number & Email)
+-- 1. PROFILES TABLE (Safe Table Creation & Column Alterations)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    phone VARCHAR(25) NOT NULL UNIQUE,                       -- Primary mobile identifier (E.164 e.g. +919876543210)
-    email TEXT NOT NULL UNIQUE,                              -- Contact & backup authentication
-    full_name TEXT NOT NULL,                                 -- User's displayed legal/preferred name
+    email TEXT NOT NULL,
+    full_name TEXT,
     avatar_url TEXT,
-    preferred_currency VARCHAR(10) NOT NULL DEFAULT 'INR',   -- Defaults to INR or user choice
-    phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    terms_accepted BOOLEAN NOT NULL DEFAULT TRUE,            -- Explicit T&C acceptance
-    terms_accepted_at TIMESTAMPTZ NOT NULL DEFAULT now(),    -- Legal compliance timestamp
-    terms_version VARCHAR(20) NOT NULL DEFAULT 'v1.0',       -- Version of T&C agreed to
+    preferred_currency VARCHAR(10) NOT NULL DEFAULT 'INR',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Index for instant lookup by mobile number or email
-CREATE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone);
+-- Ensure Phone and Terms columns exist on existing table
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone VARCHAR(25);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS mobile_number VARCHAR(25);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_version VARCHAR(20) DEFAULT 'v1.0';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE;
+
+-- Backfill any existing profiles with phone numbers if NULL (e.g. Alice and Bob)
+UPDATE public.profiles 
+SET phone = '+919876543210', mobile_number = '+919876543210', terms_accepted = TRUE 
+WHERE id = '00000000-0000-0000-0000-000000000001' AND (phone IS NULL OR phone = '');
+
+UPDATE public.profiles 
+SET phone = '+919876543211', mobile_number = '+919876543211', terms_accepted = TRUE 
+WHERE id = '00000000-0000-0000-0000-000000000002' AND (phone IS NULL OR phone = '');
+
+-- Fallback backfill for any other existing profiles
+UPDATE public.profiles 
+SET phone = '+91' || FLOOR(1000000000 + RANDOM() * 8999999999)::TEXT 
+WHERE phone IS NULL OR phone = '';
+
+UPDATE public.profiles 
+SET mobile_number = phone 
+WHERE mobile_number IS NULL OR mobile_number = '';
+
+-- Safe unique index on phone
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone);
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
 
 -- ---------------------------------------------------------------------
--- 2. TRIPS TABLE (Directly linked to User & Stored under Mobile Number)
+-- 2. TRIPS TABLE (Stored & Indexed under user_phone)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.trips (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    user_phone VARCHAR(25) REFERENCES public.profiles(phone) ON DELETE CASCADE ON UPDATE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
     origin TEXT NOT NULL,
@@ -65,25 +84,33 @@ CREATE TABLE IF NOT EXISTS public.trips (
     CONSTRAINT valid_dates CHECK (end_date >= start_date)
 );
 
+-- Ensure user_phone column exists on trips
+ALTER TABLE public.trips ADD COLUMN IF NOT EXISTS user_phone VARCHAR(25);
+
+-- Backfill user_phone from profiles for existing trips
+UPDATE public.trips t
+SET user_phone = p.phone
+FROM public.profiles p
+WHERE t.user_id = p.id AND (t.user_phone IS NULL OR t.user_phone = '');
+
 CREATE INDEX IF NOT EXISTS idx_trips_user_phone ON public.trips(user_phone);
 CREATE INDEX IF NOT EXISTS idx_trips_user_id ON public.trips(user_id);
 CREATE INDEX IF NOT EXISTS idx_trips_status ON public.trips(status);
 
 -- ---------------------------------------------------------------------
--- 3. TRIP COLLABORATORS (Co-planners can be invited by Mobile Number)
+-- 3. TRIP COLLABORATORS TABLE
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.trip_collaborators (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     trip_id UUID NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    collaborator_phone VARCHAR(25) REFERENCES public.profiles(phone) ON DELETE SET NULL,
-    role TEXT NOT NULL DEFAULT 'viewer' 
-        CHECK (role IN ('owner', 'editor', 'viewer')),
+    role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('owner', 'editor', 'viewer')),
     invited_email TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (trip_id, user_id)
 );
 
+ALTER TABLE public.trip_collaborators ADD COLUMN IF NOT EXISTS collaborator_phone VARCHAR(25);
 CREATE INDEX IF NOT EXISTS idx_trip_collaborators_phone ON public.trip_collaborators(collaborator_phone);
 CREATE INDEX IF NOT EXISTS idx_trip_collaborators_trip_id ON public.trip_collaborators(trip_id);
 
@@ -178,21 +205,20 @@ CREATE TABLE IF NOT EXISTS public.trip_expenses (
     amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
     currency VARCHAR(10) NOT NULL DEFAULT 'INR',
     paid_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    payer_phone VARCHAR(25) REFERENCES public.profiles(phone) ON DELETE SET NULL,
     expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.trip_expenses ADD COLUMN IF NOT EXISTS payer_phone VARCHAR(25);
 CREATE INDEX IF NOT EXISTS idx_trip_expenses_trip_id ON public.trip_expenses(trip_id);
 CREATE INDEX IF NOT EXISTS idx_trip_expenses_phone ON public.trip_expenses(payer_phone);
 
 -- ---------------------------------------------------------------------
--- 8. SAVED PLACES TABLE (Bookmarked places under user mobile number)
+-- 8. SAVED PLACES TABLE
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.saved_places (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    user_phone VARCHAR(25) REFERENCES public.profiles(phone) ON DELETE CASCADE,
     trip_id UUID REFERENCES public.trips(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     category TEXT,
@@ -205,17 +231,17 @@ CREATE TABLE IF NOT EXISTS public.saved_places (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.saved_places ADD COLUMN IF NOT EXISTS user_phone VARCHAR(25);
 CREATE INDEX IF NOT EXISTS idx_saved_places_phone ON public.saved_places(user_phone);
 CREATE INDEX IF NOT EXISTS idx_saved_places_user_id ON public.saved_places(user_id);
 
 -- ---------------------------------------------------------------------
--- 9. AGENT RUNS TABLE (AI Orchestrator Execution State)
+-- 9. AGENT RUNS TABLE
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.agent_runs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     trip_id UUID REFERENCES public.trips(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    user_phone VARCHAR(25) REFERENCES public.profiles(phone) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
     current_step TEXT NOT NULL DEFAULT 'initialized',
@@ -230,19 +256,20 @@ CREATE TABLE IF NOT EXISTS public.agent_runs (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.agent_runs ADD COLUMN IF NOT EXISTS user_phone VARCHAR(25);
 CREATE INDEX IF NOT EXISTS idx_agent_runs_phone ON public.agent_runs(user_phone);
 CREATE INDEX IF NOT EXISTS idx_agent_runs_user_id ON public.agent_runs(user_id);
 CREATE INDEX IF NOT EXISTS idx_agent_runs_trip_id ON public.agent_runs(trip_id);
 
 -- ---------------------------------------------------------------------
--- 10. AUTOMATIC SYNC TRIGGERS (Auto-populate user_phone on records)
+-- 10. AUTOMATIC SYNC TRIGGERS
 -- ---------------------------------------------------------------------
 
 -- Function: Auto-populate user_phone on new trips from user profile
 CREATE OR REPLACE FUNCTION public.sync_user_phone_on_trip()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.user_phone IS NULL THEN
+    IF NEW.user_phone IS NULL OR NEW.user_phone = '' THEN
         SELECT phone INTO NEW.user_phone 
         FROM public.profiles 
         WHERE id = NEW.user_id;
@@ -257,7 +284,7 @@ CREATE TRIGGER trg_sync_trip_phone
     FOR EACH ROW
     EXECUTE FUNCTION public.sync_user_phone_on_trip();
 
--- Function: Auto-handle updated_at
+-- Function: Updated at handler
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -275,27 +302,30 @@ CREATE TRIGGER set_trips_updated_at BEFORE UPDATE ON public.trips
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- ---------------------------------------------------------------------
--- 11. SUPABASE AUTH TRIGGER (Captures Phone, Email, Name, and T&C on Signup)
+-- 11. FAIL-SAFE SUPABASE AUTH TRIGGER (Never fails if NEW.phone is absent)
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER AS $$
 DECLARE
+    new_json JSONB;
     extracted_phone TEXT;
     extracted_full_name TEXT;
     extracted_terms BOOLEAN;
 BEGIN
-    -- Extract phone from auth.users (native phone) or raw_user_meta_data
+    -- Safely convert NEW to JSONB to prevent "record new has no field phone" errors
+    new_json := to_jsonb(NEW);
+
     extracted_phone := COALESCE(
-        NEW.phone,
+        new_json->>'phone',
         NEW.raw_user_meta_data->>'phone',
         NEW.raw_user_meta_data->>'mobile_number',
-        '+91' || FLOOR(RANDOM() * 9000000000 + 1000000000)::TEXT -- dev fallback
+        '+91' || FLOOR(1000000000 + RANDOM() * 8999999999)::TEXT
     );
 
     extracted_full_name := COALESCE(
         NEW.raw_user_meta_data->>'full_name',
         NEW.raw_user_meta_data->>'name',
-        SPLIT_PART(NEW.email, '@', 1)
+        SPLIT_PART(COALESCE(new_json->>'email', 'Traveler'), '@', 1)
     );
 
     extracted_terms := COALESCE(
@@ -306,6 +336,7 @@ BEGIN
     INSERT INTO public.profiles (
         id,
         phone,
+        mobile_number,
         email,
         full_name,
         preferred_currency,
@@ -317,7 +348,8 @@ BEGIN
     VALUES (
         NEW.id,
         extracted_phone,
-        COALESCE(NEW.email, extracted_phone || '@phone.trippilot.com'),
+        extracted_phone,
+        COALESCE(new_json->>'email', extracted_phone || '@phone.trippilot.com'),
         extracted_full_name,
         COALESCE(NEW.raw_user_meta_data->>'preferred_currency', 'INR'),
         extracted_terms,
@@ -326,17 +358,17 @@ BEGIN
         now()
     )
     ON CONFLICT (id) DO UPDATE SET
-        phone = EXCLUDED.phone,
-        email = EXCLUDED.email,
-        full_name = EXCLUDED.full_name,
-        terms_accepted = EXCLUDED.terms_accepted,
+        phone = COALESCE(EXCLUDED.phone, public.profiles.phone),
+        mobile_number = COALESCE(EXCLUDED.mobile_number, public.profiles.mobile_number),
+        email = COALESCE(EXCLUDED.email, public.profiles.email),
+        full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
+        terms_accepted = COCLUDED.terms_accepted,
         updated_at = now();
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger hook on auth.users
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT OR UPDATE ON auth.users
@@ -407,69 +439,46 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Profiles Policies
+DROP POLICY IF EXISTS "Profiles readable by authenticated users" ON public.profiles;
 CREATE POLICY "Profiles readable by authenticated users"
     ON public.profiles FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Users can manage own profile" ON public.profiles;
 CREATE POLICY "Users can manage own profile"
     ON public.profiles FOR ALL
     TO authenticated
     USING (id = auth.uid())
     WITH CHECK (id = auth.uid());
 
--- Trips Policies (Access by User ID or Mobile match)
-CREATE POLICY "Users can view own trips or collaborated trips"
+-- Trips Policies
+DROP POLICY IF EXISTS "Users can view own trips" ON public.trips;
+CREATE POLICY "Users can view own trips"
     ON public.trips FOR SELECT
     TO authenticated
-    USING (
-        user_id = auth.uid() 
-        OR public.is_trip_member(id, auth.uid())
-    );
+    USING (user_id = auth.uid() OR public.is_trip_member(id, auth.uid()));
 
+DROP POLICY IF EXISTS "Users can create trips" ON public.trips;
 CREATE POLICY "Users can create trips"
     ON public.trips FOR INSERT
     TO authenticated
     WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Trip owners and editors can update trips"
+DROP POLICY IF EXISTS "Users can update trips" ON public.trips;
+CREATE POLICY "Users can update trips"
     ON public.trips FOR UPDATE
     TO authenticated
-    USING (public.is_trip_editor(id, auth.uid()))
-    WITH CHECK (public.is_trip_editor(id, auth.uid()));
+    USING (user_id = auth.uid() OR public.is_trip_editor(id, auth.uid()))
+    WITH CHECK (user_id = auth.uid() OR public.is_trip_editor(id, auth.uid()));
 
-CREATE POLICY "Trip owners can delete trips"
+DROP POLICY IF EXISTS "Users can delete trips" ON public.trips;
+CREATE POLICY "Users can delete trips"
     ON public.trips FOR DELETE
     TO authenticated
     USING (user_id = auth.uid());
 
--- Trip Days, Activities, Accommodations, Expenses
-CREATE POLICY "Trip days accessible by trip members"
-    ON public.trip_days FOR ALL TO authenticated
-    USING (public.is_trip_member(trip_id, auth.uid()))
-    WITH CHECK (public.is_trip_editor(trip_id, auth.uid()));
-
-CREATE POLICY "Activities accessible by trip members"
-    ON public.activities FOR ALL TO authenticated
-    USING (public.is_trip_member(trip_id, auth.uid()))
-    WITH CHECK (public.is_trip_editor(trip_id, auth.uid()));
-
-CREATE POLICY "Accommodations accessible by trip members"
-    ON public.accommodations FOR ALL TO authenticated
-    USING (public.is_trip_member(trip_id, auth.uid()))
-    WITH CHECK (public.is_trip_editor(trip_id, auth.uid()));
-
-CREATE POLICY "Trip expenses accessible by trip members"
-    ON public.trip_expenses FOR ALL TO authenticated
-    USING (public.is_trip_member(trip_id, auth.uid()))
-    WITH CHECK (public.is_trip_editor(trip_id, auth.uid()));
-
-CREATE POLICY "Saved places accessible by owner"
-    ON public.saved_places FOR ALL TO authenticated
-    USING (user_id = auth.uid())
-    WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "Agent runs accessible by owner"
-    ON public.agent_runs FOR ALL TO authenticated
-    USING (user_id = auth.uid())
-    WITH CHECK (user_id = auth.uid());
+-- ---------------------------------------------------------------------
+-- 14. RELOAD POSTGREST SCHEMA CACHE
+-- ---------------------------------------------------------------------
+NOTIFY pgrst, 'reload schema';

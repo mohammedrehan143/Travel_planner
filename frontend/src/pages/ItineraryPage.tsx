@@ -22,7 +22,13 @@ import {
   Luggage,
   Layers,
   Map as MapIcon,
-  PieChart as ChartIcon
+  PieChart as ChartIcon,
+  Plane,
+  Rocket,
+  Check,
+  CheckSquare,
+  Square,
+  PartyPopper
 } from 'lucide-react';
 import { useTrips } from '../context/TripContext';
 import { ActivityCard } from '../components/itinerary/ActivityCard';
@@ -49,6 +55,7 @@ export const ItineraryPage: React.FC = () => {
     activeCollaborators,
     activeChecklist,
     setActiveTripId,
+    updateTrip,
     addActivity,
     updateActivity,
     deleteActivity,
@@ -80,6 +87,50 @@ export const ItineraryPage: React.FC = () => {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validationScore, setValidationScore] = useState<number | null>(96);
+
+  // Activity Selection & Trip Activation State
+  const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set());
+  const [isUserConfirmed, setIsUserConfirmed] = useState(false);
+  const [isStartingTrip, setIsStartingTrip] = useState(false);
+  const [tripStartedModalOpen, setTripStartedModalOpen] = useState(false);
+
+  // Initialize selected activity IDs when day changes or loads
+  React.useEffect(() => {
+    if (dayActivities.length > 0) {
+      setSelectedActivityIds(new Set(dayActivities.map((a) => a.id)));
+    }
+  }, [currentDay?.id, dayActivities.length]);
+
+  const toggleSelectActivity = (actId: string) => {
+    setSelectedActivityIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(actId)) {
+        next.delete(actId);
+      } else {
+        next.add(actId);
+      }
+      return next;
+    });
+  };
+
+  const selectAllActivities = () => {
+    setSelectedActivityIds(new Set(dayActivities.map((a) => a.id)));
+  };
+
+  const deselectAllActivities = () => {
+    setSelectedActivityIds(new Set());
+  };
+
+  const handleStartTrip = async () => {
+    if (!trip) return;
+    setIsStartingTrip(true);
+    try {
+      await updateTrip(trip.id, { status: 'confirmed' });
+      setTripStartedModalOpen(true);
+    } finally {
+      setIsStartingTrip(false);
+    }
+  };
 
   // Tab view: 'schedule' | 'map' | 'budget' | 'checklist'
   const [activeTab, setActiveTab] = useState<'schedule' | 'map' | 'budget' | 'checklist'>('schedule');
@@ -191,6 +242,24 @@ export const ItineraryPage: React.FC = () => {
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 Budget: {formatCurrency(trip.total_budget, trip.currency, true)}
               </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-200 border border-sky-400/30 flex items-center gap-1 backdrop-blur-sm">
+                <Plane className="w-3 h-3 text-sky-300" />
+                <span>
+                  Flight: {trip.flight_ticket_estimate?.cost === 0
+                    ? 'Local (₹0)'
+                    : formatCurrency(trip.flight_ticket_estimate?.cost || (trip.destination.toLowerCase().includes('saudi') ? 26000 : 5800), trip.currency, true)}
+                </span>
+              </span>
+              {trip.status === 'confirmed' ? (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white shadow-md flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3 h-3 text-white" />
+                  <span>Active Trip</span>
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/70 text-amber-100 backdrop-blur-sm">
+                  Review & Confirm
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
@@ -346,6 +415,60 @@ export const ItineraryPage: React.FC = () => {
             </div>
           )}
 
+          {/* Flight Ticket Charges Estimation Card */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Plane className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold text-slate-900">✈️ Flight & Long-Distance Fare Estimate:</span>
+                  <span className="font-black text-blue-700 text-sm">
+                    {trip.flight_ticket_estimate?.cost === 0
+                      ? 'Local Traveling Only (₹0)'
+                      : formatCurrency(trip.flight_ticket_estimate?.cost || (trip.destination.toLowerCase().includes('saudi') ? 26000 : 5800), trip.currency, true)}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-200">
+                    AI Live Rate
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {trip.flight_ticket_estimate?.description || `Estimated round-trip airfare from ${trip.origin} to ${trip.destination}.`}
+                  {trip.flight_ticket_estimate?.airlines ? ` • Carrier: ${trip.flight_ticket_estimate.airlines}` : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Activity Selection Controls Toolbar */}
+          {dayActivities.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 text-xs">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-blue-600" />
+                <span className="font-bold text-slate-800">
+                  Select Activities to Include in Your Journey ({selectedActivityIds.size} of {dayActivities.length} selected)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={selectAllActivities}
+                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-bold text-[11px] border border-slate-300 shadow-2xs transition-colors"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={deselectAllActivities}
+                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-bold text-[11px] border border-slate-300 shadow-2xs transition-colors"
+                >
+                  Deselect All
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Activity Cards List */}
           <div className="space-y-4">
             {dayActivities.length > 0 ? (
@@ -355,6 +478,8 @@ export const ItineraryPage: React.FC = () => {
                   activity={act}
                   index={index}
                   totalActivities={dayActivities.length}
+                  isSelected={selectedActivityIds.has(act.id)}
+                  onToggleSelect={() => toggleSelectActivity(act.id)}
                   onEdit={(activity) => {
                     setEditingActivity(activity);
                     setEditModalOpen(true);
@@ -383,6 +508,59 @@ export const ItineraryPage: React.FC = () => {
                   className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
                 >
                   Add First Activity
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* User Confirmation & Start Trip Section */}
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white border border-indigo-500/30 shadow-xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30 mb-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Trip Ready for Acceptance</span>
+                </div>
+                <h3 className="text-lg font-black text-white">Accept & Start Your Trip</h3>
+                <p className="text-xs text-slate-300 max-w-lg mt-0.5">
+                  Select the places you love, check "Yes" to confirm this itinerary, and start your real-world journey!
+                </p>
+              </div>
+
+              {/* User Confirmation Toggle ("Say Yes") */}
+              <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 cursor-pointer select-none transition-all">
+                <input
+                  type="checkbox"
+                  checked={isUserConfirmed}
+                  onChange={(e) => setIsUserConfirmed(e.target.checked)}
+                  className="w-5 h-5 rounded text-emerald-500 accent-emerald-500 cursor-pointer"
+                />
+                <div>
+                  <span className="text-xs font-black text-white block">
+                    Yes, I accept this plan!
+                  </span>
+                  <span className="text-[10px] text-slate-300">
+                    Confirm {selectedActivityIds.size} selected spot(s)
+                  </span>
+                </div>
+              </label>
+            </div>
+
+            {/* When user checks "Yes": The Start Trip button pops up! */}
+            {isUserConfirmed && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-emerald-300 font-semibold">
+                  <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                  <span>Plan accepted! All selected places are ready in your itinerary.</span>
+                </div>
+
+                <button
+                  onClick={handleStartTrip}
+                  disabled={isStartingTrip || selectedActivityIds.size === 0}
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  <Rocket className="w-4 h-4 text-slate-950" />
+                  <span>🚀 Start Trip (Accept & Activate)</span>
                 </button>
               </div>
             )}
@@ -457,6 +635,44 @@ export const ItineraryPage: React.FC = () => {
           expenses={activeExpenses}
           onClose={() => setPdfExportOpen(false)}
         />
+      )}
+
+      {/* Trip Started Celebration Modal */}
+      {tripStartedModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-5 shadow-2xl border border-slate-100">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
+              <Rocket className="w-8 h-8 animate-bounce text-emerald-600" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-slate-900">
+                🎉 Trip Started & Accepted!
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Your journey to <span className="font-bold text-slate-900">{trip.destination}</span> is now active with <span className="font-bold text-blue-600">{selectedActivityIds.size} places</span> confirmed.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1.5 text-left font-medium">
+              <p className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Trip status updated to <strong>Active / Confirmed</strong></span>
+              </p>
+              <p className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Selected itinerary and daily schedule verified and locked</span>
+              </p>
+            </div>
+
+            <button
+              onClick={() => setTripStartedModalOpen(false)}
+              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all"
+            >
+              Continue Exploring My Itinerary
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

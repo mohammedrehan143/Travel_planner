@@ -24,6 +24,8 @@ interface ActivityCardProps {
   activity: Activity;
   index: number;
   totalActivities: number;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
   onEdit: (activity: Activity) => void;
   onDelete: (activityId: string) => void;
   onMoveUp?: () => void;
@@ -71,13 +73,13 @@ const CATEGORY_CONFIG: Record<
     icon: <Sparkles className="w-3.5 h-3.5" />,
   },
   relaxation: {
-    label: 'Relaxation',
+    label: 'Hangout & Relax',
     bg: 'bg-teal-50 border-teal-200',
     text: 'text-teal-700',
     icon: <Coffee className="w-3.5 h-3.5" />,
   },
   transit: {
-    label: 'Transit',
+    label: 'Traveling',
     bg: 'bg-slate-50 border-slate-200',
     text: 'text-slate-700',
     icon: <Clock className="w-3.5 h-3.5" />,
@@ -88,6 +90,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   activity,
   index,
   totalActivities,
+  isSelected = true,
+  onToggleSelect,
   onEdit,
   onDelete,
   onMoveUp,
@@ -95,11 +99,47 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 }) => {
   const catConfig = CATEGORY_CONFIG[activity.category] || CATEGORY_CONFIG.sightseeing;
 
+  // Extract speciality or dietary from notes if present
+  let displaySpeciality = activity.speciality;
+  let displayDietary = activity.dietary_tag;
+
+  if (activity.notes) {
+    if (!displaySpeciality && activity.notes.includes('Speciality:')) {
+      const match = activity.notes.match(/Speciality:\s*([^|•]+)/i);
+      if (match) displaySpeciality = match[1].trim();
+    }
+    if (!displayDietary && activity.notes.includes('Dietary:')) {
+      const match = activity.notes.match(/Dietary:\s*([^|•]+)/i);
+      if (match) {
+        const d = match[1].trim().toLowerCase();
+        if (d.includes('veg') && !d.includes('non')) displayDietary = 'veg';
+        else if (d.includes('non')) displayDietary = 'non_veg';
+        else displayDietary = 'both';
+      }
+    }
+  }
+
   return (
-    <div className="group relative bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 overflow-hidden">
+    <div className={`group relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
+      isSelected
+        ? 'border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-300'
+        : 'border-slate-200 opacity-60 bg-slate-50/50'
+    }`}>
       {/* Top status bar accent */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 pt-4 pb-2 border-b border-slate-100 bg-slate-50/40">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Activity Selection Checkbox */}
+          {onToggleSelect && (
+            <label className="flex items-center cursor-pointer select-none" title="Select to include in final trip">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={onToggleSelect}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer accent-blue-600"
+              />
+            </label>
+          )}
+
           {/* Order Badge */}
           <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
             {index + 1}
@@ -121,6 +161,21 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             {catConfig.icon}
             <span>{catConfig.label}</span>
           </div>
+
+          {/* Dietary Tag Badge */}
+          {displayDietary && (
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                displayDietary === 'veg'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : displayDietary === 'non_veg'
+                  ? 'bg-orange-50 text-orange-800 border-orange-300'
+                  : 'bg-teal-50 text-teal-800 border-teal-300'
+              }`}
+            >
+              {displayDietary === 'veg' ? '🥬 Pure Veg' : displayDietary === 'non_veg' ? '🍗 Non-Veg' : '🥗 Veg & Non-Veg'}
+            </span>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -169,9 +224,18 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
       {/* Main Content */}
       <div className="p-5 space-y-3">
-        <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-          {activity.title}
-        </h4>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+            {activity.title}
+          </h4>
+
+          {displaySpeciality && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50/90 border border-amber-200 text-xs font-bold text-amber-900 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>Speciality: {displaySpeciality}</span>
+            </div>
+          )}
+        </div>
 
         {activity.description && (
           <p className="text-sm text-slate-600 leading-relaxed">{activity.description}</p>
