@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, Trip } from '../../types';
 import { MapPin, Navigation, Compass, ZoomIn, ZoomOut, ExternalLink, Globe } from 'lucide-react';
+import { formatCurrency } from '../../lib/currency';
 
 interface ItineraryMapProps {
   trip: Trip;
@@ -264,7 +265,9 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
 
             <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="font-semibold text-emerald-600">
-                {activePin.estimated_cost === 0 ? 'Free entry' : `Est. $${activePin.estimated_cost}`}
+                {activePin.estimated_cost === 0
+                  ? 'Free entry'
+                  : `Est. ${formatCurrency(activePin.estimated_cost, activePin.currency)}`}
               </span>
 
               <div className="flex items-center gap-3">

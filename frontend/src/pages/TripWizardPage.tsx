@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTrips } from '../context/TripContext';
 import { TravelStyle, TripCreateWizardInput } from '../types';
+import { getCurrencySymbol, formatCurrency, SUPPORTED_CURRENCIES } from '../lib/currency';
 
 export const TripWizardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -315,7 +316,9 @@ export const TripWizardPage: React.FC = () => {
                         Total Planned Budget
                       </label>
                       <div className="relative">
-                        <DollarSign className="w-4 h-4 text-emerald-600 absolute left-3.5 top-3" />
+                        <span className="w-5 text-center font-bold text-sm text-emerald-600 absolute left-3 top-2.5 select-none">
+                          {getCurrencySymbol(currency)}
+                        </span>
                         <input
                           type="number"
                           min="100"
@@ -334,13 +337,13 @@ export const TripWizardPage: React.FC = () => {
                       <select
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
                       >
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="JPY">JPY (¥)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="CHF">CHF</option>
+                        {SUPPORTED_CURRENCIES.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.code} ({c.symbol}) - {c.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -456,7 +459,7 @@ export const TripWizardPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2 text-slate-600 pt-1">
                     <p><span className="font-semibold text-slate-900">Dates:</span> {startDate} to {endDate}</p>
                     <p><span className="font-semibold text-slate-900">Travelers:</span> {travelerCount} Person(s)</p>
-                    <p><span className="font-semibold text-slate-900">Budget:</span> ${totalBudget} {currency}</p>
+                    <p><span className="font-semibold text-slate-900">Budget:</span> {formatCurrency(totalBudget, currency, true)}</p>
                     <p><span className="font-semibold text-slate-900">Style:</span> {travelStyle}</p>
                   </div>
                 </div>

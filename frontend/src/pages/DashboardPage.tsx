@@ -19,6 +19,7 @@ import {
 import { useTrips } from '../context/TripContext';
 import { useAuth } from '../context/AuthContext';
 import { TripStatus } from '../types';
+import { formatCurrency } from '../lib/currency';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -215,8 +216,8 @@ export const DashboardPage: React.FC = () => {
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                     <span className="flex items-center gap-1 font-bold text-slate-900">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                      ${trip.total_budget.toLocaleString()} {trip.currency}
+                      <span>{formatCurrency(trip.total_budget, trip.currency)}</span>
+                      <span className="text-[11px] font-normal text-slate-400">{trip.currency}</span>
                     </span>
                     <span className="flex items-center gap-1 text-slate-500">
                       <Users className="w-3.5 h-3.5" />

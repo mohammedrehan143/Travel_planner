@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Trip, TripExpense, ExpenseCategory } from '../../types';
 import { useTrips } from '../../context/TripContext';
+import { formatCurrency, getCurrencySymbol } from '../../lib/currency';
 
 interface BudgetTrackerProps {
   trip: Trip;
@@ -154,7 +155,8 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Planned Budget</p>
           <p className="text-2xl font-black text-slate-900 mt-1">
-            ${budget.toLocaleString()} <span className="text-xs font-normal text-slate-500">{trip.currency}</span>
+            {formatCurrency(budget, trip.currency)}{' '}
+            <span className="text-xs font-normal text-slate-500">{trip.currency}</span>
           </p>
           <p className="text-xs text-slate-500 mt-1">For {trip.traveler_count} travelers ({trip.duration_days} days)</p>
         </div>
@@ -163,7 +165,8 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
         <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
           <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Total Allocated</p>
           <p className="text-2xl font-black text-blue-900 mt-1">
-            ${totalSpent.toLocaleString()} <span className="text-xs font-normal text-blue-600">{trip.currency}</span>
+            {formatCurrency(totalSpent, trip.currency)}{' '}
+            <span className="text-xs font-normal text-blue-600">{trip.currency}</span>
           </p>
           <div className="w-full bg-blue-200/60 rounded-full h-2 mt-2 overflow-hidden">
             <div
@@ -181,7 +184,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
             {remaining >= 0 ? 'Remaining Balance' : 'Budget Overrun'}
           </p>
           <p className={`text-2xl font-black mt-1 ${remaining >= 0 ? 'text-emerald-900' : 'text-rose-900'}`}>
-            ${Math.abs(remaining).toLocaleString()}{' '}
+            {formatCurrency(Math.abs(remaining), trip.currency)}{' '}
             <span className="text-xs font-normal text-slate-500">{trip.currency}</span>
           </p>
           <p className={`text-xs mt-1 ${remaining >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -222,7 +225,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
                 required
                 min="0.01"
                 step="0.01"
-                placeholder="Amount ($)"
+                placeholder={`Amount (${getCurrencySymbol(trip.currency)})`}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -283,13 +286,13 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: any) => [`$${value}`, 'Amount']} />
+                    <Tooltip formatter={(value: any) => [formatCurrency(Number(value), trip.currency), 'Amount']} />
                   </PieChart>
                 ) : (
                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-25} textAnchor="end" />
                     <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(value: any) => [`$${value}`, 'Amount']} />
+                    <Tooltip formatter={(value: any) => [formatCurrency(Number(value), trip.currency), 'Amount']} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                       {chartData.map((entry, index) => (
                         <Cell key={`bar-${index}`} fill={entry.color} />
@@ -331,7 +334,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900">${exp.amount.toLocaleString()}</span>
+                  <span className="text-xs font-bold text-slate-900">{formatCurrency(exp.amount, exp.currency || trip.currency)}</span>
                   <button
                     onClick={() => deleteExpense(exp.id)}
                     className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-opacity"

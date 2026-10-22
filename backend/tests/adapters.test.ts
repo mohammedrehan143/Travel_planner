@@ -37,21 +37,30 @@ describe('External Integration Adapters Suite', () => {
     expect(res.source).toBeDefined();
   });
 
-  it('CurrencyAdapter: converts currencies with rate precision', async () => {
+  it('CurrencyAdapter: converts currencies with rate precision including INR', async () => {
     const res = await CurrencyAdapter.convert(100, 'USD', 'EUR');
     expect(res.convertedAmount).toBeGreaterThan(0);
     expect(res.rate).toBeGreaterThan(0);
+
+    const inr = await CurrencyAdapter.convert(100, 'USD', 'INR');
+    expect(inr.convertedAmount).toBeGreaterThan(7000);
+    expect(inr.rate).toBeGreaterThan(70);
 
     const same = await CurrencyAdapter.convert(50, 'USD', 'USD');
     expect(same.convertedAmount).toBe(50);
     expect(same.rate).toBe(1.0);
   });
 
-  it('AccommodationAdapter: returns realistic lodging suggestions with not_booked status', async () => {
+  it('AccommodationAdapter: returns realistic lodging suggestions with not_booked status and INR scaling', async () => {
     const stays = await AccommodationAdapter.searchLodging('Tokyo, Japan', 4, 'balanced', 'USD');
     expect(stays.length).toBeGreaterThanOrEqual(2);
     expect(stays[0].nightlyRate).toBeGreaterThan(0);
     expect(stays[0].totalPrice).toBe(stays[0].nightlyRate * 4);
     expect(stays[0].bookingStatus).toBe('not_booked');
+
+    const inrStays = await AccommodationAdapter.searchLodging('New Delhi, India', 3, 'balanced', 'INR');
+    expect(inrStays.length).toBeGreaterThanOrEqual(2);
+    expect(inrStays[0].currency).toBe('INR');
+    expect(inrStays[0].nightlyRate).toBeGreaterThan(5000);
   });
 });

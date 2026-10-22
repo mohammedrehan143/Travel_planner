@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trip, TripDay, Activity, TripExpense } from '../../types';
 import { Printer, X, Compass, Calendar, DollarSign, MapPin, Clock } from 'lucide-react';
+import { formatCurrency } from '../../lib/currency';
 
 interface PDFExportViewProps {
   trip: Trip;
@@ -70,7 +71,7 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
             </p>
             <p className="text-slate-600">Travelers: {trip.traveler_count}</p>
             <p className="font-semibold text-blue-700">
-              Budget: ${trip.total_budget.toLocaleString()} {trip.currency}
+              Budget: {formatCurrency(trip.total_budget, trip.currency, true)}
             </p>
           </div>
         </div>
@@ -121,7 +122,9 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
                           {act.location_name} {act.location_address ? `• ${act.location_address}` : ''}
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {act.estimated_cost === 0 ? 'Free' : `Est. $${act.estimated_cost}`}
+                          {act.estimated_cost === 0
+                            ? 'Free'
+                            : `Est. ${formatCurrency(act.estimated_cost, act.currency || trip.currency)}`}
                         </span>
                       </div>
                     </div>
@@ -150,12 +153,16 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
                 <tr key={e.id}>
                   <td className="py-2 font-medium text-slate-800">{e.description}</td>
                   <td className="py-2 capitalize text-slate-500">{e.category}</td>
-                  <td className="py-2 text-right font-bold text-slate-900">${e.amount.toLocaleString()}</td>
+                  <td className="py-2 text-right font-bold text-slate-900">
+                    {formatCurrency(e.amount, e.currency || trip.currency)}
+                  </td>
                 </tr>
               ))}
               <tr className="border-t-2 border-slate-300 font-bold">
                 <td className="py-2" colSpan={2}>Total Estimated Expenditure</td>
-                <td className="py-2 text-right text-blue-700">${totalSpent.toLocaleString()} {trip.currency}</td>
+                <td className="py-2 text-right text-blue-700">
+                  {formatCurrency(totalSpent, trip.currency, true)}
+                </td>
               </tr>
             </tbody>
           </table>

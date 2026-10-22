@@ -137,6 +137,20 @@ export class ToolHandlers {
       dailyTransitPerPerson = 45;
     }
 
+    if (curr !== 'USD') {
+      try {
+        const { rate } = await CurrencyAdapter.convert(1, 'USD', curr);
+        if (rate && rate > 0) {
+          nightlyAccommodationPerRoom = Math.round(nightlyAccommodationPerRoom * rate);
+          dailyFoodPerPerson = Math.round(dailyFoodPerPerson * rate);
+          dailyActivitiesPerPerson = Math.round(dailyActivitiesPerPerson * rate);
+          dailyTransitPerPerson = Math.round(dailyTransitPerPerson * rate);
+        }
+      } catch {
+        // Fallback to unscaled
+      }
+    }
+
     const roomsNeeded = Math.ceil(travelers / 2);
     const totalAccommodation = nightlyAccommodationPerRoom * nights * roomsNeeded;
     const totalFood = dailyFoodPerPerson * days * travelers;
@@ -148,14 +162,15 @@ export class ToolHandlers {
     const surplusOrDeficit = Number((params.totalBudget - estimatedTotalCost).toFixed(2));
     const isWithinBudget = surplusOrDeficit >= 0;
 
+    const symbol = curr === 'INR' ? '₹' : curr === 'EUR' ? '€' : curr === 'GBP' ? '£' : curr === 'JPY' ? '¥' : '$';
     const recommendations: string[] = [];
     if (!isWithinBudget) {
       recommendations.push(
-        `Budget deficit of $${Math.abs(surplusOrDeficit)}. Consider choosing budget-friendly dining or exploring free cultural walking districts.`
+        `Budget deficit of ${symbol}${Math.abs(surplusOrDeficit).toLocaleString()} ${curr}. Consider choosing budget-friendly dining or exploring free cultural walking districts.`
       );
     } else {
       recommendations.push(
-        `Budget surplus of $${surplusOrDeficit}. Comfortable margin for premium dining and spontaneous experiences.`
+        `Budget surplus of ${symbol}${surplusOrDeficit.toLocaleString()} ${curr}. Comfortable margin for premium dining and spontaneous experiences.`
       );
     }
 
@@ -205,6 +220,17 @@ export class ToolHandlers {
       currency: params.currency
     });
 
+    const currUpper = (params.currency || 'USD').toUpperCase();
+    let currencyRate = 1.0;
+    if (currUpper !== 'USD') {
+      try {
+        const { rate } = await CurrencyAdapter.convert(1, 'USD', currUpper);
+        if (rate && rate > 0) currencyRate = rate;
+      } catch {
+        // Fallback to unscaled
+      }
+    }
+
     const startDateObj = new Date(params.startDate);
     const days: PlannedDay[] = [];
 
@@ -244,7 +270,7 @@ export class ToolHandlers {
           locationAddress: dayPlaces[0]?.address || `Central District, ${params.destination}`,
           latitude: dayPlaces[0]?.lat || coords.lat,
           longitude: dayPlaces[0]?.lng || coords.lng,
-          estimatedCost: dayPlaces[0]?.estimatedCost || 15,
+          estimatedCost: Math.round((dayPlaces[0]?.estimatedCost || 15) * currencyRate),
           currency: params.currency,
           bookingRequired: false,
           bookingStatus: 'not_booked',
@@ -261,7 +287,7 @@ export class ToolHandlers {
           locationAddress: `Culinary Promenade, ${params.destination}`,
           latitude: coords.lat + 0.002,
           longitude: coords.lng + 0.003,
-          estimatedCost: params.travelStyle === 'luxury' ? 65 : 25,
+          estimatedCost: Math.round((params.travelStyle === 'luxury' ? 65 : 25) * currencyRate),
           currency: params.currency,
           bookingRequired: false,
           bookingStatus: 'not_booked',
@@ -283,7 +309,7 @@ export class ToolHandlers {
           locationAddress: dayPlaces[1]?.address || `Parkway, ${params.destination}`,
           latitude: dayPlaces[1]?.lat || coords.lat - 0.003,
           longitude: dayPlaces[1]?.lng || coords.lng + 0.004,
-          estimatedCost: dayPlaces[1]?.estimatedCost || 18,
+          estimatedCost: Math.round((dayPlaces[1]?.estimatedCost || 18) * currencyRate),
           currency: params.currency,
           bookingRequired: dayPlaces[1]?.priceLevel ? dayPlaces[1].priceLevel > 2 : false,
           bookingStatus: 'not_booked',
@@ -305,7 +331,7 @@ export class ToolHandlers {
           locationAddress: `Boulevard Vista, ${params.destination}`,
           latitude: coords.lat + 0.004,
           longitude: coords.lng - 0.002,
-          estimatedCost: 20,
+          estimatedCost: Math.round(20 * currencyRate),
           currency: params.currency,
           bookingRequired: false,
           bookingStatus: 'not_booked',

@@ -35,6 +35,7 @@ import { PackingChecklist } from '../components/itinerary/PackingChecklist';
 import { PDFExportView } from '../components/itinerary/PDFExportView';
 import { Activity, TripDay } from '../types';
 import { TripPilotAPI } from '../lib/api';
+import { formatCurrency } from '../lib/currency';
 
 export const ItineraryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -188,7 +189,7 @@ export const ItineraryPage: React.FC = () => {
                 {trip.duration_days} Days Journey
               </span>
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                Budget: ${trip.total_budget.toLocaleString()} {trip.currency}
+                Budget: {formatCurrency(trip.total_budget, trip.currency, true)}
               </span>
             </div>
 

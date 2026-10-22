@@ -1,4 +1,5 @@
 import { PlacesAdapter } from './places.adapter.js';
+import { CurrencyAdapter } from './currency.adapter.js';
 
 export interface AccommodationOption {
   name: string;
@@ -41,6 +42,18 @@ export class AccommodationAdapter {
     } else if (travelStyle === 'cultural' || travelStyle === 'relaxed') {
       baseRate = 180;
       preferredType = 'hotel';
+    }
+
+    const currUpper = (currency || 'USD').toUpperCase();
+    if (currUpper !== 'USD') {
+      try {
+        const { rate } = await CurrencyAdapter.convert(1, 'USD', currUpper);
+        if (rate && rate > 0) {
+          baseRate = Math.round(baseRate * rate);
+        }
+      } catch {
+        // preserve baseRate if conversion fails
+      }
     }
 
     const suggestions: AccommodationOption[] = [

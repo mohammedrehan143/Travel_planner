@@ -18,6 +18,7 @@ import {
   Coffee
 } from 'lucide-react';
 import { Activity, ActivityCategory } from '../../types';
+import { formatCurrency } from '../../lib/currency';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -198,9 +199,10 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         {/* Footer Meta: Cost & Booking */}
         <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1 font-semibold text-slate-900">
-            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
             <span>
-              {activity.estimated_cost === 0 ? 'Free entry' : `Est. $${activity.estimated_cost}`}
+              {activity.estimated_cost === 0
+                ? 'Free entry'
+                : `Est. ${formatCurrency(activity.estimated_cost, activity.currency)}`}
             </span>
           </div>
 
