@@ -353,9 +353,230 @@ export class ToolHandlers {
       { theme: 'Urban Culture & Celebrated Gathering Hubs', category: 'entertainment' }
     ];
 
-    const isBlr = destLower.includes('bangalore') || destLower.includes('bengaluru');
-    const isSaudi = destLower.includes('saudi') || destLower.includes('riyadh');
     const dietaryChoice = ((params as any).dietaryPreference || 'any').toLowerCase();
+
+    // Helper for destination-specific dining
+    const getDiningForDest = (dest: string, dietary: string, dIdx: number) => {
+      const d = dest.toLowerCase();
+      if (d.includes('goa')) {
+        return dietary === 'veg'
+          ? {
+              title: dIdx === 0 ? 'Bhakti Pure Veg & Coastal Cafe' : 'Vinayak Local Kitchen - Veg Thali',
+              desc: 'Traditional Goan vegetarian dishes including fragrant coconut Sol Kadhi, spiced Vegetable Xacuti, and hot poi bread.',
+              location: 'Assagao, Goa',
+              speciality: 'Sol Kadhi & Goan Vegetable Xacuti',
+              cost: 220
+            }
+          : {
+              title: dIdx === 0 ? 'Vinayak Family Restaurant - Authentic Goan Fish Curry' : 'Fisherman\'s Wharf - Riverside Seafood Feast',
+              desc: 'Celebrated local tavern famous for crispy rava fried kingfish, butter garlic crab, and rich Goan fish curry thali.',
+              location: dIdx === 0 ? 'Assagao, Goa' : 'Cavelossim, Goa',
+              speciality: 'Goan Fish Curry Thali & Prawn Balchão',
+              cost: 380
+            };
+      }
+      if (d.includes('rajasthan') || d.includes('jaipur')) {
+        return dietary === 'veg'
+          ? {
+              title: dIdx === 0 ? 'Laxmi Mishthan Bhandar (LMB) - Royal Dal Baati Churma' : 'Chokhi Dhani Traditional Rajasthani Dining',
+              desc: 'Legendary Rajasthani royal heritage feast with crisp baatis drowned in pure ghee, five-lentil dal, and sweet churma.',
+              location: 'Johari Bazar, Jaipur',
+              speciality: 'Dal Baati Churma & Ghewar',
+              cost: 400
+            }
+          : {
+              title: dIdx === 0 ? 'Handi Restaurant - Traditional Rajasthani Laal Maas' : 'Niros Restaurant - Mutton Rogan Josh & Tandoori Grills',
+              desc: 'Iconic heritage restaurant renowned for slow-cooked fiery Mathania red chilli Laal Maas and smoked kebabs.',
+              location: 'MI Road, Jaipur',
+              speciality: 'Smoked Mutton Laal Maas & Rumali Roti',
+              cost: 550
+            };
+      }
+      if (d.includes('manali') || d.includes('himachal')) {
+        return dietary === 'veg'
+          ? {
+              title: dIdx === 0 ? 'Chopsticks Old Manali - Steaming Veg Momos & Thukpa' : 'Renaissance Italian & Himachali Woodfire Cafe',
+              desc: 'Cozy mountain dining with hot vegetable thukpa noodle broth, steamed momos, and spiced Himachali siddu bread.',
+              location: 'Old Manali, Himachal Pradesh',
+              speciality: 'Himachali Siddu & Vegetable Thukpa',
+              cost: 250
+            }
+          : {
+              title: dIdx === 0 ? 'Johnson\'s Cafe - Woodfire Himalayan Trout Grill' : 'Lazy Dog Lounge - Mountain Riverside Dining',
+              desc: 'Freshly caught Beas river trout pan-fried with almond butter sauce and served with roasted mountain herbs.',
+              location: 'Circuit House Rd, Old Manali',
+              speciality: 'Pan-Seared Himalayan Trout in Lemon Butter',
+              cost: 480
+            };
+      }
+      if (d.includes('mumbai')) {
+        return dietary === 'veg'
+          ? {
+              title: 'Swati Snacks - Gujarati & Coastal Street Delights',
+              desc: 'Famous heritage spot for baked panki, handvo, crisp sev puri, and authentic sugarcane juice.',
+              location: 'Tardeo, Mumbai',
+              speciality: 'Baked Panki & Fresh Farsan',
+              cost: 300
+            }
+          : {
+              title: 'Britannia & Co. - Legendary Parsi Berry Pulao',
+              desc: 'Historic 1923 Parsi institution renowned for fragrant berry pulao with tender mutton and sali boti.',
+              location: 'Ballard Estate, Fort, Mumbai',
+              speciality: 'Irani Mutton Berry Pulao & Caramel Custard',
+              cost: 500
+            };
+      }
+      if (d.includes('delhi')) {
+        return dietary === 'veg'
+          ? {
+              title: 'Paranthe Wali Gali - Century-Old Stuffed Flatbreads',
+              desc: 'Historic 1870s alleyway serving piping hot rabri paranthas, khoya paranthas, and spicy mint chutneys.',
+              location: 'Chandni Chowk, Old Delhi',
+              speciality: 'Crispy Stuffed Paranthas & Sweet Lassi',
+              cost: 200
+            }
+          : {
+              title: 'Karim\'s - Historic Mughal Imperial Feast',
+              desc: 'World-renowned 1913 eatery near Jama Masjid serving slow-cooked mutton burra, seekh kebabs, and rogan josh.',
+              location: 'Gali Kababian, Jama Masjid, Old Delhi',
+              speciality: 'Mutton Burra & Imperial Shahi Korma',
+              cost: 450
+            };
+      }
+      if (d.includes('paris')) {
+        return dietary === 'veg'
+          ? {
+              title: 'Le Potager du Marais - Artisanal Plant-Based French Bistro',
+              desc: 'Classic French vegetarian cuisine with organic ingredients, savory vegetable tarts, and vegan bourguignon.',
+              location: 'Rue Rambuteau, Le Marais, Paris',
+              speciality: 'French Onion Gratin & Mushroom Bourguignon',
+              cost: 35
+            }
+          : {
+              title: 'Bouillon Chartier - Belle Époque Historic Dining',
+              desc: 'Legendary 1896 grand hall serving traditional French duck confit, steak frites, and escargot.',
+              location: 'Rue du Faubourg Montmartre, Paris',
+              speciality: 'Crispy Duck Confit & Roasted Potatoes',
+              cost: 40
+            };
+      }
+      if (d.includes('tokyo')) {
+        return dietary === 'veg'
+          ? {
+              title: 'Shojin Ryori Daigo - Traditional Buddhist Plant-Based Tasting',
+              desc: 'Michelin-starred seasonal Japanese temple cuisine featuring seasonal wild mountain vegetables, tofu, and miso.',
+              location: 'Atago, Minato City, Tokyo',
+              speciality: 'Shojin Ryori Zen Kaiseki Multi-Course',
+              cost: 60
+            }
+          : {
+              title: 'Toyosu Fish Market - Fresh Morning Nigiri & Yakitori',
+              desc: 'World-famous seafood market tasting fresh bluefin tuna nigiri, tamagoyaki, and charcoal-grilled skewers.',
+              location: 'Toyosu, Koto City, Tokyo',
+              speciality: 'Omakase Tuna Nigiri & Wagyu Skewers',
+              cost: 50
+            };
+      }
+      if (d.includes('bangalore') || d.includes('bengaluru')) {
+        return dietary === 'veg'
+          ? {
+              title: dIdx === 0 ? 'Vidyarthi Bhavan - Famous Ghee Masala Dosa' : 'CTR Shri Sagar - Crispy Benne Dosa',
+              desc: 'Iconic heritage eatery renowned for golden buttery masala dosas and frothy filter kaapi.',
+              location: dIdx === 0 ? 'Gandhi Bazaar, Basavanagudi, Bengaluru' : 'Malleshwaram, Bengaluru',
+              speciality: 'Crispy Ghee Butter Dosa & Filter Kaapi',
+              cost: 160
+            }
+          : {
+              title: dIdx === 0 ? 'Meghana Foods - Signature Andhra Dum Biryani' : 'Shivaji Military Hotel - Woodfire Mutton Donne Biryani',
+              desc: 'Legendary restaurant renowned for spicy Andhra-style chicken dum biryani and chilli chicken.',
+              location: dIdx === 0 ? 'Koramangala 5th Block, Bengaluru' : '8th Block, Jayanagar, Bengaluru',
+              speciality: 'Spicy Andhra Dum Biryani & Chilli Chicken',
+              cost: 320
+            };
+      }
+      if (d.includes('saudi') || d.includes('riyadh')) {
+        return {
+          title: 'Najd Village - Authentic Heritage Arabian Feast',
+          desc: 'Traditional mud-brick courtyard dining serving slow-cooked lamb kabsa, fresh khubz bread, and cardamom saffron tea.',
+          location: 'Al Olaya, Riyadh, Saudi Arabia',
+          speciality: 'Lamb Hashi Kabsa & Saffron Qahwa',
+          cost: 35
+        };
+      }
+      return {
+        title: `${params.destination} Authentic Culinary Quarter`,
+        desc: `Taste celebrated local specialties and regional dishes at a top-rated neighborhood eatery in ${params.destination}.`,
+        location: `Culinary District, ${params.destination}`,
+        speciality: `Authentic Regional Delicacies`,
+        cost: 25
+      };
+    };
+
+    // Helper for destination-specific evening / hangout spot
+    const getHangoutForDest = (dest: string, dIdx: number) => {
+      const d = dest.toLowerCase();
+      if (d.includes('goa')) {
+        return dIdx === 0
+          ? {
+              title: 'Thalassa & Vagator Sunset Cliff Promenade',
+              desc: 'Breathtaking red cliff promenade overlooking the Arabian Sea, vibrant sunset sessions, and Greek-Goan cafes.',
+              location: 'Vagator Cliff, Goa',
+              speciality: 'Sunset Views & Coastal Mocktails'
+            }
+          : {
+              title: 'Tito\'s Lane & Baga Beach Twilight Shacks',
+              desc: 'Lively beachfront walkway with glowing neon lights, acoustic music, and sizzling seafood barbecue.',
+              location: 'Baga Beach, Goa',
+              speciality: 'Beachside Night Atmosphere & Seafood BBQ'
+            };
+      }
+      if (d.includes('rajasthan') || d.includes('jaipur')) {
+        return {
+          title: 'Nahargarh Fort Sunset Point Overlooking Jaipur',
+          desc: 'Perched on the edge of the Aravalli hills, watch the sunset bathe the entire Pink City in golden light from the historic ramparts.',
+          location: 'Nahargarh Fort, Jaipur',
+          speciality: 'Panoramic Sunset Vista Over the City'
+        };
+      }
+      if (d.includes('manali') || d.includes('himachal')) {
+        return {
+          title: 'Mall Road Promenade & Himalayan Cedar Walk',
+          desc: 'Pedestrian street lined with pine craft shops, street food stalls, and misty evening mountain air.',
+          location: 'The Mall, Manali',
+          speciality: 'Warm Kashmiri Kahwa & Artisan Shawls'
+        };
+      }
+      if (d.includes('paris')) {
+        return {
+          title: 'Seine Riverbanks & Pont des Arts Twilight Stroll',
+          desc: 'Romantic evening walk along the illuminated Seine, gazing at the Eiffel Tower light sparkles and street musicians.',
+          location: 'Quai de la Seine, Paris',
+          speciality: 'Illuminated Riverbanks & Parisian Cafes'
+        };
+      }
+      if (d.includes('tokyo')) {
+        return {
+          title: 'Shibuya Sky & Omoide Yokocho Lantern Alley',
+          desc: 'Panoramic open-air observation deck followed by dinner in the nostalgic lantern-lit yakitori alleys of Shinjuku.',
+          location: 'Shibuya & Shinjuku, Tokyo',
+          speciality: '360° Neon Skyline & Yakitori Atmosphere'
+        };
+      }
+      if (d.includes('bangalore') || d.includes('bengaluru')) {
+        return {
+          title: 'Church Street & Blossoms Book House Cultural Hangout',
+          desc: 'Bangalore favorite walking street: browse vintage books across 3 floors at Blossoms, enjoy specialty roasts, and soak in indie culture.',
+          location: 'Church Street, Bengaluru',
+          speciality: 'Vintage Books & Indie Coffee Culture'
+        };
+      }
+      return {
+        title: `${params.destination} Central Promenade & Vibrant Cafes`,
+        desc: `Relax along the city's most beloved gathering plaza, featuring boutique cafes and lively local street culture.`,
+        location: `Central Boulevard, ${params.destination}`,
+        speciality: 'Local Gathering Spot & Artisan Coffee'
+      };
+    };
 
     for (let dayIdx = 0; dayIdx < params.durationDays; dayIdx++) {
       const currentDayDate = new Date(startDateObj);
@@ -364,31 +585,48 @@ export class ToolHandlers {
       const themePreset = themes[dayIdx % themes.length];
       const weather = forecast[dayIdx] || forecast[0];
 
-      // Provide AT LEAST 4 to 5 rich places per day with distinct specialities and hangout spots
+      // Select distinct places across days
+      const morningPlace = places.length > 0
+        ? places[(dayIdx * 2) % places.length]
+        : {
+            name: `${params.destination} Historic Landmark`,
+            description: `Explore historic architecture and landmarks in ${params.destination}.`,
+            address: `Central District, ${params.destination}`,
+            lat: coords.lat + 0.005,
+            lng: coords.lng + 0.005,
+            estimatedCost: 20
+          };
+
+      const afternoonPlace = places.length > 1
+        ? places[(dayIdx * 2 + 1) % places.length]
+        : {
+            name: `${params.destination} Cultural Exhibition & Gardens`,
+            description: `Stroll through peaceful botanical grounds and exhibitions in ${params.destination}.`,
+            address: `Promenade, ${params.destination}`,
+            lat: coords.lat - 0.004,
+            lng: coords.lng + 0.006,
+            estimatedCost: 25
+          };
+
+      const diningInfo = getDiningForDest(params.destination, dietaryChoice, dayIdx);
+      const hangoutInfo = getHangoutForDest(params.destination, dayIdx);
+
       const activities: PlannedActivity[] = [
         // 1. Morning Landmark / Heritage Sight
         {
-          title: isBlr
-            ? 'Bangalore Palace & Tudor Heritage Grounds'
-            : isSaudi
-            ? 'Kingdom Centre Sky Bridge Observation'
-            : places[0]?.name || `${params.destination} Historic Landmark`,
-          description: isBlr
-            ? 'Explore 19th-century Tudor-style royal architecture, ornate wood carvings, and expansive gardens.'
-            : isSaudi
-            ? 'Ascend 300 meters above Riyadh for unhindered 360-degree vistas across the Arabian capital.'
-            : places[0]?.description || `Morning exploration of top cultural landmarks in ${params.destination}.`,
-          category: isSaudi ? 'sightseeing' : 'cultural',
+          title: morningPlace.name,
+          description: morningPlace.description || `Morning exploration of top cultural landmarks in ${params.destination}.`,
+          category: 'cultural',
           startTime: '09:00',
           endTime: '11:00',
           durationMinutes: 120,
-          locationName: isBlr ? 'Bangalore Palace' : isSaudi ? 'Kingdom Centre Tower' : places[0]?.name || `${params.destination} Center`,
-          locationAddress: isBlr ? 'Vasanth Nagar, Bengaluru' : isSaudi ? 'Al Olaya, Riyadh, Saudi Arabia' : places[0]?.address || `Central District, ${params.destination}`,
-          latitude: isBlr ? 12.9988 : isSaudi ? 24.7114 : places[0]?.lat || coords.lat,
-          longitude: isBlr ? 77.5921 : isSaudi ? 46.6744 : places[0]?.lng || coords.lng,
-          estimatedCost: Math.round((places[0]?.estimatedCost || (isBlr ? 250 : 69)) * (isBlr ? 1 : currencyRate)),
+          locationName: morningPlace.name,
+          locationAddress: morningPlace.address || `Central District, ${params.destination}`,
+          latitude: morningPlace.lat || coords.lat,
+          longitude: morningPlace.lng || coords.lng,
+          estimatedCost: Math.round((morningPlace.estimatedCost || 30) * currencyRate),
           currency: params.currency,
-          speciality: isBlr ? 'Royal Tudor Woodcarvings & Durbar Hall' : isSaudi ? '300m Curved Glass Skybridge Panorama' : 'Heritage Architecture & Exhibits',
+          speciality: 'Iconic Architecture & Heritage Grounds',
           bookingRequired: false,
           bookingStatus: 'not_booked',
           orderIndex: 1,
@@ -396,38 +634,20 @@ export class ToolHandlers {
         },
         // 2. Midday Culinary Spot with Veg / Non-Veg Speciality
         {
-          title: isBlr
-            ? dietaryChoice === 'veg'
-              ? 'Vidyarthi Bhavan - Legendary Ghee Masala Dosa'
-              : 'Meghana Foods - Signature Andhra Dum Biryani'
-            : isSaudi
-            ? 'Najd Village - Authentic Saudi Heritage Feast'
-            : `Artisanal Regional Dining & Local Specialities`,
-          description: isBlr
-            ? dietaryChoice === 'veg'
-              ? 'Century-old vegetarian institution renowned for thick crispy butter masala dosas and frothy filter coffee.'
-              : 'Renowned destination for fiery Andhra-style boneless chicken biryani and chilli chicken.'
-            : isSaudi
-            ? 'Traditional Najdi heritage courtyard dining serving aromatic kabsa, lamb hashi, and cardamom saffron tea.'
-            : `Savor authentic regional cuisine and local specialties prepared according to vetted recipes.`,
+          title: diningInfo.title,
+          description: diningInfo.desc,
           category: 'dining',
           startTime: '11:30',
           endTime: '13:00',
           durationMinutes: 90,
-          locationName: isBlr
-            ? dietaryChoice === 'veg' ? 'Vidyarthi Bhavan' : 'Meghana Foods'
-            : isSaudi ? 'Najd Village Restaurant' : `${params.destination} Gourmet Quarter`,
-          locationAddress: isBlr
-            ? dietaryChoice === 'veg' ? 'Gandhi Bazaar, Basavanagudi, Bengaluru' : 'Koramangala 5th Block, Bengaluru'
-            : isSaudi ? 'Al Olaya, Riyadh, Saudi Arabia' : `Culinary Quarter, ${params.destination}`,
+          locationName: diningInfo.title.split('-')[0].trim(),
+          locationAddress: diningInfo.location,
           latitude: coords.lat + 0.002,
           longitude: coords.lng + 0.003,
-          estimatedCost: Math.round((isBlr ? (dietaryChoice === 'veg' ? 180 : 350) : 35) * (isBlr ? 1 : currencyRate)),
+          estimatedCost: Math.round(diningInfo.cost * (params.currency === 'INR' ? 1 : currencyRate)),
           currency: params.currency,
-          dietaryTag: isBlr ? (dietaryChoice === 'veg' ? 'veg' : 'non-veg') : 'both',
-          speciality: isBlr
-            ? dietaryChoice === 'veg' ? 'Crispy Ghee Butter Dosa & Filter Kaapi' : 'Spicy Andhra Dum Biryani & Chilli Chicken'
-            : isSaudi ? 'Aromatic Lamb Kabsa & Cardamom Saffron Qahwa' : 'Signature Local Culinary Specialties',
+          dietaryTag: (dietaryChoice === 'veg' ? 'veg' : dietaryChoice === 'non_veg' ? 'non-veg' : 'both') as any,
+          speciality: diningInfo.speciality,
           bookingRequired: false,
           bookingStatus: 'not_booked',
           orderIndex: 2,
@@ -439,27 +659,19 @@ export class ToolHandlers {
         },
         // 3. Afternoon Cultural & Nature Exploration
         {
-          title: isBlr
-            ? 'Lalbagh Glass House & Botanical Gardens'
-            : isSaudi
-            ? 'Historic Diriyah (At-Turaif UNESCO World Heritage Site)'
-            : places[1]?.name || `${params.destination} Gardens & Panorama`,
-          description: isBlr
-            ? 'Stroll through 240 acres of century-old tropical flora, tranquil lotus ponds, and the Victorian glass pavilion.'
-            : isSaudi
-            ? 'Wander the restored mud-brick alleys, palaces, and atmospheric desert courtyards of the first Saudi state.'
-            : places[1]?.description || `Afternoon visit to renowned exhibition spaces and scenic grounds.`,
-          category: isBlr ? 'outdoor' : 'cultural',
+          title: afternoonPlace.name,
+          description: afternoonPlace.description || `Afternoon discovery of scenic viewpoints and artistic exhibits in ${params.destination}.`,
+          category: 'sightseeing',
           startTime: '13:30',
           endTime: '15:30',
           durationMinutes: 120,
-          locationName: isBlr ? 'Lalbagh Botanical Garden' : isSaudi ? 'At-Turaif District, Diriyah' : places[1]?.name || `${params.destination} Gardens`,
-          locationAddress: isBlr ? 'Mavalli, Bengaluru' : isSaudi ? 'Diriyah, Riyadh, Saudi Arabia' : places[1]?.address || `Parkway, ${params.destination}`,
-          latitude: isBlr ? 12.9507 : isSaudi ? 24.7337 : places[1]?.lat || coords.lat - 0.003,
-          longitude: isBlr ? 77.5848 : isSaudi ? 46.5752 : places[1]?.lng || coords.lng + 0.004,
-          estimatedCost: Math.round((isBlr ? 30 : 50) * (isBlr ? 1 : currencyRate)),
+          locationName: afternoonPlace.name,
+          locationAddress: afternoonPlace.address || `Parkway, ${params.destination}`,
+          latitude: afternoonPlace.lat || coords.lat - 0.003,
+          longitude: afternoonPlace.lng || coords.lng + 0.004,
+          estimatedCost: Math.round((afternoonPlace.estimatedCost || 25) * currencyRate),
           currency: params.currency,
-          speciality: isBlr ? '1889 Victorian Crystal Glass House & Bonsai Garden' : isSaudi ? 'Najdi Mud-Brick Citadel & UNESCO Alleys' : 'Panoramic Grounds',
+          speciality: 'Scenic Panoramas & Exhibitions',
           bookingRequired: false,
           bookingStatus: 'not_booked',
           orderIndex: 3,
@@ -471,27 +683,19 @@ export class ToolHandlers {
         },
         // 4. Late Afternoon Famous Local Hangout Spot
         {
-          title: isBlr
-            ? 'Church Street & Blossoms Book House Cultural Hangout'
-            : isSaudi
-            ? 'Boulevard Riyadh City Dancing Fountains'
-            : `${params.destination} Vibrant Promenade & Artisan Cafes`,
-          description: isBlr
-            ? 'Bangalore favorite bohemian hangout: browse 3 floors of vintage books, sip specialty roasts, and people-watch on Church Street.'
-            : isSaudi
-            ? 'Popular open-air gathering hub featuring dancing music fountains, open-air cafes, boutique shops, and lighted walkways.'
-            : `Soak in the local lifestyle at the city's most beloved gathering plaza and cafe strip.`,
+          title: hangoutInfo.title,
+          description: hangoutInfo.desc,
           category: 'relaxation',
           startTime: '16:00',
           endTime: '17:30',
           durationMinutes: 90,
-          locationName: isBlr ? 'Church Street & Blossoms' : isSaudi ? 'Boulevard Riyadh City' : `${params.destination} Hangout Strip`,
-          locationAddress: isBlr ? 'Church Street, Shanthala Nagar, Bengaluru' : isSaudi ? 'Hittin, Riyadh, Saudi Arabia' : `Promenade, ${params.destination}`,
+          locationName: hangoutInfo.title.split('&')[0].trim(),
+          locationAddress: hangoutInfo.location,
           latitude: coords.lat + 0.003,
           longitude: coords.lng - 0.002,
-          estimatedCost: Math.round((isBlr ? 150 : 25) * (isBlr ? 1 : currencyRate)),
+          estimatedCost: Math.round(25 * currencyRate),
           currency: params.currency,
-          speciality: isBlr ? 'Old Book Browsing & Bangalore Indie Cafe Culture' : isSaudi ? 'Illuminated Dancing Fountains & Luxury Cafes' : 'Local Artisan Coffee & Atmosphere',
+          speciality: hangoutInfo.speciality,
           bookingRequired: false,
           bookingStatus: 'not_booked',
           orderIndex: 4,
@@ -501,40 +705,22 @@ export class ToolHandlers {
             distanceKm: 1.2
           }
         },
-        // 5. Evening Food Street / Vibrant Social Experience
+        // 5. Evening Dining & Night Social Atmosphere
         {
-          title: isBlr
-            ? dietaryChoice === 'veg'
-              ? 'VV Puram Food Street (Thindi Beedi) Evening Feast'
-              : 'Shivaji Military Hotel - Woodfire Mutton Donne Biryani'
-            : isSaudi
-            ? 'Souq Al Zal Evening Antiques & Perfume Market'
-            : `${params.destination} Evening Night Market & Speciality Dining`,
-          description: isBlr
-            ? dietaryChoice === 'veg'
-              ? 'Gourmet street-food crawl through Bangalore legendary Thindi Beedi: hot paddus, butter benne dosas, Congress buns, and jalebis.'
-              : 'Authentic 1924 military hotel serving tender mutton donne biryani slow-cooked over charcoal with chicken sukka.'
-            : isSaudi
-            ? 'Riyadh oldest traditional marketplace filled with authentic oud incense, amber beads, handwoven rugs, and local spices.'
-            : `Experience the vibrant evening social scene and sample celebrated local delicacies.`,
-          category: isSaudi ? 'shopping' : 'dining',
+          title: `${params.destination} Evening Food Feast & Twilight Walk`,
+          description: `Wind down your day with authentic local delicacies, evening music, and vibrant night atmosphere in ${params.destination}.`,
+          category: 'dining',
           startTime: '18:00',
           endTime: '20:00',
           durationMinutes: 120,
-          locationName: isBlr
-            ? dietaryChoice === 'veg' ? 'VV Puram Food Street' : 'Shivaji Military Hotel'
-            : isSaudi ? 'Souq Al Zal' : `${params.destination} Night Hub`,
-          locationAddress: isBlr
-            ? dietaryChoice === 'veg' ? 'Old Tharagupet, Bengaluru' : '8th Block, Jayanagar, Bengaluru'
-            : isSaudi ? 'Al Dirah, Riyadh, Saudi Arabia' : `Boulevard, ${params.destination}`,
+          locationName: `${params.destination} Waterfront Promenade`,
+          locationAddress: `Promenade District, ${params.destination}`,
           latitude: coords.lat - 0.002,
           longitude: coords.lng + 0.002,
-          estimatedCost: Math.round((isBlr ? 200 : 30) * (isBlr ? 1 : currencyRate)),
+          estimatedCost: Math.round(35 * currencyRate),
           currency: params.currency,
-          dietaryTag: isBlr ? (dietaryChoice === 'veg' ? 'veg' : 'non-veg') : 'both',
-          speciality: isBlr
-            ? dietaryChoice === 'veg' ? 'Hot Paddus, Congress Buns & Davangere Benne Dosa' : 'Heritage Charcoal Mutton Donne Biryani'
-            : isSaudi ? 'Rare Oud Incense & Heritage Arabian Crafts' : 'Evening Street Delicacies',
+          dietaryTag: (dietaryChoice === 'veg' ? 'veg' : 'both') as any,
+          speciality: 'Evening Street Specialties & Twilight Views',
           bookingRequired: false,
           bookingStatus: 'not_booked',
           orderIndex: 5,

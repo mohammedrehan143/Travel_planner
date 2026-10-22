@@ -100,43 +100,51 @@ export const TripPilotAPI = {
     input: PlanGenerationRequest,
     onProgress?: (step: string, percent: number, logMsg: string) => void
   ): Promise<PlanGenerationResponse> {
-    try {
-      const headers = await getAuthHeaders();
-      const payload = {
-        origin: input.origin,
-        destination: input.destination,
-        startDate: input.start_date,
-        endDate: input.end_date,
-        travelerCount: input.traveler_count,
-        travelCompanion: input.travel_companion,
-        budget: input.total_budget,
-        currency: input.currency,
-        travelStyle: input.travel_style,
-        interests: input.interests,
-        transportPreference: input.transport_preference,
-        accommodationPreference: input.accommodation_preference,
-        notes: input.notes || `Curated ${input.travel_style} travel`,
-        asyncExecution: false,
-      };
+    const headers = await getAuthHeaders();
+    const payload = {
+      origin: input.origin,
+      destination: input.destination,
+      startDate: input.start_date,
+      endDate: input.end_date,
+      travelerCount: input.traveler_count,
+      travelCompanion: input.travel_companion,
+      budget: input.total_budget,
+      currency: input.currency,
+      travelStyle: input.travel_style,
+      interests: input.interests,
+      transportPreference: input.transport_preference,
+      accommodationPreference: input.accommodation_preference,
+      notes: input.notes || `Curated ${input.travel_style} travel`,
+      asyncExecution: false,
+    };
 
-      const res = await fetch(`${API_URL}/api/trips/plan`, {
+    if (onProgress) onProgress('interpret_request', 15, `Interpreting trip preferences for ${input.destination}...`);
+
+    let res: Response;
+    try {
+      res = await fetch(`${API_URL}/api/trips/plan`, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.itinerary) {
-          return mapBackendItineraryToFrontend(data);
-        }
-      }
-    } catch (err) {
-      console.log('Live backend orchestrator unreachable, switching to browser agent simulation...', err);
+    } catch (networkErr: any) {
+      console.warn(`Could not reach backend at ${API_URL}:`, networkErr?.message || networkErr);
+      throw new Error(`Could not connect to the TripPilot backend service at ${API_URL}. Please verify that the backend server is running.`);
     }
 
-    // High fidelity simulated agent run with realistic multi-step tool calls
-    return await simulateAgenticTripPlanning(input, onProgress);
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      const errMsg = errJson.message || errJson.error || `Server responded with HTTP ${res.status}`;
+      throw new Error(`Trip planning error: ${errMsg}`);
+    }
+
+    const data = await res.json();
+    if (data.itinerary) {
+      if (onProgress) onProgress('save_trip', 100, `Finalizing structured itinerary for ${input.destination}...`);
+      return mapBackendItineraryToFrontend(data);
+    }
+
+    throw new Error('Trip planning service returned an invalid itinerary structure.');
   },
 
   /**
@@ -404,6 +412,26 @@ async function simulateAgenticTripPlanning(
     lat = 12.9716;
     lng = 77.5946;
     coverImg = 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('goa')) {
+    lat = 15.2993;
+    lng = 74.1240;
+    coverImg = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('rajasthan') || destLower.includes('jaipur')) {
+    lat = 26.9124;
+    lng = 75.7873;
+    coverImg = 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('manali') || destLower.includes('himachal')) {
+    lat = 32.2432;
+    lng = 77.1892;
+    coverImg = 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('kerala') || destLower.includes('kochi')) {
+    lat = 9.9312;
+    lng = 76.2673;
+    coverImg = 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=1200&q=80';
+  } else if (destLower.includes('mumbai')) {
+    lat = 19.0760;
+    lng = 72.8777;
+    coverImg = 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=80';
   } else if (destLower.includes('saudi') || destLower.includes('riyadh')) {
     lat = 24.7136;
     lng = 46.6753;

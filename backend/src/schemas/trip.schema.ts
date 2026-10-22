@@ -43,7 +43,7 @@ export const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 export const timeRegex = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
 export const planTripSchema = z.object({
-  origin: z.string().min(2, 'Origin city or address is required'),
+  origin: z.string().min(2, 'Origin city or address is required').optional().default('Current Location'),
   destination: z.string().min(2, 'Destination city or region is required'),
   startDate: z.string().regex(dateRegex, 'startDate must be formatted as YYYY-MM-DD'),
   endDate: z.string().regex(dateRegex, 'endDate must be formatted as YYYY-MM-DD'),
@@ -54,8 +54,8 @@ export const planTripSchema = z.object({
   currency: z.string().length(3).default('USD'),
   travelStyle: travelStyleEnum.default('balanced'),
   interests: z.array(z.string()).default([]),
-  transportPreference: z.enum(['flight', 'train', 'car', 'public_transit', 'flexible']).default('flexible'),
-  accommodationPreference: z.enum(['hotel', 'hostel', 'resort', 'apartment', 'villa', 'flexible']).default('hotel'),
+  transportPreference: z.string().optional().default('flexible'),
+  accommodationPreference: z.string().optional().default('hotel'),
   notes: z.string().max(1000).optional(),
   tripId: z.string().uuid().optional(),
   asyncExecution: z.boolean().default(false)

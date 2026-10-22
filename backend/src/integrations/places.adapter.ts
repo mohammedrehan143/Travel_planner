@@ -562,6 +562,287 @@ const CURATED_PLACES: CuratedPlaceCatalog = {
         description: 'Oldest bazaar in Riyadh filled with aromas of burning oud, authentic handwoven carpets, antiques, and traditional daggers.'
       }
     ]
+  },
+  goa: {
+    center: { lat: 15.2993, lng: 74.1240 },
+    places: [
+      {
+        id: 'goa-001',
+        name: 'Fort Aguada & 1864 Portuguese Lighthouse',
+        category: 'sightseeing',
+        address: 'Aguada Fort Rd, Candolim, Goa 403515',
+        lat: 15.4920,
+        lng: 73.7735,
+        rating: 4.6,
+        reviewCount: 38000,
+        priceLevel: 1,
+        estimatedCost: 50,
+        openingHours: {
+          openTime: '09:00',
+          closeTime: '17:30',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Commanding 17th-century Portuguese fortress overlooking the Arabian Sea, featuring a historic 4-tiered lighthouse and stone ramparts.'
+      },
+      {
+        id: 'goa-002',
+        name: 'Basilica of Bom Jesus (UNESCO World Heritage Site)',
+        category: 'cultural',
+        address: 'Old Goa Rd, Bainguinim, Goa 403402',
+        lat: 15.5009,
+        lng: 73.9116,
+        rating: 4.7,
+        reviewCount: 42000,
+        priceLevel: 1,
+        estimatedCost: 0,
+        openingHours: {
+          openTime: '09:00',
+          closeTime: '18:30',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Magnificent 1605 Baroque basilica holding the sacred mortal remains of St. Francis Xavier, renowned for ornate gilded woodwork and marble altars.'
+      },
+      {
+        id: 'goa-003',
+        name: 'Fontainhas Latin Quarter Heritage Walk',
+        category: 'cultural',
+        address: 'Fontainhas, Altinho, Panaji, Goa 403001',
+        lat: 15.4989,
+        lng: 73.8278,
+        rating: 4.6,
+        reviewCount: 22000,
+        priceLevel: 1,
+        estimatedCost: 0,
+        openingHours: {
+          openTime: '07:00',
+          closeTime: '21:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Asia\'s only surviving Latin Quarter featuring narrow cobblestone alleys lined with vibrant pastel Portuguese villas, tiled roofs, and heritage cafes.'
+      },
+      {
+        id: 'goa-004',
+        name: 'Anjuna Beach & Sun-Kissed Flea Market Promenade',
+        category: 'relaxation',
+        address: 'Anjuna Beach, Anjuna, Goa 403509',
+        lat: 15.5733,
+        lng: 73.7410,
+        rating: 4.5,
+        reviewCount: 29000,
+        priceLevel: 1,
+        estimatedCost: 0,
+        openingHours: {
+          openTime: '06:00',
+          closeTime: '23:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Iconic golden shoreline framed by red laterite cliffs, swaying coconut palms, world-famous beach shacks, and vibrant flea market culture.'
+      },
+      {
+        id: 'goa-005',
+        name: 'Vinayak Family Restaurant - Authentic Goan Seafood & Thali',
+        category: 'dining',
+        address: 'House No. 252, Main Road, Assagao, Goa 403507',
+        lat: 15.5898,
+        lng: 73.7845,
+        rating: 4.7,
+        reviewCount: 16500,
+        priceLevel: 2,
+        estimatedCost: 280,
+        openingHours: {
+          openTime: '12:30',
+          closeTime: '22:30',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Celebrated local culinary haven famous for authentic Goan Fish Curry Thali, Prawn Balchão, Rava Fried Kingfish, and refreshing Sol Kadhi.'
+      },
+      {
+        id: 'goa-006',
+        name: 'Palolem Beach & Butterfly Island Cove',
+        category: 'relaxation',
+        address: 'Palolem Beach, Canacona, South Goa 403702',
+        lat: 15.0100,
+        lng: 74.0232,
+        rating: 4.8,
+        reviewCount: 34000,
+        priceLevel: 1,
+        estimatedCost: 0,
+        openingHours: {
+          openTime: '06:00',
+          closeTime: '23:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Idyllic crescent bay in South Goa renowned for tranquil calm waters, beachside wooden huts, dolphin-spotting boat trips, and couples sunset dining.'
+      }
+    ]
+  },
+  rajasthan: {
+    center: { lat: 26.9124, lng: 75.7873 },
+    places: [
+      {
+        id: 'raj-001',
+        name: 'Amer Fort & Sheesh Mahal (Mirror Palace)',
+        category: 'cultural',
+        address: 'Devi Singhpura, Amer, Jaipur, Rajasthan 302001',
+        lat: 26.9855,
+        lng: 75.8513,
+        rating: 4.8,
+        reviewCount: 58000,
+        priceLevel: 2,
+        estimatedCost: 150,
+        openingHours: {
+          openTime: '08:00',
+          closeTime: '17:30',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Imposing 16th-century Rajput-Mughal hilltop fortress constructed of red sandstone and marble, housing the glittering Sheesh Mahal mirror hall.'
+      },
+      {
+        id: 'raj-002',
+        name: 'Hawa Mahal (Palace of Winds)',
+        category: 'sightseeing',
+        address: 'Hawa Mahal Rd, Badi Choupad, Jaipur, Rajasthan 302002',
+        lat: 26.9239,
+        lng: 75.8267,
+        rating: 4.6,
+        reviewCount: 46000,
+        priceLevel: 1,
+        estimatedCost: 50,
+        openingHours: {
+          openTime: '09:00',
+          closeTime: '17:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Iconic 1799 pink sandstone palace facade featuring 953 intricately carved jharokha honeycomb windows designed for royal breezes.'
+      },
+      {
+        id: 'raj-003',
+        name: 'City Palace Complex & Mubarak Mahal',
+        category: 'cultural',
+        address: 'Tulsi Marg, Gangori Bazaar, Jaipur, Rajasthan 302002',
+        lat: 26.9258,
+        lng: 75.8237,
+        rating: 4.7,
+        reviewCount: 39000,
+        priceLevel: 2,
+        estimatedCost: 200,
+        openingHours: {
+          openTime: '09:30',
+          closeTime: '17:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Sprawling royal citadel blending Rajput and Mughal architectural styles, housing royal museums, ceremonial courtyards, and the Peacock Gate.'
+      },
+      {
+        id: 'raj-004',
+        name: 'Mehrangarh Fort Citadel (Jodhpur)',
+        category: 'cultural',
+        address: 'P.B# 165, The Fort, Jodhpur, Rajasthan 342006',
+        lat: 26.2978,
+        lng: 73.0185,
+        rating: 4.9,
+        reviewCount: 48000,
+        priceLevel: 2,
+        estimatedCost: 200,
+        openingHours: {
+          openTime: '09:00',
+          closeTime: '17:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'One of India\'s largest and most magnificent citadels perched 400 feet above the blue city of Jodhpur, containing expansive palace galleries.'
+      },
+      {
+        id: 'raj-005',
+        name: 'Laxmi Mishthan Bhandar (LMB) - Pure Royal Rajasthani Dining',
+        category: 'dining',
+        address: 'Johari Bazar, Jaipur, Rajasthan 302003',
+        lat: 26.9205,
+        lng: 75.8260,
+        rating: 4.5,
+        reviewCount: 24000,
+        priceLevel: 2,
+        estimatedCost: 450,
+        openingHours: {
+          openTime: '08:00',
+          closeTime: '23:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Historic culinary institution serving authentic royal Rajasthani Dal Baati Churma, Gatte ki Sabzi, Ker Sangri, and freshly baked Pyaaz Kachoris.'
+      }
+    ]
+  },
+  manali: {
+    center: { lat: 32.2432, lng: 77.1892 },
+    places: [
+      {
+        id: 'man-001',
+        name: 'Solang Valley & Alpine Adventure Panorama',
+        category: 'outdoor',
+        address: 'Solang Valley, Manali, Himachal Pradesh 175103',
+        lat: 32.3166,
+        lng: 77.1575,
+        rating: 4.7,
+        reviewCount: 35000,
+        priceLevel: 1,
+        estimatedCost: 100,
+        openingHours: {
+          openTime: '08:00',
+          closeTime: '18:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Spectacular alpine mountain valley surrounded by snow-draped Himalayan ridges, cedar forests, and scenic viewpoints.'
+      },
+      {
+        id: 'man-002',
+        name: 'Hadimba Devi 1553 Cedar Pagoda Shrine',
+        category: 'cultural',
+        address: 'Hadimba Temple Rd, Old Manali, Himachal Pradesh 175131',
+        lat: 32.2483,
+        lng: 77.1804,
+        rating: 4.6,
+        reviewCount: 41000,
+        priceLevel: 1,
+        estimatedCost: 20,
+        openingHours: {
+          openTime: '08:00',
+          closeTime: '18:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Historic 16th-century four-tiered wooden pagoda temple carved with mythological motifs nestled amid towering deodar forests.'
+      },
+      {
+        id: 'man-003',
+        name: 'Old Manali Riverside Village & Artisan Cafes',
+        category: 'relaxation',
+        address: 'Old Manali, Manali, Himachal Pradesh 175131',
+        lat: 32.2536,
+        lng: 77.1772,
+        rating: 4.7,
+        reviewCount: 18000,
+        priceLevel: 1,
+        estimatedCost: 0,
+        openingHours: {
+          openTime: '08:00',
+          closeTime: '22:00',
+          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          isOpenToday: true
+        },
+        description: 'Peaceful bohemian mountain hamlet featuring traditional Himachali stone houses, riverside apple orchards, and indie cafes.'
+      }
+    ]
   }
 };
 
@@ -584,6 +865,9 @@ export class PlacesAdapter {
     else if (destLower.includes('saudi') || destLower.includes('riyadh')) catalogKey = 'saudi';
     else if (destLower.includes('paris')) catalogKey = 'paris';
     else if (destLower.includes('tokyo') || destLower.includes('japan')) catalogKey = 'tokyo';
+    else if (destLower.includes('goa')) catalogKey = 'goa';
+    else if (destLower.includes('rajasthan') || destLower.includes('jaipur') || destLower.includes('jodhpur') || destLower.includes('udaipur')) catalogKey = 'rajasthan';
+    else if (destLower.includes('manali') || destLower.includes('himachal')) catalogKey = 'manali';
     else {
       const firstWord = destLower.split(/[, ]+/)[0];
       if (CURATED_PLACES[firstWord]) catalogKey = firstWord;
@@ -774,6 +1058,39 @@ export class PlacesAdapter {
     if (destLower.includes('bangalore') || destLower.includes('bengaluru')) {
       return { lat: 12.9716, lng: 77.5946 };
     }
+    if (destLower.includes('goa')) {
+      return { lat: 15.2993, lng: 74.1240 };
+    }
+    if (destLower.includes('rajasthan') || destLower.includes('jaipur')) {
+      return { lat: 26.9124, lng: 75.7873 };
+    }
+    if (destLower.includes('udaipur')) {
+      return { lat: 24.5854, lng: 73.7125 };
+    }
+    if (destLower.includes('jodhpur')) {
+      return { lat: 26.2918, lng: 73.0168 };
+    }
+    if (destLower.includes('manali') || destLower.includes('himachal')) {
+      return { lat: 32.2432, lng: 77.1892 };
+    }
+    if (destLower.includes('shimla')) {
+      return { lat: 31.1048, lng: 77.1734 };
+    }
+    if (destLower.includes('kashmir') || destLower.includes('gulmarg') || destLower.includes('srinagar')) {
+      return { lat: 34.0837, lng: 74.7973 };
+    }
+    if (destLower.includes('kerala') || destLower.includes('kochi') || destLower.includes('cochin')) {
+      return { lat: 9.9312, lng: 76.2673 };
+    }
+    if (destLower.includes('munnar')) {
+      return { lat: 10.0889, lng: 77.0595 };
+    }
+    if (destLower.includes('agra')) {
+      return { lat: 27.1767, lng: 78.0081 };
+    }
+    if (destLower.includes('varanasi')) {
+      return { lat: 25.3176, lng: 82.9739 };
+    }
     if (destLower.includes('saudi') || destLower.includes('riyadh')) {
       return { lat: 24.7136, lng: 46.6753 };
     }
@@ -800,6 +1117,21 @@ export class PlacesAdapter {
     }
     if (destLower.includes('york')) {
       return { lat: 40.7128, lng: -74.0060 };
+    }
+    if (destLower.includes('rome') || destLower.includes('italy')) {
+      return { lat: 41.9028, lng: 12.4964 };
+    }
+    if (destLower.includes('singapore')) {
+      return { lat: 1.3521, lng: 103.8198 };
+    }
+    if (destLower.includes('zermatt') || destLower.includes('switzerland') || destLower.includes('swiss')) {
+      return { lat: 45.9765, lng: 7.7491 };
+    }
+    if (destLower.includes('bali') || destLower.includes('indonesia')) {
+      return { lat: -8.4095, lng: 115.1889 };
+    }
+    if (destLower.includes('maldives')) {
+      return { lat: 3.2028, lng: 73.2207 };
     }
 
     try {

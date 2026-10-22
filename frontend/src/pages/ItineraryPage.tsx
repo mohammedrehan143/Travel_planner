@@ -48,6 +48,9 @@ export const ItineraryPage: React.FC = () => {
   const navigate = useNavigate();
   const {
     trips,
+    tripDays,
+    activities,
+    activeTrip,
     activeTripDays,
     activeTripActivities,
     activeAccommodations,
@@ -66,17 +69,18 @@ export const ItineraryPage: React.FC = () => {
   // Find target trip
   const trip = trips.find((t) => t.id === id) || trips[0];
 
-  // Set active trip in context if needed
+  // Set active trip in context whenever id or trip changes
   React.useEffect(() => {
-    if (trip && trip.id !== id) {
+    if (trip && trip.id) {
       setActiveTripId(trip.id);
     }
-  }, [id, trip]);
+    setSelectedDayIndex(0);
+  }, [id, trip?.id]);
 
-  const days = activeTripDays || [];
+  const days = (trip && tripDays && tripDays[trip.id]) || activeTripDays || [];
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
   const currentDay = days[selectedDayIndex] || days[0];
-  const dayActivities = currentDay ? (activeTripActivities[currentDay.id] || []) : [];
+  const dayActivities = currentDay ? ((activities && activities[currentDay.id]) || activeTripActivities[currentDay.id] || []) : [];
 
   // Modals & Panels State
   const [editModalOpen, setEditModalOpen] = useState(false);

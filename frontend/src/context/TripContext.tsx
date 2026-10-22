@@ -20,6 +20,8 @@ interface TripContextType {
   activeTrip: Trip | null;
   activeTripDays: TripDay[];
   activeTripActivities: Record<string, Activity[]>;
+  tripDays: Record<string, TripDay[]>;
+  activities: Record<string, Activity[]>;
   activeAccommodations: Accommodation[];
   activeExpenses: TripExpense[];
   activeCollaborators: TripCollaborator[];
@@ -707,6 +709,8 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeTrip,
         activeTripDays,
         activeTripActivities: activities,
+        tripDays,
+        activities,
         activeAccommodations,
         activeExpenses,
         activeCollaborators,

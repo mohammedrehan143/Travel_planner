@@ -14,7 +14,8 @@ import {
   ArrowLeft,
   CheckCircle2,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { useTrips } from '../context/TripContext';
 import { TravelStyle, TripCreateWizardInput } from '../types';
@@ -30,10 +31,11 @@ export const TripWizardPage: React.FC = () => {
   const [currentAgentStep, setCurrentAgentStep] = useState<string>('initialized');
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [agentLogs, setAgentLogs] = useState<string[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Wizard state
-  const [origin, setOrigin] = useState('Bangalore, India');
-  const [destination, setDestination] = useState('Bangalore, Karnataka');
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('2026-11-10');
   const [endDate, setEndDate] = useState('2026-11-10');
   const [travelerCount, setTravelerCount] = useState<number>(1);
@@ -106,9 +108,11 @@ export const TripWizardPage: React.FC = () => {
   };
 
   const handleGenerate = async () => {
+    if (isGenerating) return;
     setIsGenerating(true);
+    setErrorMsg(null);
     setProgressPercent(10);
-    setAgentLogs(['Initializing TripPilot Agentic AI orchestrator...']);
+    setAgentLogs([`Initializing TripPilot AI Agent for ${destination.trim()}...`]);
 
     const input: TripCreateWizardInput = {
       origin,
@@ -139,9 +143,10 @@ export const TripWizardPage: React.FC = () => {
       // Navigate to the newly generated trip
       setTimeout(() => {
         navigate(`/trip/${generatedTrip.id}`);
-      }, 600);
-    } catch (err) {
+      }, 400);
+    } catch (err: any) {
       console.error('Trip generation error', err);
+      setErrorMsg(err?.message || 'Failed to generate itinerary. Please try again.');
       setIsGenerating(false);
     }
   };
@@ -247,16 +252,15 @@ export const TripWizardPage: React.FC = () => {
                     label="Starting City (Origin)"
                     value={origin}
                     onChange={setOrigin}
-                    placeholder="e.g. Bangalore, India"
+                    placeholder="e.g. Current Location, Mumbai, London"
                     icon={<MapPin className="w-4 h-4 text-slate-400" />}
-                    required
                   />
 
                   <PlaceAutocomplete
                     label="Target Destination"
                     value={destination}
                     onChange={setDestination}
-                    placeholder="e.g. Saudi Arabia, Bangalore, Dubai"
+                    placeholder="e.g. Goa, Paris, Tokyo, Manali, Jaipur"
                     icon={<Compass className="w-4 h-4 text-blue-600" />}
                     required
                   />
@@ -598,6 +602,23 @@ export const TripWizardPage: React.FC = () => {
               </div>
             )}
 
+            {/* Error Banner */}
+            {errorMsg && (
+              <div className="mt-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{errorMsg}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setErrorMsg(null)}
+                  className="text-rose-500 hover:text-rose-700 font-bold text-xs shrink-0"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {/* Step Navigation Buttons */}
             <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
               {step > 1 ? (
@@ -616,7 +637,14 @@ export const TripWizardPage: React.FC = () => {
               {step < 4 ? (
                 <button
                   type="button"
-                  onClick={() => setStep(step + 1)}
+                  onClick={() => {
+                    if (step === 1 && !destination.trim()) {
+                      setErrorMsg('Please specify a destination to proceed.');
+                      return;
+                    }
+                    setErrorMsg(null);
+                    setStep(step + 1);
+                  }}
                   className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-colors"
                 >
                   <span>Next Step</span>

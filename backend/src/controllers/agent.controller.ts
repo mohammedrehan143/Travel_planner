@@ -31,9 +31,12 @@ export class AgentController {
         const endDateObj = new Date(startDateObj.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000);
         const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
-        const isIndianDest = /bangalore|bengaluru|goa|mumbai|delhi|jaipur|kerala|hyderabad|chennai|kolkata|india/i.test(dest);
+        const isIndianDest = /bangalore|bengaluru|goa|mumbai|delhi|jaipur|rajasthan|kerala|hyderabad|chennai|kolkata|manali|shimla|kashmir|agra|varanasi|rishikesh|ladakh|ooty|darjeeling|munnar|udaipur|jodhpur|amritsar|india/i.test(dest);
         const currency = chatResult.tripParams.currency || (context?.currency as string) || (isIndianDest ? 'INR' : 'USD');
-        const defaultBudget = currency === 'INR' ? (durationDays === 1 ? 2500 : 15000) : (durationDays === 1 ? 150 : 2000);
+        const isBudget = chatResult.tripParams.travelStyle === 'budget' || /budget|cheap/i.test(message);
+        const defaultBudget = currency === 'INR'
+          ? (durationDays === 1 ? (isBudget ? 1200 : 2500) : (isBudget ? 6000 : 15000))
+          : (durationDays === 1 ? (isBudget ? 80 : 150) : (isBudget ? 800 : 2000));
 
         const planReq: PlanTripRequest = {
           userId,

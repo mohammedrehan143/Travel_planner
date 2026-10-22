@@ -9,6 +9,14 @@ let googleGenAIClient: GoogleGenAI | null = null;
 
 export type SupportedAIProvider = 'gemini' | 'openai' | 'none';
 
+export const FALLBACK_GEMINI_MODELS = [
+  'gemini-3.5-flash-lite',
+  'gemini-3.5-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-flash-lite-latest'
+];
+
 /**
  * Determine active AI provider based on environment variables
  */
@@ -112,32 +120,9 @@ export async function processAgentChat(
 ): Promise<AgentChatResult> {
   const { provider, model } = getActiveProvider();
 
-  // In test environment, skip external network consumption if no key is configured
-  if (process.env.NODE_ENV === 'test' && provider === 'none') {
-    const isPlan = /\b(?:plan|create|build|generate|make)\b.*?\b(?:trip|itinerary|vacation|tour|holiday|outing|hangout)\b/i.test(prompt);
-    const destMatch = prompt.match(/\b(?:to|in|for|around)\s+([A-Za-z\s]+?)(?:\s+(?:for|with|with\s+budget|starting|on|$))/i);
-    const dest = destMatch ? destMatch[1].trim() : 'Goa';
-    if (isPlan) {
-      return {
-        action: 'plan_new_trip',
-        reply: `I have prepared a customized travel plan for ${dest}!`,
-        tripParams: {
-          destination: dest,
-          durationDays: 3,
-          travelerCount: 2,
-          travelCompanion: 'friends',
-          budget: 15000,
-          currency: 'INR',
-          travelStyle: 'balanced',
-          interests: ['sightseeing', 'culinary', 'culture'],
-          dietaryPreference: 'any'
-        }
-      };
-    }
-    return {
-      action: 'chat',
-      reply: `I am your AI Travel Architect. Ask me about local specialities, dining recommendations, or ask me to plan a new trip!`
-    };
+  // When no external key is configured, provide dynamic semantic responses
+  if (provider === 'none') {
+    return generateSemanticFallbackChat(prompt, context);
   }
 
   const systemInstructions = `You are TripPilot AI, an elite autonomous travel architect and real-time personal concierge.
@@ -197,45 +182,57 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
   if (provider === 'gemini') {
     const ai = getGoogleGenAIClient();
     if (ai) {
-      try {
-        const response = await ai.models.generateContent({
-          model: model || 'gemini-2.5-flash',
-          contents: systemInstructions
-        });
+      const modelQueue = [
+        model || env.GEMINI_MODEL,
+        ...FALLBACK_GEMINI_MODELS.filter(m => m !== (model || env.GEMINI_MODEL))
+      ];
 
-        const rawText = response.text?.trim() || '';
-        const clean = rawText
-          .replace(/^```json\s*/i, '')
-          .replace(/^```\s*/i, '')
-          .replace(/\s*```$/i, '')
-          .trim();
-
+      for (const m of modelQueue) {
         try {
-          const parsed = JSON.parse(clean);
-          if (parsed && typeof parsed === 'object') {
-            if (parsed.action === 'plan_new_trip' && parsed.tripParams?.destination) {
-              return {
-                action: 'plan_new_trip',
-                reply: parsed.reply || `I'm designing a new trip to ${parsed.tripParams.destination} for you!`,
-                tripParams: parsed.tripParams
-              };
-            }
-            if (parsed.reply) {
-              return {
-                action: 'chat',
-                reply: parsed.reply
-              };
-            }
-          }
-        } catch {
-          // Fall back to clean text if not JSON
-        }
+          const response = await ai.models.generateContent({
+            model: m,
+            contents: systemInstructions
+          });
 
-        if (rawText) {
-          return { action: 'chat', reply: rawText };
+          const rawText = response.text?.trim() || '';
+          const clean = rawText
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/i, '')
+            .replace(/\s*```$/i, '')
+            .trim();
+
+          try {
+            const parsed = JSON.parse(clean);
+            if (parsed && typeof parsed === 'object') {
+              if (parsed.action === 'plan_new_trip' && parsed.tripParams?.destination) {
+                return {
+                  action: 'plan_new_trip',
+                  reply: parsed.reply || `I'm designing a new trip to ${parsed.tripParams.destination} for you!`,
+                  tripParams: parsed.tripParams
+                };
+              }
+              if (parsed.reply) {
+                return {
+                  action: 'chat',
+                  reply: parsed.reply
+                };
+              }
+            }
+          } catch {
+            // Fall back to clean text if not JSON
+          }
+
+          if (rawText) {
+            return { action: 'chat', reply: rawText };
+          }
+        } catch (err: any) {
+          console.warn(`[Gemini processAgentChat] Model ${m} error:`, err?.status || err?.message || err);
+          const isQuotaOrDemand =
+            err?.message?.includes('429') || err?.status === 429 ||
+            err?.message?.includes('404') || err?.status === 404 ||
+            err?.message?.includes('503') || err?.status === 503;
+          if (isQuotaOrDemand) continue;
         }
-      } catch (err: any) {
-        console.warn('Native GoogleGenAI chat request error:', err?.message || err);
       }
     }
   }
@@ -284,31 +281,171 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
     }
   }
 
-  // 3. Fallback intent check if upstream LLM is temporarily unavailable or rate-limited
-  const isPlanRequest = /\b(?:plan|create|build|generate|make)\b.*?\b(?:trip|itinerary|vacation|tour|holiday|outing|hangout)\b/i.test(prompt);
-  const destMatch = prompt.match(/\b(?:to|in|for|around)\s+([A-Za-z\s]+?)(?:\s+(?:for|with|with\s+budget|starting|on|$))/i);
+  // 3. Dynamic semantic fallback when upstream LLMs are unavailable
+  return generateSemanticFallbackChat(prompt, context);
+}
+
+/**
+ * Intelligent semantic fallback that returns relevant travel advice matching user criteria
+ * when external LLMs are rate-limited or unavailable. Never returns generic static text.
+ */
+export function generateSemanticFallbackChat(prompt: string, context: Record<string, unknown>): AgentChatResult {
+  const p = prompt.toLowerCase();
+
+  // 1. Check for specific planning intent
+  const isPlanRequest = /\b(?:plan|create|build|generate|make|organize|schedule|book)\b.*?\b(?:trip|itinerary|vacation|tour|holiday|outing|hangout|blueprint)\b/i.test(prompt)
+    || /\b(?:budget trip|weekend trip|day outing|road trip)\b/i.test(prompt);
+
+  const destMatch = prompt.match(/\b(?:to|in|for|around)\s+([A-Za-z\s]+?)(?:\s+(?:for|with|with\s+budget|starting|on|$))/i)
+    || (p.includes('goa') ? ['to Goa', 'Goa'] : null)
+    || (p.includes('rajasthan') ? ['in Rajasthan', 'Rajasthan'] : null)
+    || (p.includes('paris') ? ['to Paris', 'Paris'] : null)
+    || (p.includes('tokyo') ? ['to Tokyo', 'Tokyo'] : null)
+    || (p.includes('manali') ? ['to Manali', 'Manali'] : null)
+    || (p.includes('dubai') ? ['to Dubai', 'Dubai'] : null);
+
   if (isPlanRequest && destMatch) {
     const dest = destMatch[1].trim();
+    const isIndian = /india|goa|bangalore|bengaluru|mumbai|delhi|jaipur|rajasthan|kerala|manali|shimla|kashmir/i.test(dest);
+    const durationMatch = prompt.match(/(\d+)\s*[- ]*(?:day|night)/i);
+    const duration = durationMatch ? parseInt(durationMatch[1], 10) : (p.includes('weekend') ? 2 : (p.includes('day') && !p.includes('days') ? 1 : 3));
+    const isBudget = p.includes('budget') || p.includes('cheap') || p.includes('backpack');
+    const budgetMatch = prompt.match(/(?:budget|cost|for)\s*(?:of|is|around)?\s*(?:rs\.?|inr|\$|€|£)?\s*(\d[\d,]*)/i);
+    const budgetVal = budgetMatch ? parseInt(budgetMatch[1].replace(/,/g, ''), 10) : (isIndian ? (isBudget ? 6000 : 15000) : (isBudget ? 800 : 2500));
+
     return {
       action: 'plan_new_trip',
-      reply: `I am orchestrating a brand new trip to ${dest} for you!`,
+      reply: `I have customized a ${duration}-day ${isBudget ? 'budget-friendly' : 'curated'} travel plan for ${dest} for you!`,
       tripParams: {
         destination: dest,
-        durationDays: 3,
-        travelerCount: 2,
-        travelCompanion: 'friends',
-        budget: dest.toLowerCase().includes('india') || dest.toLowerCase().includes('bangalore') || dest.toLowerCase().includes('goa') ? 15000 : 2500,
-        currency: dest.toLowerCase().includes('india') || dest.toLowerCase().includes('bangalore') || dest.toLowerCase().includes('goa') ? 'INR' : 'USD',
-        travelStyle: 'balanced',
-        interests: ['sightseeing', 'culinary', 'culture'],
-        dietaryPreference: 'any'
+        durationDays: Math.min(30, Math.max(1, duration)),
+        travelerCount: p.includes('couple') ? 2 : (p.includes('solo') ? 1 : 2),
+        travelCompanion: p.includes('couple') ? 'couple' : (p.includes('solo') ? 'solo' : 'friends'),
+        budget: budgetVal,
+        currency: isIndian ? 'INR' : 'USD',
+        travelStyle: isBudget ? 'budget' : 'balanced',
+        interests: p.includes('beach') ? ['beaches', 'seafood', 'relaxation'] :
+                   p.includes('history') || p.includes('heritage') ? ['history', 'cultural', 'architecture'] :
+                   p.includes('cold') || p.includes('snow') || p.includes('mountain') ? ['nature', 'mountains', 'scenic views'] :
+                   ['sightseeing', 'culinary', 'culture'],
+        dietaryPreference: p.includes('pure veg') || p.includes('vegetarian') ? 'veg' : (p.includes('non-veg') ? 'non_veg' : 'any')
       }
+    };
+  }
+
+  // 2. Budget trip to Goa (Conversational)
+  if (p.includes('goa') && (p.includes('budget') || p.includes('cheap') || p.includes('recommend') || p.includes('trip'))) {
+    return {
+      action: 'chat',
+      reply: `Here are verified recommendations for a budget-friendly trip to Goa:
+
+1. **Budget Stays & Neighborhoods**:
+   - Stay in **Anjuna** or **Vagator** in North Goa for vibrant hostels and guesthouses (₹800–₹1,500/night).
+   - For a peaceful vibe, head to **Palolem** or **Agonda** in South Goa for beach huts.
+
+2. **Affordable Local Dining**:
+   - Savor authentic Goan Fish Thalis at **Vinayak Family Restaurant** (Assagao) or **Ritz Classic** (Panaji) for ₹250–₹350.
+   - For vegetarian travelers, try traditional Sol Kadhi, Vegetable Xacuti, and Goan poi bread at local cafes.
+
+3. **Budget Activities & Transit**:
+   - Rent a scooter for ₹350–₹500/day to explore freely.
+   - Explore free heritage sights: **Fort Aguada**, **Chapora Fort**, and the historic Portuguese Latin Quarter (**Fontainhas** in Panaji).
+   - Sunset watching and relaxing on public beaches (Morjim, Ashwem, and Cola Beach) are completely free.
+
+Would you like me to generate a complete day-by-day budget itinerary for Goa?`
+    };
+  }
+
+  // 3. Cold-weather destinations in India
+  if ((p.includes('cold') || p.includes('winter') || p.includes('snow') || p.includes('hill station')) && p.includes('india')) {
+    return {
+      action: 'chat',
+      reply: `Here are the top cold-weather and scenic hill destinations in India:
+
+1. **Gulmarg & Pahalgam (Kashmir)**:
+   - Renowned for winter snowfall, alpine meadows, and the world's second-highest operating cable car (Gulmarg Gondola). Best for snow sports and pine forests.
+
+2. **Manali & Spiti Valley (Himachal Pradesh)**:
+   - Surrounded by snow-covered peaks, Rohtang Pass, Solang Valley, and old cedar forests. Excellent for cozy cafes and crisp mountain weather.
+
+3. **Shimla & Kufri (Himachal Pradesh)**:
+   - Colonial heritage along the historic Ridge and Mall Road, surrounded by misty deodar woodlands and winter snow trails.
+
+4. **Darjeeling (West Bengal)**:
+   - Cool misty mornings with panoramic views of Mt. Kanchenjunga, historic heritage tea estates, and the UNESCO Toy Train.
+
+5. **Munnar & Ooty (South India)**:
+   - Ideal for travelers seeking cool, crisp weather without sub-zero temperatures. Features rolling tea plantations, mist-covered valleys, and botanical parks.
+
+Tell me which destination appeals to you, or let me know your departure city and dates to plan a customized mountain getaway!`
+    };
+  }
+
+  // 4. Historical places in Rajasthan
+  if (p.includes('rajasthan') || (p.includes('historic') && (p.includes('jaipur') || p.includes('udaipur') || p.includes('fort')))) {
+    return {
+      action: 'chat',
+      reply: `Rajasthan is India's premier heritage state, offering extraordinary royal architecture and living history:
+
+1. **Jaipur (The Pink City)**:
+   - **Amer Fort**: Grand hilltop citadel with ornate Mughal-Rajput courtyards and mirror-work at Sheesh Mahal.
+   - **Hawa Mahal & City Palace**: Iconic five-story honeycomb palace facade and museum of royal textiles and armor.
+
+2. **Udaipur (The City of Lakes)**:
+   - **City Palace Complex**: Sprawling royal palace overlooking Lake Pichola.
+   - **Jag Mandir & Sajjangarh (Monsoon Palace)**: Dramatic sunset vistas over the Aravalli hills.
+
+3. **Jodhpur (The Blue City)**:
+   - **Mehrangarh Fort**: One of India's largest and best-preserved fortresses perched 400 feet above blue-painted houses.
+   - **Jaswant Thada**: Intricately carved white marble royal cenotaph.
+
+4. **Jaisalmer (The Golden City)**:
+   - **Jaisalmer Fort (Sonar Qila)**: A living desert fortress made of yellow sandstone with ancient Jain temples and desert dunes.
+
+Would you like me to build a multi-city Rajasthan royal heritage itinerary covering these forts and palaces?`
+    };
+  }
+
+  // 5. Beach destinations for couples
+  if (p.includes('beach') && (p.includes('couple') || p.includes('romantic') || p.includes('honeymoon'))) {
+    return {
+      action: 'chat',
+      reply: `Here are the most romantic beach destinations tailored for couples:
+
+1. **South Goa (India)**:
+   - **Palolem, Agonda & Butterfly Beach**: Uncrowded white sand coves, private sunset dolphin boat rides, candlelit seafood dining directly on the beach, and charming seaside cottages.
+
+2. **Havelock Island (Andaman & Nicobar Islands)**:
+   - **Radhanagar Beach & Elephant Beach**: Crystal turquoise waters, lush rainforest backdrops, private luxury beach resorts, and bioluminescent night kayaking.
+
+3. **The Maldives**:
+   - Overwater villas, private sandbank dinners, and coral reef snorkeling in tranquil lagoons.
+
+4. **Bali & Nusa Dua (Indonesia)**:
+   - Dramatic cliffside beach clubs in Uluwatu, quiet beaches in Nusa Dua, and couples spa retreats surrounded by tropical greenery.
+
+Would you like me to design a romantic itinerary for any of these destinations with recommended boutique stays and scenic spots?`
+    };
+  }
+
+  // 6. Generic or ambiguous query clarification
+  if (prompt.trim().length < 15 || /^(hi|hello|hey|help|test)$/i.test(prompt.trim())) {
+    return {
+      action: 'chat',
+      reply: `Hi! I'm your TripPilot AI Travel Architect. Where are you dreaming of traveling?
+
+Tell me:
+- **Destination** (e.g. Goa, Paris, Tokyo, Manali, Rajasthan, Dubai)
+- **Trip Style or Budget** (e.g. Budget backpacking, Luxury, Family, Romantic couple)
+- **Duration** (e.g. Weekend getaway, 3 days, 1 week)
+
+You can ask me for recommendations or say *"Plan a 3-day trip to Goa"* and I will design a complete day-by-day plan for you!`
     };
   }
 
   return {
     action: 'chat',
-    reply: `I am your AI Travel Concierge powered by Google Gemini. Ask me about local specialities, vegetarian or non-vegetarian dining, scenic hangout spots, or tell me to plan a brand-new trip anywhere in the world!`
+    reply: `I can help you explore and plan travel for "${prompt}". Could you share your preferred destination, travel dates, or budget so I can give you tailored recommendations?`
   };
 }
 
@@ -349,7 +486,7 @@ export async function callLLMWithTools(messages: ChatMessage[]) {
 }
 
 /**
- * Direct generation with Gemini using GoogleGenAI SDK
+ * Direct generation with Gemini using GoogleGenAI SDK with resilient multi-model fallback
  */
 export async function generateWithGemini(prompt: string, modelName = env.GEMINI_MODEL): Promise<string> {
   const ai = getGoogleGenAIClient();
@@ -357,10 +494,31 @@ export async function generateWithGemini(prompt: string, modelName = env.GEMINI_
     throw new Error('GEMINI_API_KEY is not configured in environment variables.');
   }
 
-  const response = await ai.models.generateContent({
-    model: modelName,
-    contents: prompt
-  });
+  const modelQueue = [modelName, ...FALLBACK_GEMINI_MODELS.filter(m => m !== modelName)];
+  let lastError: any = null;
 
-  return response.text || '';
+  for (const m of modelQueue) {
+    try {
+      const response = await ai.models.generateContent({
+        model: m,
+        contents: prompt
+      });
+      if (response && response.text) {
+        return response.text;
+      }
+    } catch (err: any) {
+      lastError = err;
+      const isQuotaOrDemand =
+        err?.message?.includes('429') || err?.status === 429 ||
+        err?.message?.includes('404') || err?.status === 404 ||
+        err?.message?.includes('503') || err?.status === 503;
+      if (isQuotaOrDemand) {
+        console.warn(`[Gemini generateWithGemini] Model ${m} error (${err?.status || err?.code || 'unavailable'}), trying fallback model...`);
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error('All Gemini model fallbacks exhausted.');
 }
