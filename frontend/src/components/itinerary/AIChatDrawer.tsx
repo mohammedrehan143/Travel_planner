@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Bot, User as UserIcon, X, Check, Loader2, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Sparkles, Send, Bot, User as UserIcon, X, Check, Loader2, ArrowRight, MapPin } from 'lucide-react';
 import { Trip, TripDay, Activity } from '../../types';
-import { TripPilotAPI } from '../../lib/api';
+import { HangoutPlace, TripPilotAPI } from '../../lib/api';
 import { useTrips } from '../../context/TripContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface AIChatDrawerProps {
   isOpen: boolean;
@@ -20,6 +22,12 @@ interface Message {
     type: 'add_activity';
     activity: Activity;
   };
+  tripId?: string;
+}
+
+interface HangoutFlow {
+  step: 'idle' | 'location' | 'duration';
+  location?: { label: string; lat: number; lng: number };
 }
 
 export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
@@ -28,12 +36,15 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   trip,
   currentDay,
 }) => {
-  const { addActivity, activeTripActivities } = useTrips();
+  const { addActivity, addHangoutPlan, activeTripActivities, setActiveTripId } = useTrips();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [hangoutFlow, setHangoutFlow] = useState<HangoutFlow>({ step: 'idle' });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       sender: 'ai',
-      text: `Hello! I'm your AI Travel Co-Pilot. I can adjust schedules, swap museums for outdoors, find authentic restaurants, or optimize route timings for ${trip.destination}. How can I tweak your trip?`,
+      text: `Hi! I can help plan a day out with your cousin. Tell me what you have in mind and I’ll ask how long you want to go out for.`,
       timestamp: 'Just now',
     },
   ]);
@@ -41,11 +52,130 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   const [isThinking, setIsThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const addAIMessage = (text: string, tripId?: string) => setMessages((prev) => [...prev, {
+    id: `msg-ai-${Date.now()}`,
+    sender: 'ai',
+    text,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    tripId,
+  }]);
+
+  const detectLocation = async (): Promise<NonNullable<HangoutFlow['location']>> => {
+    if (!navigator.geolocation) throw new Error('Location services are not available in this browser.');
+    const coords = await new Promise<GeolocationCoordinates>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(position.coords),
+        () => reject(new Error('I could not access your location. You can type your city or neighborhood instead.')),
+        { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
+      );
+    });
+
+    let label = `${coords.latitude.toFixed(3)}, ${coords.longitude.toFixed(3)}`;
+    try {
+      const params = new URLSearchParams({ format: 'jsonv2', lat: String(coords.latitude), lon: String(coords.longitude) });
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { signal: AbortSignal.timeout(5000) });
+      if (response.ok) {
+        const data = await response.json();
+        const address = data.address || {};
+        label = address.suburb || address.neighbourhood || address.city_district || address.city || address.town || address.village || label;
+        if (address.city && label !== address.city) label = `${label}, ${address.city}`;
+      }
+    } catch {
+      // Coordinates still locate nearby results if reverse geocoding is unavailable.
+    }
+    return { label, lat: coords.latitude, lng: coords.longitude };
+  };
+
+  const createHangout = async (location: NonNullable<HangoutFlow['location']>, hours: number) => {
+    const found = await TripPilotAPI.searchHangoutPlaces(location.label, location);
+    const usable = found.filter((place) => place.name && Number.isFinite(place.lat) && Number.isFinite(place.lng));
+    const count = Math.min(usable.length, hours >= 5 ? 3 : 2);
+    if (count < 2) throw new Error(`I couldn't find enough places near ${location.label} to make a good hangout plan.`);
+
+    const places = usable.slice(0, count);
+    const planLocation = {
+      ...location,
+      lat: location.lat || places[0].lat,
+      lng: location.lng || places[0].lng,
+    };
+    const now = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const tripId = `hangout-${Date.now()}`;
+    const dayId = `day-${tripId}-1`;
+    const totalMinutes = Math.round(hours * 60);
+    const activityMinutes = Math.max(45, Math.floor((totalMinutes - (count - 1) * 15) / count));
+    const startAt = 10 * 60;
+    const categoryMap: Record<string, Activity['category']> = {
+      sightseeing: 'sightseeing', cultural: 'cultural', outdoor: 'outdoor', dining: 'dining',
+      entertainment: 'entertainment', shopping: 'shopping', relaxation: 'relaxation', transit: 'transit',
+    };
+    const activities: Activity[] = places.map((place: HangoutPlace, index) => {
+      const start = startAt + index * (activityMinutes + 15);
+      const end = start + activityMinutes;
+      const time = (mins: number) => `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+      const rawCategory = (place.category || 'sightseeing').toLowerCase();
+      return {
+        id: `act-${tripId}-${index + 1}`,
+        trip_id: tripId,
+        trip_day_id: dayId,
+        title: place.name,
+        description: place.description || `A stop on your ${hours}-hour hangout near ${location.label}.`,
+        category: categoryMap[rawCategory] || 'sightseeing',
+        start_time: time(start),
+        end_time: time(end),
+        duration_minutes: activityMinutes,
+        location_name: place.name,
+        location_address: place.address,
+        latitude: place.lat,
+        longitude: place.lng,
+        estimated_cost: place.estimatedCost || 0,
+        currency: trip.currency,
+        booking_required: false,
+        booking_status: 'not_booked',
+        order_index: index,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      };
+    });
+    const hangoutTrip: Trip = {
+      id: tripId,
+      user_id: user?.id || '00000000-0000-0000-0000-000000000001',
+      title: 'Hangout with Cousin',
+      description: `${hours}-hour outing with ${activities.length} stops near ${location.label}.`,
+      origin: location.label,
+      destination: location.label,
+      start_date: date,
+      end_date: date,
+      duration_days: 1,
+      traveler_count: 2,
+      travel_companion: 'friends',
+      travel_style: 'balanced',
+      interests: ['hangout', 'food', 'sightseeing'],
+      total_budget: activities.reduce((sum, activity) => sum + activity.estimated_cost, 0),
+      currency: trip.currency || 'USD',
+      status: 'planning',
+      destination_lat: planLocation.lat,
+      destination_lng: planLocation.lng,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    };
+    const day: TripDay = {
+      id: dayId,
+      trip_id: tripId,
+      day_number: 1,
+      date,
+      theme: `Cousin hangout · ${hours} hours`,
+      summary: `${activities.length} nearby stops planned around ${location.label}.`,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    };
+    addHangoutPlan(hangoutTrip, day, activities);
+    return { hangoutTrip, activities };
+  };
+
   const samplePrompts = [
-    'Add an authentic ramen or sushi dinner for tonight',
-    'Make tomorrow afternoon slower-paced and relaxing',
-    'Find a scenic sunset viewpoint with drinks',
-    'Is there any scheduling conflict in Day 1?',
+    'Plan a one-day hangout with my cousin',
+    'Plan a 4-hour outing near me',
   ];
 
   const scrollToBottom = () => {
@@ -72,6 +202,43 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     setIsThinking(true);
 
     try {
+      const isHangoutRequest = /\b(hang ?out|go out|day out|outing|with my cousin|with cousin|near me)\b/i.test(prompt);
+      if (isHangoutRequest && hangoutFlow.step === 'idle') {
+        try {
+          const location = await detectLocation();
+          if (!location) throw new Error('Location not found');
+          setHangoutFlow({ step: 'duration', location });
+          addAIMessage(`I found your area near ${location.label}. How many hours would you like the hangout to last?`);
+        } catch {
+          setHangoutFlow({ step: 'location' });
+          addAIMessage('I need your area to find nearby places. Type your city or neighborhood, and I’ll plan around it.');
+        }
+        return;
+      }
+
+      if (hangoutFlow.step === 'location') {
+        const location = { label: prompt, lat: 0, lng: 0 };
+        setHangoutFlow({ step: 'duration', location });
+        addAIMessage(`Got it, ${prompt}. How many hours should I plan for?`);
+        return;
+      }
+
+      if (hangoutFlow.step === 'duration' && hangoutFlow.location) {
+        const durationText = prompt.toLowerCase();
+        const parsedHours = Number(durationText.match(/\d+(?:\.\d+)?/)?.[0]);
+        const hours = durationText.includes('half day') ? 4 : durationText.includes('all day') || durationText.includes('full day') || /\b1\s*day\b/.test(durationText) ? 8 :
+          durationText.includes('hour') || durationText.endsWith('h') || /^\d+(?:\.\d+)?$/.test(durationText) ? parsedHours : NaN;
+        if (!Number.isFinite(hours) || hours < 2 || hours > 12) {
+          addAIMessage('Please choose a duration between 2 and 12 hours (for example, 3 hours or half a day).');
+          return;
+        }
+        const { hangoutTrip, activities } = await createHangout(hangoutFlow.location, hours);
+        setHangoutFlow({ step: 'idle' });
+        const list = activities.map((activity) => `• ${activity.start_time}–${activity.end_time}: ${activity.title}`).join('\n');
+        addAIMessage(`Your ${hours}-hour hangout with your cousin is ready with ${activities.length} stops near ${hangoutTrip.destination}:\n${list}\n\nI added it to your dashboard.`, hangoutTrip.id);
+        return;
+      }
+
       const response = await TripPilotAPI.modifyItinerary({
         trip_id: trip.id,
         day_id: currentDay?.id,
@@ -113,15 +280,8 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
 
       setMessages((prev) => [...prev, aiMsg]);
     } catch (e) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `msg-err-${Date.now()}`,
-          sender: 'ai',
-          text: 'I had trouble processing that modification right now, but your schedule is intact!',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      setHangoutFlow({ step: 'idle' });
+      addAIMessage(e instanceof Error ? e.message : 'I had trouble planning that hangout. Please try again.');
     } finally {
       setIsThinking(false);
     }
@@ -194,7 +354,15 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                       : 'bg-blue-600 text-white rounded-tr-xs shadow-sm'
                   }`}
                 >
-                  <p>{m.text}</p>
+                  <p className="whitespace-pre-line">{m.text}</p>
+                  {m.tripId && (
+                    <button
+                      onClick={() => { setActiveTripId(m.tripId!); onClose(); navigate(`/trip/${m.tripId}`); }}
+                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-700"
+                    >
+                      <MapPin className="h-3 w-3" /> View hangout plan
+                    </button>
+                  )}
 
                   {/* Applied activity card badge */}
                   {m.suggestedAction?.activity && (

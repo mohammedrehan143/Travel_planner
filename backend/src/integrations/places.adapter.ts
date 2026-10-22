@@ -1,6 +1,14 @@
 import { PlaceItem } from '../types/trip.types.js';
 import { env } from '../config/env.js';
 
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRadians = (degrees: number) => degrees * Math.PI / 180;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 interface CuratedPlaceCatalog {
   [cityKey: string]: {
     center: { lat: number; lng: number };
@@ -565,7 +573,9 @@ export class PlacesAdapter {
     query: string,
     destination: string,
     category?: string,
-    limit = 10
+    limit = 10,
+    lat?: number,
+    lng?: number
   ): Promise<{ places: PlaceItem[]; source: 'google_places' | 'curated_catalog' | 'osm_geocoder' }> {
     const destLower = destination.toLowerCase().trim();
     let catalogKey: string | undefined = undefined;
@@ -584,7 +594,7 @@ export class PlacesAdapter {
       try {
         const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
           `${query} in ${destination}`
-        )}&key=${env.MAPS_API_KEY}`;
+        )}${lat !== undefined && lng !== undefined ? `&location=${lat},${lng}&radius=5000` : ''}&key=${env.MAPS_API_KEY}`;
         const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
         if (res.ok) {
           const data = (await res.json()) as { results?: any[] };
@@ -632,6 +642,9 @@ export class PlacesAdapter {
           filtered = queryMatches;
         }
       }
+      if (lat !== undefined && lng !== undefined) {
+        filtered = filtered.sort((a, b) => distanceKm(lat, lng, a.lat, a.lng) - distanceKm(lat, lng, b.lat, b.lng));
+      }
       return { places: filtered.slice(0, limit), source: 'curated_catalog' };
     }
 
@@ -639,7 +652,7 @@ export class PlacesAdapter {
     try {
       const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
         `${query} ${destination}`
-      )}&limit=${limit}`;
+      )}&limit=${limit}${lat !== undefined && lng !== undefined ? `&viewbox=${lng - 0.05},${lat + 0.05},${lng + 0.05},${lat - 0.05}&bounded=1` : ''}`;
       const res = await fetch(geoUrl, {
         headers: { 'User-Agent': 'TripPilotAI/1.0' },
         signal: AbortSignal.timeout(3500)
@@ -666,6 +679,9 @@ export class PlacesAdapter {
             },
             description: `${item.type || 'Attraction'} in ${destination}`
           }));
+          if (lat !== undefined && lng !== undefined) {
+            places.sort((a, b) => distanceKm(lat, lng, a.lat, a.lng) - distanceKm(lat, lng, b.lat, b.lng));
+          }
           return { places, source: 'osm_geocoder' };
         }
       }

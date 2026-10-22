@@ -31,6 +31,19 @@ export interface ModifyItineraryResponse {
   regenerated_day?: TripDay;
 }
 
+export interface HangoutPlace {
+  id?: string;
+  name: string;
+  category?: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  rating?: number;
+  estimatedCost?: number;
+  description?: string;
+  photoUrl?: string;
+}
+
 export interface ValidationResult {
   valid: boolean;
   score: number;
@@ -61,6 +74,18 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 }
 
 export const TripPilotAPI = {
+  async searchHangoutPlaces(destination: string, location?: { lat: number; lng: number }, query = 'popular places for friends to hang out'): Promise<HangoutPlace[]> {
+    const params = new URLSearchParams({ destination, query, limit: '8' });
+    if (location && (location.lat !== 0 || location.lng !== 0)) {
+      params.set('lat', String(location.lat));
+      params.set('lng', String(location.lng));
+    }
+    const response = await fetch(`${BACKEND_BASE_URL}/api/integrations/places/search?${params}`);
+    if (!response.ok) throw new Error('Could not find nearby places right now.');
+    const data = await response.json();
+    return Array.isArray(data.places) ? data.places : [];
+  },
+
   /**
    * Request agentic itinerary generation
    */

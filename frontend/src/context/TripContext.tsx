@@ -34,6 +34,7 @@ interface TripContextType {
   updateTrip: (tripId: string, updates: Partial<Trip>) => Promise<void>;
   deleteTrip: (tripId: string) => Promise<void>;
   addActivity: (dayId: string, activity: Omit<Activity, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addHangoutPlan: (trip: Trip, day: TripDay, activities: Activity[]) => void;
   updateActivity: (dayId: string, activityId: string, updates: Partial<Activity>) => Promise<void>;
   deleteActivity: (dayId: string, activityId: string) => Promise<void>;
   reorderActivities: (dayId: string, orderedActivities: Activity[]) => Promise<void>;
@@ -147,6 +148,19 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = { ...activities, [dayId]: updatedDayActs };
     setActivities(updated);
     LocalStore.saveActivities(updated);
+  };
+
+  const addHangoutPlan = (trip: Trip, day: TripDay, dayActivities: Activity[]) => {
+    const nextTrips = [trip, ...trips];
+    const nextDays = { ...tripDays, [trip.id]: [day] };
+    const nextActivities = { ...activities, [day.id]: dayActivities };
+    setTrips(nextTrips);
+    setTripDays(nextDays);
+    setActivities(nextActivities);
+    setActiveTripIdState(trip.id);
+    LocalStore.saveTrips(nextTrips);
+    LocalStore.saveTripDays(nextDays);
+    LocalStore.saveActivities(nextActivities);
   };
 
   const updateActivity = async (dayId: string, activityId: string, updates: Partial<Activity>) => {
@@ -266,6 +280,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateTrip,
         deleteTrip,
         addActivity,
+        addHangoutPlan,
         updateActivity,
         deleteActivity,
         reorderActivities,

@@ -14,13 +14,15 @@ export class IntegrationController {
       const destination = req.query.destination as string;
       const category = req.query.category as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
+      const lng = req.query.lng ? parseFloat(req.query.lng as string) : undefined;
 
       if (!destination) {
         res.status(400).json({ error: 'Missing destination parameter' });
         return;
       }
 
-      const result = await PlacesAdapter.searchPlaces(query, destination, category, limit);
+      const result = await PlacesAdapter.searchPlaces(query, destination, category, limit, lat, lng);
       res.status(200).json(result);
     } catch (err: any) {
       res.status(500).json({ error: 'Place Search Failed', message: err.message });
