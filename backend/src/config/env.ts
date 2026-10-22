@@ -12,6 +12,9 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-4o'),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  AI_PROVIDER: z.enum(['gemini', 'openai', 'auto']).default('auto'),
   MAPS_API_KEY: z.string().optional(),
   WEATHER_API_KEY: z.string().optional(),
   CORS_ORIGIN: z.string().default('*')
