@@ -152,22 +152,22 @@ export const TripWizardPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
+    <div className="max-w-3xl mx-auto px-4 py-10 space-y-8 bg-white">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-800 text-xs font-bold">
+          <Sparkles className="w-3.5 h-3.5 text-[#F97316]" />
           <span>Step-by-Step AI Trip Architect</span>
         </div>
-        <h1 className="text-3xl font-black text-slate-900">Plan Your Next Trip</h1>
-        <p className="text-xs text-slate-500">
+        <h1 className="text-3xl font-black text-[#171717]">Plan Your Next Trip</h1>
+        <p className="text-xs text-[#525252]">
           Our tool-calling AI agent validates schedules, weather, transit, and budgets.
         </p>
       </div>
 
       {/* Step Indicators */}
       {!isGenerating && (
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-4">
           {[
             { num: 1, label: 'Destination' },
             { num: 2, label: 'Travelers & Budget' },
@@ -178,17 +178,17 @@ export const TripWizardPage: React.FC = () => {
               <div
                 className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition-colors ${
                   step === s.num
-                    ? 'bg-blue-600 text-white shadow-sm'
+                    ? 'bg-[#F97316] text-white shadow-sm ring-2 ring-orange-200'
                     : step > s.num
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                    : 'bg-slate-100 text-slate-400'
+                    ? 'bg-[#171717] text-white'
+                    : 'bg-[#F3F4F6] text-[#525252] border border-[#E5E7EB]'
                 }`}
               >
-                {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
+                {step > s.num ? <CheckCircle2 className="w-4 h-4 text-white" /> : s.num}
               </div>
               <span
                 className={`text-xs font-semibold hidden sm:inline-block ${
-                  step === s.num ? 'text-slate-900 font-bold' : 'text-slate-400'
+                  step === s.num ? 'text-[#171717] font-bold' : 'text-[#525252]'
                 }`}
               >
                 {s.label}
@@ -199,43 +199,42 @@ export const TripWizardPage: React.FC = () => {
       )}
 
       {/* Main Wizard Form Container */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-8">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-card p-6 sm:p-8">
         {/* Live Agent Generation Screen */}
         {isGenerating ? (
           <div className="py-8 space-y-6 text-center">
             <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-4 border-blue-100 animate-ping opacity-30" />
-              <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <div className="w-16 h-16 rounded-2xl bg-[#F97316] text-white flex items-center justify-center shadow-lg">
                 <Compass className="w-8 h-8 animate-spin" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">
+              <h3 className="text-xl font-bold text-[#171717]">
                 TripPilot AI is Orchestrating Your Itinerary
               </h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
+              <p className="text-xs text-[#525252] max-w-md mx-auto">
                 Executing real-time tool calls for places, weather forecasts, route coordinates, and budget constraints.
               </p>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full max-w-md mx-auto bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div className="w-full max-w-md mx-auto bg-[#F3F4F6] rounded-full h-2.5 overflow-hidden border border-[#E5E7EB]">
               <div
-                className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-300 rounded-full"
+                className="h-full bg-[#F97316] transition-all duration-300 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
 
-            {/* Live Terminal-style Agent Logs */}
-            <div className="max-w-md mx-auto text-left p-4 rounded-2xl bg-slate-950 text-slate-300 font-mono text-[11px] space-y-1.5 shadow-inner max-h-48 overflow-y-auto">
-              <div className="flex items-center gap-1.5 text-blue-400 border-b border-slate-800 pb-1 font-bold">
-                <Sparkles className="w-3 h-3 text-amber-400" />
+            {/* Live Terminal-style Agent Logs (Dark Section) */}
+            <div className="max-w-md mx-auto text-left p-4 rounded-2xl bg-[#171717] text-neutral-300 font-mono text-[11px] space-y-1.5 shadow-inner max-h-48 overflow-y-auto border border-neutral-800">
+              <div className="flex items-center gap-1.5 text-[#F97316] border-b border-neutral-800 pb-1 font-bold">
+                <Sparkles className="w-3 h-3 text-[#F97316]" />
                 <span>Agent Execution Stream</span>
               </div>
               {agentLogs.map((log, i) => (
                 <p key={i} className="leading-relaxed">
-                  <span className="text-emerald-400">✓</span> {log}
+                  <span className="text-[#16A34A]">✓</span> {log}
                 </p>
               ))}
             </div>
@@ -245,7 +244,7 @@ export const TripWizardPage: React.FC = () => {
             {/* STEP 1: Destination & Dates */}
             {step === 1 && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <h3 className="text-base font-bold text-slate-900">Where and when are you traveling?</h3>
+                <h3 className="text-base font-bold text-[#171717]">Where and when are you traveling?</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <PlaceAutocomplete
@@ -253,7 +252,7 @@ export const TripWizardPage: React.FC = () => {
                     value={origin}
                     onChange={setOrigin}
                     placeholder="e.g. Current Location, Mumbai, London"
-                    icon={<MapPin className="w-4 h-4 text-slate-400" />}
+                    icon={<MapPin className="w-4 h-4 text-neutral-400" />}
                   />
 
                   <PlaceAutocomplete
@@ -261,47 +260,47 @@ export const TripWizardPage: React.FC = () => {
                     value={destination}
                     onChange={setDestination}
                     placeholder="e.g. Goa, Paris, Tokyo, Manali, Jaipur"
-                    icon={<Compass className="w-4 h-4 text-blue-600" />}
+                    icon={<Compass className="w-4 h-4 text-[#F97316]" />}
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
                       Start Date
                     </label>
                     <div className="relative">
-                      <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Calendar className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
                       <input
                         type="date"
                         required
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
                       End Date
                     </label>
                     <div className="relative">
-                      <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Calendar className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
                       <input
                         type="date"
                         required
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717]"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-1">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
                     Quick Duration Preset
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -310,8 +309,8 @@ export const TripWizardPage: React.FC = () => {
                       onClick={() => setDurationDays(1)}
                       className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
                         isOneDay
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                          ? 'bg-[#F97316] text-white border-[#F97316] shadow-sm'
+                          : 'bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6]'
                       }`}
                     >
                       ⚡ 1-Day Outing
@@ -319,28 +318,28 @@ export const TripWizardPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setDurationDays(2)}
-                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 transition-all text-center"
+                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6] transition-all text-center"
                     >
                       Weekend (2D)
                     </button>
                     <button
                       type="button"
                       onClick={() => setDurationDays(3)}
-                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 transition-all text-center"
+                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6] transition-all text-center"
                     >
                       3 Days
                     </button>
                     <button
                       type="button"
                       onClick={() => setDurationDays(5)}
-                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 transition-all text-center"
+                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6] transition-all text-center"
                     >
                       5 Days
                     </button>
                   </div>
                   {isOneDay && (
-                    <div className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2">
-                      <span className="font-bold text-emerald-600">⚡ Single-Day Outing active:</span>
+                    <div className="text-[11px] text-orange-900 bg-orange-50 border border-orange-200 rounded-xl p-2.5 flex items-center gap-2">
+                      <span className="font-bold text-[#F97316]">⚡ Single-Day Outing active:</span>
                       <span>Optimized to cover maximum top attractions in 1 day with zero lodging expenses.</span>
                     </div>
                   )}
@@ -351,12 +350,12 @@ export const TripWizardPage: React.FC = () => {
             {/* STEP 2: Travelers & Budget */}
             {step === 2 && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <h3 className="text-base font-bold text-slate-900">Travelers & Budget Parameters</h3>
+                <h3 className="text-base font-bold text-[#171717]">Travelers & Budget Parameters</h3>
 
                 <div className="space-y-4">
-                  {/* Travel Companion / With whom */}
+                  {/* Travel Companion */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-2">
                       With Whom Are You Traveling?
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
@@ -370,21 +369,21 @@ export const TripWizardPage: React.FC = () => {
                           }}
                           className={`p-3 rounded-2xl border text-left transition-all ${
                             travelCompanion === comp.id
-                              ? 'bg-blue-50/80 border-blue-600 ring-2 ring-blue-500/20 shadow-xs'
-                              : 'bg-white border-slate-200 hover:border-slate-300'
+                              ? 'bg-orange-50 border-[#F97316] ring-2 ring-orange-500/20 shadow-sm'
+                              : 'bg-white border-[#E5E7EB] hover:border-neutral-300'
                           }`}
                         >
                           <span className="text-xl block mb-1">{comp.icon}</span>
-                          <p className="text-xs font-bold text-slate-900">{comp.label}</p>
-                          <p className="text-[10px] text-slate-500 line-clamp-1">{comp.desc}</p>
+                          <p className="text-xs font-bold text-[#171717]">{comp.label}</p>
+                          <p className="text-[10px] text-[#525252] line-clamp-1">{comp.desc}</p>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Dietary Preference (Veg / Non-Veg / Both) */}
+                  {/* Dietary Preference */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-2">
                       Food & Dietary Preference
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -395,22 +394,22 @@ export const TripWizardPage: React.FC = () => {
                           onClick={() => setDietaryPreference(diet.id)}
                           className={`p-3 rounded-2xl border text-left transition-all ${
                             dietaryPreference === diet.id
-                              ? 'bg-emerald-50 border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs'
-                              : 'bg-white border-slate-200 hover:border-slate-300'
+                              ? 'bg-orange-50 border-[#F97316] ring-2 ring-orange-500/20 shadow-sm'
+                              : 'bg-white border-[#E5E7EB] hover:border-neutral-300'
                           }`}
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xl">{diet.icon}</span>
-                            <p className="text-xs font-bold text-slate-900">{diet.label}</p>
+                            <p className="text-xs font-bold text-[#171717]">{diet.label}</p>
                           </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">{diet.desc}</p>
+                          <p className="text-[10px] text-[#525252] leading-tight">{diet.desc}</p>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
                       Number of Travelers
                     </label>
                     <div className="flex items-center gap-3">
@@ -421,8 +420,8 @@ export const TripWizardPage: React.FC = () => {
                           onClick={() => setTravelerCount(num)}
                           className={`flex-1 py-3 rounded-xl border text-xs font-bold transition-all ${
                             travelerCount === num
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                              ? 'bg-[#F97316] text-white border-[#F97316] shadow-sm'
+                              : 'bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6]'
                           }`}
                         >
                           {num} {num === 1 ? 'Solo' : `${num} People`}
@@ -433,11 +432,11 @@ export const TripWizardPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
                         Total Planned Budget (Min: 500)
                       </label>
                       <div className="relative">
-                        <span className="w-5 text-center font-bold text-sm text-emerald-600 absolute left-3 top-2.5 select-none">
+                        <span className="w-5 text-center font-bold text-sm text-[#171717] absolute left-3 top-2.5 select-none">
                           {getCurrencySymbol(currency)}
                         </span>
                         <input
@@ -446,17 +445,17 @@ export const TripWizardPage: React.FC = () => {
                           step="100"
                           value={totalBudget}
                           onChange={(e) => setTotalBudget(Number(e.target.value))}
-                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] font-semibold text-[#171717]"
                         />
                       </div>
                       <div className="flex items-center gap-1.5 mt-2">
-                        <span className="text-[10px] font-semibold text-slate-400">Presets:</span>
+                        <span className="text-[10px] font-semibold text-[#525252]">Presets:</span>
                         {[500, 1500, 5000, 15000].map((amt) => (
                           <button
                             key={amt}
                             type="button"
                             onClick={() => setTotalBudget(amt)}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                            className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#F3F4F6] hover:bg-neutral-200 text-[#171717] border border-[#E5E7EB] transition-colors"
                           >
                             {getCurrencySymbol(currency)}{amt.toLocaleString()}
                           </button>
@@ -465,13 +464,13 @@ export const TripWizardPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
                         Currency
                       </label>
                       <select
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white font-medium text-[#171717]"
                       >
                         {SUPPORTED_CURRENCIES.map((c) => (
                           <option key={c.code} value={c.code}>
@@ -488,11 +487,11 @@ export const TripWizardPage: React.FC = () => {
             {/* STEP 3: Travel Style & Interests */}
             {step === 3 && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <h3 className="text-base font-bold text-slate-900">Travel Style & Interests</h3>
+                <h3 className="text-base font-bold text-[#171717]">Travel Style & Interests</h3>
 
                 {/* Travel Style Radio Grid */}
                 <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
                     Travel Pace & Style
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -503,14 +502,14 @@ export const TripWizardPage: React.FC = () => {
                         onClick={() => setTravelStyle(style.id)}
                         className={`text-left p-3.5 rounded-2xl border transition-all ${
                           travelStyle === style.id
-                            ? 'bg-blue-50/70 border-blue-600 ring-2 ring-blue-500/20 shadow-xs'
-                            : 'bg-white border-slate-200 hover:border-slate-300'
+                            ? 'bg-orange-50 border-[#F97316] ring-2 ring-orange-500/20 shadow-sm'
+                            : 'bg-white border-[#E5E7EB] hover:border-neutral-300'
                         }`}
                       >
-                        <p className={`text-xs font-bold ${travelStyle === style.id ? 'text-blue-900' : 'text-slate-900'}`}>
+                        <p className={`text-xs font-bold ${travelStyle === style.id ? 'text-[#F97316]' : 'text-[#171717]'}`}>
                           {style.label}
                         </p>
-                        <p className="text-[11px] text-slate-500 mt-1">{style.desc}</p>
+                        <p className="text-[11px] text-[#525252] mt-1">{style.desc}</p>
                       </button>
                     ))}
                   </div>
@@ -518,7 +517,7 @@ export const TripWizardPage: React.FC = () => {
 
                 {/* Specific Interests Tags */}
                 <div className="space-y-2 pt-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
                     Select Your Top Interests (Select at least 2)
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -531,8 +530,8 @@ export const TripWizardPage: React.FC = () => {
                           onClick={() => toggleInterest(item.id)}
                           className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all ${
                             isSel
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                              ? 'bg-[#F97316] text-white border-[#F97316] shadow-sm'
+                              : 'bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6]'
                           }`}
                         >
                           <span>{item.icon}</span>
@@ -548,55 +547,55 @@ export const TripWizardPage: React.FC = () => {
             {/* STEP 4: Preferences & Confirmation */}
             {step === 4 && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <h3 className="text-base font-bold text-slate-900">Transport & Lodging Preferences</h3>
+                <h3 className="text-base font-bold text-[#171717]">Transport & Lodging Preferences</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
                       Transport Preference
                     </label>
                     <div className="relative">
-                      <Plane className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Plane className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
                       <input
                         type="text"
                         value={transportPreference}
                         onChange={(e) => setTransportPreference(e.target.value)}
                         placeholder="e.g. Traveling, Train, Flight, Private Cab"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] text-[#171717]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
                       Accommodation Style
                     </label>
                     <div className="relative">
-                      <Building className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Building className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
                       <input
                         type="text"
                         value={accommodationPreference}
                         onChange={(e) => setAccommodationPreference(e.target.value)}
                         placeholder="e.g. Boutique Hotel, Resort, Airbnb"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] text-[#171717]"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Summary Card Before Launch */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                    <span className="font-bold text-slate-700">Trip Blueprint Summary</span>
-                    <span className="font-bold text-blue-600">{destination}</span>
+                <div className="p-4 rounded-2xl bg-[#F3F4F6] border border-[#E5E7EB] space-y-2 text-xs">
+                  <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
+                    <span className="font-bold text-[#171717]">Trip Blueprint Summary</span>
+                    <span className="font-bold text-[#F97316]">{destination}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-slate-600 pt-1">
-                    <p><span className="font-semibold text-slate-900">Dates:</span> {startDate} to {endDate} ({isOneDay ? '⚡ 1-Day Outing' : `${Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)} Days`})</p>
-                    <p><span className="font-semibold text-slate-900">Party:</span> {travelerCount} Person(s) • <span className="capitalize">{travelCompanion}</span></p>
-                    <p><span className="font-semibold text-slate-900">Dietary:</span> <span className="capitalize font-semibold text-slate-800">{dietaryPreference === 'veg' ? '🥬 Pure Vegetarian' : dietaryPreference === 'non_veg' ? '🍗 Non-Vegetarian' : '🥗 Veg & Non-Veg'}</span></p>
-                    <p><span className="font-semibold text-slate-900">Budget:</span> {formatCurrency(totalBudget, currency, true)}</p>
-                    <p><span className="font-semibold text-slate-900">Style:</span> {travelStyle}</p>
-                    <p><span className="font-semibold text-slate-900">Transit:</span> {transportPreference}</p>
+                  <div className="grid grid-cols-2 gap-2 text-[#525252] pt-1">
+                    <p><span className="font-semibold text-[#171717]">Dates:</span> {startDate} to {endDate} ({isOneDay ? '⚡ 1-Day Outing' : `${Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)} Days`})</p>
+                    <p><span className="font-semibold text-[#171717]">Party:</span> {travelerCount} Person(s) • <span className="capitalize">{travelCompanion}</span></p>
+                    <p><span className="font-semibold text-[#171717]">Dietary:</span> <span className="capitalize font-semibold text-[#171717]">{dietaryPreference === 'veg' ? '🥬 Pure Vegetarian' : dietaryPreference === 'non_veg' ? '🍗 Non-Vegetarian' : '🥗 Veg & Non-Veg'}</span></p>
+                    <p><span className="font-semibold text-[#171717]">Budget:</span> {formatCurrency(totalBudget, currency, true)}</p>
+                    <p><span className="font-semibold text-[#171717]">Style:</span> {travelStyle}</p>
+                    <p><span className="font-semibold text-[#171717]">Transit:</span> {transportPreference}</p>
                   </div>
                 </div>
               </div>
@@ -604,15 +603,15 @@ export const TripWizardPage: React.FC = () => {
 
             {/* Error Banner */}
             {errorMsg && (
-              <div className="mt-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2 animate-in fade-in">
+              <div className="mt-4 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-[#DC2626] text-xs flex items-center justify-between gap-2 animate-in fade-in">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-[#DC2626]" />
                   <span>{errorMsg}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setErrorMsg(null)}
-                  className="text-rose-500 hover:text-rose-700 font-bold text-xs shrink-0"
+                  className="text-red-500 hover:text-red-700 font-bold text-xs shrink-0"
                 >
                   ✕
                 </button>
@@ -620,12 +619,12 @@ export const TripWizardPage: React.FC = () => {
             )}
 
             {/* Step Navigation Buttons */}
-            <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+            <div className="pt-6 border-t border-[#E5E7EB] flex items-center justify-between">
               {step > 1 ? (
                 <button
                   type="button"
                   onClick={() => setStep(step - 1)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-[#E5E7EB] text-[#171717] font-bold text-xs hover:bg-[#F3F4F6] flex items-center gap-1.5 transition-colors"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Previous</span>
@@ -645,7 +644,7 @@ export const TripWizardPage: React.FC = () => {
                     setErrorMsg(null);
                     setStep(step + 1);
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-colors"
+                  className="px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-colors active:scale-95"
                 >
                   <span>Next Step</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -654,9 +653,9 @@ export const TripWizardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleGenerate}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all"
+                  className="px-6 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-md flex items-center gap-2 transition-all active:scale-95"
                 >
-                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <Sparkles className="w-4 h-4 text-white" />
                   <span>Orchestrate Trip with AI Agent</span>
                 </button>
               )}

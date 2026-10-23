@@ -4,46 +4,92 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F3F4F6;
+    --bg-card: #FFFFFF;
+    --bg-dark: #171717;
+    --text-primary: #171717;
+    --text-secondary: #525252;
+    --border-color: #E5E7EB;
+    --primary-accent: #F97316;
+    --hover-accent: #EA580C;
+    --text-on-accent: #FFFFFF;
+    --success: #16A34A;
+    --error: #DC2626;
+
+    /* Tailwind HSL mappings if any legacy hsl() is referenced */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --card-foreground: 0 0% 9%;
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 0 0% 45%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 24.6 95% 53.1%;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Form controls focus ring standards */
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    border-color: #F97316;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
   }
 }
 
-/* Custom scrollbar */
+@layer components {
+  /* Reusable Mono & Orange Button Components */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-[#F3F4F6] text-[#171717] border border-[#E5E7EB] font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#171717] hover:bg-neutral-800 text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .card-mono {
+    @apply bg-white rounded-2xl border border-[#E5E7EB] shadow-card transition-all duration-200;
+  }
+
+  .badge-orange {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200;
+  }
+
+  .badge-mono {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F3F4F6] text-[#171717] border border-[#E5E7EB];
+  }
+}
+
+/* Custom Minimalist Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #F3F4F6;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #D4D4D4;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #A3A3A3;
 }
 
 /* Print styling for PDF export */

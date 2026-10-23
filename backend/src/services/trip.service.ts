@@ -98,8 +98,7 @@ const mockTrips = new Map<string, any>([
         {
           id: '99999999-9999-9999-9999-999999999991',
           userId: '00000000-0000-0000-0000-000000000002',
-          role: 'editor',
-          invitedEmail: 'bob@trippilot.test'
+          role: 'editor'
         }
       ]
     }

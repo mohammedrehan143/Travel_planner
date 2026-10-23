@@ -25,7 +25,7 @@ Production-grade, responsive AI-powered travel planning frontend for **TripPilot
 
 2. **Supabase Authentication & Multi-Tenant Support (`AuthPage.tsx` & `AuthContext.tsx`)**:
    - Complete email/password Sign In and Sign Up with Supabase Auth.
-   - Built-in instant **One-Click Demo Sign-In** for *Alice Wanderlust* (Owner) and *Bob Adventurer* (Collaborator) for rapid evaluation.
+   - A local-only development demo with sample itineraries and no seeded personal contact details.
    - Protected routes (`ProtectedRoute`) enforcing authentication.
 
 3. **Multi-Step AI Trip Creation Wizard (`TripWizardPage.tsx`)**:

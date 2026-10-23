@@ -31,15 +31,16 @@ interface BudgetTrackerProps {
   expenses: TripExpense[];
 }
 
+// Mono & Orange brand palette for chart categories
 const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  flights: '#3b82f6',        // Blue
-  accommodation: '#8b5cf6',  // Purple
-  activities: '#06b6d4',     // Cyan
-  food: '#f59e0b',           // Amber
-  transport: '#10b981',      // Emerald
-  shopping: '#ec4899',       // Pink
-  insurance: '#64748b',      // Slate
-  other: '#94a3b8',          // Gray
+  flights: '#F97316',        // Primary Orange
+  accommodation: '#171717',  // Pitch Black / Dark Neutral
+  food: '#EA580C',           // Darker Orange
+  activities: '#525252',     // Neutral Gray 600
+  transport: '#FB923C',      // Light Orange
+  shopping: '#737373',       // Medium Gray 500
+  insurance: '#A3A3A3',      // Light Slate 400
+  other: '#D4D4D4',          // Soft Gray 300
 };
 
 export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) => {
@@ -82,7 +83,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
     .map(([cat, val]) => ({
       name: cat.charAt(0).toUpperCase() + cat.slice(1),
       value: Math.round(val),
-      color: CATEGORY_COLORS[cat as ExpenseCategory] || '#94a3b8',
+      color: CATEGORY_COLORS[cat as ExpenseCategory] || '#737373',
     }));
 
   const handleAddSubmit = (e: React.FormEvent) => {
@@ -104,26 +105,26 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 space-y-6">
+    <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-card p-6 space-y-6">
       {/* Title & Quick Stats */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5E7EB] pb-5">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-bold text-[#171717] flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-[#F97316]" />
             Trip Budget & Expense Tracker
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#525252]">
             Real-time financial breakdown across flights, lodging, dining, and activities
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Chart view toggle */}
-          <div className="flex items-center bg-slate-100 rounded-xl p-1 text-xs">
+          <div className="flex items-center bg-[#F3F4F6] rounded-xl p-1 text-xs border border-[#E5E7EB]">
             <button
               onClick={() => setChartType('pie')}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                chartType === 'pie' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                chartType === 'pie' ? 'bg-white text-[#171717] shadow-sm border border-[#E5E7EB]' : 'text-[#525252] hover:text-[#171717]'
               }`}
             >
               <PieIcon className="w-3.5 h-3.5" />
@@ -132,7 +133,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
             <button
               onClick={() => setChartType('bar')}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                chartType === 'bar' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                chartType === 'bar' ? 'bg-white text-[#171717] shadow-sm border border-[#E5E7EB]' : 'text-[#525252] hover:text-[#171717]'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -142,7 +143,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
 
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm transition-colors active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Add Expense</span>
@@ -151,24 +152,24 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
       </div>
 
       {/* Flight Estimate Overview Bar */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-9 h-9 rounded-xl bg-[#171717] text-[#F97316] flex items-center justify-center shrink-0 shadow-sm">
             <Plane className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900">✈️ Flight / Transit Fare Estimate:</span>
-              <span className="font-black text-blue-700">
+              <span className="font-bold text-[#171717]">✈️ Flight / Transit Fare Estimate:</span>
+              <span className="font-black text-[#171717]">
                 {trip.flight_ticket_estimate?.cost === 0
                   ? 'Zero (Intra-City Outing)'
                   : formatCurrency(trip.flight_ticket_estimate?.cost || (trip.destination.toLowerCase().includes('saudi') ? 26000 : 5800), trip.currency, true)}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-200">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 font-bold border border-orange-200">
                 AI Live Rate
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-[#525252] mt-0.5">
               {trip.flight_ticket_estimate?.description || `Estimated flight charges for ${trip.origin} ➔ ${trip.destination}`}
               {trip.flight_ticket_estimate?.airlines ? ` • Airlines: ${trip.flight_ticket_estimate.airlines}` : ''}
             </p>
@@ -179,26 +180,26 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
       {/* 3 Metric Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Budget */}
-        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Planned Budget</p>
-          <p className="text-2xl font-black text-slate-900 mt-1">
+        <div className="p-4 rounded-2xl bg-[#F3F4F6] border border-[#E5E7EB]">
+          <p className="text-xs font-semibold text-[#525252] uppercase tracking-wider">Total Planned Budget</p>
+          <p className="text-2xl font-black text-[#171717] mt-1">
             {formatCurrency(budget, trip.currency)}{' '}
-            <span className="text-xs font-normal text-slate-500">{trip.currency}</span>
+            <span className="text-xs font-normal text-[#525252]">{trip.currency}</span>
           </p>
-          <p className="text-xs text-slate-500 mt-1">For {trip.traveler_count} travelers ({trip.duration_days} days)</p>
+          <p className="text-xs text-[#525252] mt-1">For {trip.traveler_count} travelers ({trip.duration_days} days)</p>
         </div>
 
         {/* Total Spent */}
-        <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
-          <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Total Allocated</p>
-          <p className="text-2xl font-black text-blue-900 mt-1">
+        <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-card">
+          <p className="text-xs font-semibold text-[#171717] uppercase tracking-wider">Total Allocated</p>
+          <p className="text-2xl font-black text-[#F97316] mt-1">
             {formatCurrency(totalSpent, trip.currency)}{' '}
-            <span className="text-xs font-normal text-blue-600">{trip.currency}</span>
+            <span className="text-xs font-normal text-[#525252]">{trip.currency}</span>
           </p>
-          <div className="w-full bg-blue-200/60 rounded-full h-2 mt-2 overflow-hidden">
+          <div className="w-full bg-[#F3F4F6] rounded-full h-2 mt-2 overflow-hidden border border-[#E5E7EB]">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                percentSpent > 90 ? 'bg-rose-500' : percentSpent > 75 ? 'bg-amber-500' : 'bg-blue-600'
+                percentSpent > 90 ? 'bg-[#DC2626]' : 'bg-[#F97316]'
               }`}
               style={{ width: `${Math.min(100, percentSpent)}%` }}
             />
@@ -206,15 +207,15 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
         </div>
 
         {/* Remaining */}
-        <div className={`p-4 rounded-2xl border ${remaining >= 0 ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50 border-rose-200'}`}>
-          <p className={`text-xs font-semibold uppercase tracking-wider ${remaining >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+        <div className={`p-4 rounded-2xl border ${remaining >= 0 ? 'bg-[#F3F4F6] border-[#E5E7EB]' : 'bg-red-50 border-red-200'}`}>
+          <p className={`text-xs font-semibold uppercase tracking-wider ${remaining >= 0 ? 'text-[#171717]' : 'text-[#DC2626]'}`}>
             {remaining >= 0 ? 'Remaining Balance' : 'Budget Overrun'}
           </p>
-          <p className={`text-2xl font-black mt-1 ${remaining >= 0 ? 'text-emerald-900' : 'text-rose-900'}`}>
+          <p className={`text-2xl font-black mt-1 ${remaining >= 0 ? 'text-[#171717]' : 'text-[#DC2626]'}`}>
             {formatCurrency(Math.abs(remaining), trip.currency)}{' '}
-            <span className="text-xs font-normal text-slate-500">{trip.currency}</span>
+            <span className="text-xs font-normal text-[#525252]">{trip.currency}</span>
           </p>
-          <p className={`text-xs mt-1 ${remaining >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+          <p className={`text-xs mt-1 ${remaining >= 0 ? 'text-[#525252]' : 'text-[#DC2626]'}`}>
             {remaining >= 0 ? `${100 - percentSpent}% of funds available` : 'Exceeds target budget limit'}
           </p>
         </div>
@@ -222,13 +223,13 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
 
       {/* Quick Add Expense Form */}
       {showAddForm && (
-        <form onSubmit={handleAddSubmit} className="p-4 rounded-2xl bg-blue-50/40 border border-blue-200 space-y-3 animate-in fade-in duration-150">
+        <form onSubmit={handleAddSubmit} className="p-4 rounded-2xl bg-[#F3F4F6] border border-[#E5E7EB] space-y-3 animate-in fade-in duration-150">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">New Expense Entry</h4>
+            <h4 className="text-xs font-bold text-[#171717] uppercase tracking-wider">New Expense Entry</h4>
             <button
               type="button"
               onClick={() => setShowAddForm(false)}
-              className="text-xs text-slate-500 hover:text-slate-800"
+              className="text-xs text-[#525252] hover:text-[#171717]"
             >
               Close
             </button>
@@ -242,7 +243,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
                 placeholder="Description (e.g. Flight tickets, Hotel booking)"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
 
@@ -255,7 +256,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
                 placeholder={`Amount (${getCurrencySymbol(trip.currency)})`}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
 
@@ -263,7 +264,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               >
                 <option value="flights">Flights</option>
                 <option value="accommodation">Accommodation</option>
@@ -280,7 +281,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
           <div className="flex justify-end">
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors"
+              className="px-4 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm transition-colors"
             >
               Save Expense
             </button>
@@ -291,8 +292,8 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
       {/* Chart & Expense List Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
         {/* Visual Chart */}
-        <div className="lg:col-span-7 bg-slate-50/50 rounded-2xl border border-slate-100 p-4 flex flex-col items-center justify-center">
-          <p className="text-xs font-bold text-slate-700 mb-2 self-start">Spending by Category</p>
+        <div className="lg:col-span-7 bg-[#F3F4F6]/50 rounded-2xl border border-[#E5E7EB] p-4 flex flex-col items-center justify-center">
+          <p className="text-xs font-bold text-[#171717] mb-2 self-start">Spending by Category</p>
           {chartData.length > 0 ? (
             <div className="w-full h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -330,7 +331,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-slate-400">
+            <div className="h-48 flex items-center justify-center text-xs text-[#525252]">
               No expense items recorded yet.
             </div>
           )}
@@ -338,33 +339,33 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
 
         {/* Expense Items List */}
         <div className="lg:col-span-5 space-y-2 max-h-80 overflow-y-auto pr-1">
-          <p className="text-xs font-bold text-slate-700 mb-2">Itemized Records ({expenses.length})</p>
+          <p className="text-xs font-bold text-[#171717] mb-2">Itemized Records ({expenses.length})</p>
           {expenses.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl">
+            <div className="p-6 text-center text-xs text-[#525252] bg-[#F3F4F6] rounded-2xl border border-[#E5E7EB]">
               No expenses logged yet.
             </div>
           ) : (
             expenses.map((exp) => (
               <div
                 key={exp.id}
-                className="group flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-blue-200 bg-white shadow-xs transition-colors"
+                className="group flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] hover:border-[#F97316]/50 bg-white shadow-card transition-colors"
               >
                 <div className="flex items-center gap-2.5">
                   <div
                     className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: CATEGORY_COLORS[exp.category] || '#94a3b8' }}
+                    style={{ backgroundColor: CATEGORY_COLORS[exp.category] || '#737373' }}
                   />
                   <div>
-                    <p className="text-xs font-semibold text-slate-900 line-clamp-1">{exp.description}</p>
-                    <p className="text-[10px] text-slate-500 capitalize">{exp.category} {exp.date ? `• ${exp.date}` : ''}</p>
+                    <p className="text-xs font-semibold text-[#171717] line-clamp-1">{exp.description}</p>
+                    <p className="text-[10px] text-[#525252] capitalize">{exp.category} {exp.date ? `• ${exp.date}` : ''}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900">{formatCurrency(exp.amount, exp.currency || trip.currency)}</span>
+                  <span className="text-xs font-bold text-[#171717]">{formatCurrency(exp.amount, exp.currency || trip.currency)}</span>
                   <button
                     onClick={() => deleteExpense(exp.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-[#DC2626] transition-opacity"
                     title="Delete expense"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

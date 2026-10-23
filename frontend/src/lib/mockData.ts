@@ -531,9 +531,6 @@ export const INITIAL_COLLABORATORS: Record<string, TripCollaborator[]> = {
       trip_id: '11111111-1111-1111-1111-111111111111',
       user_id: '00000000-0000-0000-0000-000000000001',
       role: 'owner',
-      full_name: 'Alice Wanderlust',
-      invited_email: 'alice@trippilot.test',
-      avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
       created_at: '2026-10-22T08:00:00Z',
     },
     {
@@ -541,9 +538,6 @@ export const INITIAL_COLLABORATORS: Record<string, TripCollaborator[]> = {
       trip_id: '11111111-1111-1111-1111-111111111111',
       user_id: '00000000-0000-0000-0000-000000000002',
       role: 'editor',
-      full_name: 'Bob Adventurer',
-      invited_email: 'bob@trippilot.test',
-      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
       created_at: '2026-10-22T08:00:00Z',
     }
   ]

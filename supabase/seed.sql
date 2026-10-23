@@ -8,8 +8,8 @@
 -- For local/dev testing, mock UUIDs are used.
 INSERT INTO public.profiles (id, email, full_name, avatar_url, preferred_currency)
 VALUES 
-    ('00000000-0000-0000-0000-000000000001', 'alice@trippilot.test', 'Alice Wanderlust', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330', 'USD'),
-    ('00000000-0000-0000-0000-000000000002', 'bob@trippilot.test', 'Bob Adventurer', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d', 'USD')
+    ('00000000-0000-0000-0000-000000000001', 'demo-owner@example.invalid', NULL, NULL, 'USD'),
+    ('00000000-0000-0000-0000-000000000002', 'demo-collaborator@example.invalid', NULL, NULL, 'USD')
 ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
 
 -- 2. SEED TRIPS
@@ -70,7 +70,7 @@ VALUES
     '11111111-1111-1111-1111-111111111111',
     '00000000-0000-0000-0000-000000000002',
     'editor',
-    'bob@trippilot.test'
+    'demo-collaborator@example.invalid'
 )
 ON CONFLICT (trip_id, user_id) DO NOTHING;
 

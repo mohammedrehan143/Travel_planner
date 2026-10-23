@@ -68,13 +68,13 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   return (
     <div ref={wrapperRef} className="relative w-full">
       {label && (
-        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+        <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
           {label}
         </label>
       )}
 
       <div className="relative">
-        <div className="absolute left-3.5 top-3 text-slate-400 pointer-events-none">
+        <div className="absolute left-3.5 top-3 text-neutral-400 pointer-events-none">
           {icon || <MapPin className="w-4 h-4" />}
         </div>
 
@@ -88,13 +88,13 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
           }}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium text-slate-900 shadow-2xs"
+          className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white font-medium text-[#171717] placeholder:text-neutral-400 shadow-sm transition-all"
         />
 
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 transition-colors"
+          className="absolute right-2.5 top-3 text-neutral-400 hover:text-[#171717] transition-colors"
           tabIndex={-1}
         >
           <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -103,13 +103,13 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
 
       {/* Floating Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden max-h-72 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
-          <div className="p-2 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between text-[11px] font-bold text-slate-500 px-3">
-            <span>Suggested Destinations & Cities</span>
-            <span className="text-[10px] text-blue-600 font-semibold">Click to select</span>
+        <div className="absolute left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl border border-[#E5E7EB] shadow-xl overflow-hidden max-h-72 overflow-y-auto animate-in fade-in duration-150">
+          <div className="p-2.5 border-b border-[#E5E7EB] bg-[#F3F4F6] flex items-center justify-between text-[11px] font-bold text-[#525252] px-3.5">
+            <span>Suggested Destinations</span>
+            <span className="text-[10px] text-[#F97316] font-semibold">Click to select</span>
           </div>
 
-          <div className="divide-y divide-slate-100/80">
+          <div className="divide-y divide-[#E5E7EB]">
             {filteredSuggestions.length > 0 ? (
               filteredSuggestions.map((item, idx) => {
                 const isSelected = value.toLowerCase() === item.name.toLowerCase();
@@ -121,42 +121,42 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
                       onChange(item.name);
                       setIsOpen(false);
                     }}
-                    className={`w-full px-3.5 py-2.5 text-left flex items-center justify-between gap-3 hover:bg-blue-50/80 transition-colors ${
-                      isSelected ? 'bg-blue-50/90 font-bold' : ''
+                    className={`w-full px-3.5 py-2.5 text-left flex items-center justify-between gap-3 hover:bg-[#F3F4F6] transition-colors ${
+                      isSelected ? 'bg-orange-50 font-bold border-l-2 border-[#F97316]' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="text-lg leading-none shrink-0">{item.flag}</span>
                       <div className="truncate">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-slate-900 truncate">{item.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-600 font-medium">
+                          <span className="text-xs font-bold text-[#171717] truncate">{item.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-[#F3F4F6] text-[#525252] font-medium border border-[#E5E7EB]">
                             {item.country}
                           </span>
                         </div>
                         {item.subtitle && (
-                          <p className="text-[11px] text-slate-400 truncate mt-0.5">{item.subtitle}</p>
+                          <p className="text-[11px] text-[#525252] truncate mt-0.5">{item.subtitle}</p>
                         )}
                       </div>
                     </div>
 
                     {isSelected && (
-                      <Check className="w-4 h-4 text-blue-600 shrink-0" />
+                      <Check className="w-4 h-4 text-[#F97316] shrink-0" />
                     )}
                   </button>
                 );
               })
             ) : (
-              <div className="p-4 text-center space-y-1">
-                <Search className="w-5 h-5 text-slate-400 mx-auto" />
-                <p className="text-xs font-semibold text-slate-700">Custom Destination: "{value}"</p>
-                <p className="text-[11px] text-slate-400">
+              <div className="p-4 text-center space-y-2">
+                <Search className="w-5 h-5 text-neutral-400 mx-auto" />
+                <p className="text-xs font-semibold text-[#171717]">Custom Destination: "{value}"</p>
+                <p className="text-[11px] text-[#525252]">
                   You can proceed with this custom place — our AI will find coordinates and verify attractions!
                 </p>
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="mt-2 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold"
+                  className="mt-1 px-3.5 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-[11px] font-bold transition-colors"
                 >
                   Use "{value}"
                 </button>

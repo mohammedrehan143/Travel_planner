@@ -32,7 +32,7 @@ export const App: React.FC = () => {
     <AuthProvider>
       <TripProvider>
         <Router>
-          <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
+          <div className="min-h-screen flex flex-col bg-white text-[#171717] font-sans selection:bg-orange-500 selection:text-white">
             <Navbar />
             <main className="flex-1">
               <Routes>

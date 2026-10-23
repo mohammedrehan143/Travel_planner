@@ -38,10 +38,10 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Trip Sharing & Collaboration" maxWidth="lg">
-      <div className="space-y-6">
+      <div className="space-y-6 text-[#171717]">
         {/* Copy share link */}
-        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <div className="p-4 bg-[#F3F4F6] rounded-2xl border border-[#E5E7EB] space-y-2">
+          <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
             Shareable Trip Link
           </label>
           <div className="flex items-center gap-2">
@@ -49,13 +49,13 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
               type="text"
               readOnly
               value={window.location.href}
-              className="flex-1 px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 select-all"
+              className="flex-1 px-3 py-2 bg-white rounded-xl border border-[#E5E7EB] text-xs text-[#525252] select-all focus:outline-none"
             />
             <button
               onClick={handleCopyLink}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#E5E7EB] rounded-xl text-xs font-semibold text-[#171717] hover:bg-[#F3F4F6] transition-colors shadow-sm"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#16A34A]" /> : <Copy className="w-3.5 h-3.5 text-[#F97316]" />}
               <span>{copied ? 'Copied!' : 'Copy'}</span>
             </button>
           </div>
@@ -63,26 +63,26 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
 
         {/* Invite by Email */}
         <form onSubmit={handleInvite} className="space-y-3">
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
             Invite Friend or Co-Planner
           </label>
           <div className="flex flex-col sm:flex-row items-center gap-2">
             <div className="relative flex-1 w-full">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
               <input
                 type="email"
                 required
                 placeholder="colleague@domain.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717]"
               />
             </div>
 
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as 'editor' | 'viewer')}
-              className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             >
               <option value="editor">Can Edit & Add Activities</option>
               <option value="viewer">Viewer Only</option>
@@ -90,7 +90,7 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 transition-colors shrink-0"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 transition-colors shrink-0 active:scale-95"
             >
               <UserPlus className="w-4 h-4" />
               <span>Send Invite</span>
@@ -100,35 +100,41 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
 
         {/* Current Collaborators List */}
         <div>
-          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+          <h4 className="text-xs font-bold text-[#171717] uppercase tracking-wider mb-3">
             Active Members ({collaborators.length})
           </h4>
           <div className="space-y-2">
             {collaborators.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-white shadow-xs"
+                className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] bg-white shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <img
-                    src={c.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
-                    alt={c.full_name || 'Member'}
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-100"
-                  />
+                  {c.avatar_url ? (
+                    <img
+                      src={c.avatar_url}
+                      alt={c.full_name || 'Member'}
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-[#E5E7EB]"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#171717] text-white flex items-center justify-center font-bold text-xs">
+                      <Users className="w-4 h-4 text-[#F97316]" />
+                    </div>
+                  )}
                   <div>
-                    <p className="text-xs font-bold text-slate-900">{c.full_name || 'Collaborator'}</p>
-                    <p className="text-[10px] text-slate-500">{c.invited_email}</p>
+                    <p className="text-xs font-bold text-[#171717]">{c.full_name || (c.role === 'owner' ? 'Trip owner' : 'Collaborator')}</p>
+                    <p className="text-[10px] text-[#525252]">{c.invited_email || 'Development sample member'}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       c.role === 'owner'
-                        ? 'bg-blue-100 text-blue-700'
+                        ? 'bg-orange-50 text-orange-800 border border-orange-200'
                         : c.role === 'editor'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'bg-[#171717] text-white'
+                        : 'bg-[#F3F4F6] text-[#525252] border border-[#E5E7EB]'
                     }`}
                   >
                     {c.role}
@@ -139,8 +145,8 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
           </div>
         </div>
 
-        <div className="pt-2 text-[11px] text-slate-500 flex items-center gap-1.5">
-          <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+        <div className="pt-2 text-[11px] text-[#525252] flex items-center gap-1.5">
+          <Shield className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
           <span>Supabase Row-Level-Security (RLS) guarantees editor permissions are validated.</span>
         </div>
       </div>

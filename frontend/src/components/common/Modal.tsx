@@ -44,27 +44,27 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-[#171717]/70 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
         <div
-          className={`relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full ${widthClass} border border-slate-100`}
+          className={`relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full ${widthClass} border border-[#E5E7EB]`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] bg-[#F3F4F6]/60">
+            <h3 className="text-base font-bold text-[#171717]">{title}</h3>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="rounded-lg p-1.5 text-neutral-400 hover:text-[#171717] hover:bg-white transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5">{children}</div>
+          <div className="px-6 py-5 text-[#171717]">{children}</div>
         </div>
       </div>
     </div>

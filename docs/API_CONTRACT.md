@@ -17,7 +17,7 @@ This document serves as the agreed integration contract between **Person 2** (Ba
   ```http
   x-user-id: 00000000-0000-0000-0000-000000000001
   ```
-  The backend will automatically authenticate you as the default test user (`Alice Wanderlust`).
+  The backend will automatically authenticate you as a local development user.
 
 ---
 
@@ -282,7 +282,7 @@ Validates the current trip against opening hours, time overlaps, pacing, travel 
 | `GET` | `/api/trips/:id` | Returns complete trip details (days, activities, accommodations, expenses, collaborators) |
 | `PATCH` | `/api/trips/:id` | Update trip title, description, budget, status, or cover image |
 | `DELETE`| `/api/trips/:id` | Deletes a trip (Owner only) |
-| `POST` | `/api/trips/:id/collaborators` | Invite a collaborator (`{ "email": "bob@test.com", "role": "editor" }`) |
+| `POST` | `/api/trips/:id/collaborators` | Invite a collaborator (`{ "email": "collaborator@example.invalid", "role": "editor" }`) |
 
 ---
 

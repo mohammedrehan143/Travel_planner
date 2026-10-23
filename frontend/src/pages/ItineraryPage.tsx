@@ -153,10 +153,10 @@ export const ItineraryPage: React.FC = () => {
   if (!trip) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-4">
-        <p className="text-slate-600">Trip not found or has been removed.</p>
+        <p className="text-[#525252]">Trip not found or has been removed.</p>
         <button
           onClick={() => navigate('/dashboard')}
-          className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs"
+          className="px-4 py-2 rounded-xl bg-[#F97316] text-white font-bold text-xs"
         >
           Return to Dashboard
         </button>
@@ -204,9 +204,9 @@ export const ItineraryPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Hero Header Banner */}
-      <div className="relative rounded-3xl bg-slate-900 text-white overflow-hidden shadow-xl">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-white">
+      {/* Hero Header Banner (Selective Dark Section) */}
+      <div className="relative rounded-3xl bg-[#171717] text-white overflow-hidden border border-neutral-800 shadow-xl">
         <div className="relative h-64 sm:h-80 w-full overflow-hidden">
           <img
             src={
@@ -216,7 +216,7 @@ export const ItineraryPage: React.FC = () => {
             alt={trip.title}
             className="w-full h-full object-cover opacity-60"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
           {/* Action pills top right */}
           <div className="absolute top-4 right-4 flex flex-wrap items-center gap-2 z-10">
@@ -238,9 +238,9 @@ export const ItineraryPage: React.FC = () => {
 
             <button
               onClick={() => setChatDrawerOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-md shadow-blue-500/30 transition-all hover:scale-105"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-xs font-bold text-white shadow-md transition-all active:scale-95"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <Sparkles className="w-3.5 h-3.5 text-white" />
               <span>AI Co-Pilot</span>
             </button>
           </div>
@@ -248,17 +248,17 @@ export const ItineraryPage: React.FC = () => {
           {/* Bottom Title & Details */}
           <div className="absolute bottom-6 left-6 right-6 z-10 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-600/90 text-white backdrop-blur-sm border border-blue-400/40">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F97316] text-white shadow-sm">
                 {trip.destination}
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-sm">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white backdrop-blur-sm border border-white/10">
                 {trip.duration_days} Days Journey
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white backdrop-blur-sm border border-white/10">
                 Budget: {formatCurrency(trip.total_budget, trip.currency, true)}
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-200 border border-sky-400/30 flex items-center gap-1 backdrop-blur-sm">
-                <Plane className="w-3 h-3 text-sky-300" />
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white backdrop-blur-sm border border-white/10 flex items-center gap-1">
+                <Plane className="w-3 h-3 text-[#F97316]" />
                 <span>
                   Flight: {flightEstimate?.cost === 0
                     ? `Local (${getCurrencySymbol(trip.currency)}0)`
@@ -266,12 +266,12 @@ export const ItineraryPage: React.FC = () => {
                 </span>
               </span>
               {trip.status === 'confirmed' ? (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white shadow-md flex items-center gap-1.5">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#16A34A] text-white shadow-sm flex items-center gap-1.5">
                   <CheckCircle2 className="w-3 h-3 text-white" />
                   <span>Active Trip</span>
                 </span>
               ) : (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/70 text-amber-100 backdrop-blur-sm">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-neutral-800 text-neutral-200 border border-neutral-700">
                   Review & Confirm
                 </span>
               )}
@@ -281,7 +281,7 @@ export const ItineraryPage: React.FC = () => {
               {trip.title}
             </h1>
 
-            <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-300 line-clamp-2 max-w-2xl leading-relaxed">
               {trip.description}
             </p>
           </div>
@@ -289,17 +289,17 @@ export const ItineraryPage: React.FC = () => {
       </div>
 
       {/* Main Navigation Tabs: Schedule, Interactive Map, Budget, Packing */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] pb-3">
+        <div className="flex items-center gap-1 p-1 bg-[#F3F4F6] rounded-2xl text-xs font-bold border border-[#E5E7EB]">
           <button
             onClick={() => setActiveTab('schedule')}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
               activeTab === 'schedule'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-[#171717] shadow-sm border border-[#E5E7EB]'
+                : 'text-[#525252] hover:text-[#171717]'
             }`}
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className={`w-4 h-4 ${activeTab === 'schedule' ? 'text-[#F97316]' : ''}`} />
             <span>Day Schedule</span>
           </button>
 
@@ -307,11 +307,11 @@ export const ItineraryPage: React.FC = () => {
             onClick={() => setActiveTab('map')}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
               activeTab === 'map'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-[#171717] shadow-sm border border-[#E5E7EB]'
+                : 'text-[#525252] hover:text-[#171717]'
             }`}
           >
-            <MapIcon className="w-4 h-4" />
+            <MapIcon className={`w-4 h-4 ${activeTab === 'map' ? 'text-[#F97316]' : ''}`} />
             <span>Interactive Map & Route</span>
           </button>
 
@@ -319,11 +319,11 @@ export const ItineraryPage: React.FC = () => {
             onClick={() => setActiveTab('budget')}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
               activeTab === 'budget'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-[#171717] shadow-sm border border-[#E5E7EB]'
+                : 'text-[#525252] hover:text-[#171717]'
             }`}
           >
-            <ChartIcon className="w-4 h-4" />
+            <ChartIcon className={`w-4 h-4 ${activeTab === 'budget' ? 'text-[#F97316]' : ''}`} />
             <span>Budget Analytics</span>
           </button>
 
@@ -331,11 +331,11 @@ export const ItineraryPage: React.FC = () => {
             onClick={() => setActiveTab('checklist')}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
               activeTab === 'checklist'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-[#171717] shadow-sm border border-[#E5E7EB]'
+                : 'text-[#525252] hover:text-[#171717]'
             }`}
           >
-            <Luggage className="w-4 h-4" />
+            <Luggage className={`w-4 h-4 ${activeTab === 'checklist' ? 'text-[#F97316]' : ''}`} />
             <span>Packing Checklist</span>
           </button>
         </div>
@@ -345,9 +345,9 @@ export const ItineraryPage: React.FC = () => {
           <button
             onClick={handleValidateTrip}
             disabled={isValidating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E5E7EB] bg-white hover:bg-[#F3F4F6] text-xs font-semibold text-[#171717] shadow-sm transition-colors"
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
             <span>Validation Score: {validationScore}%</span>
           </button>
         </div>
@@ -364,19 +364,19 @@ export const ItineraryPage: React.FC = () => {
                 onClick={() => setSelectedDayIndex(idx)}
                 className={`flex-1 min-w-[140px] p-3.5 rounded-2xl border text-left transition-all ${
                   selectedDayIndex === idx
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20 ring-2 ring-blue-400/20'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                    ? 'bg-[#F97316] text-white border-[#F97316] shadow-sm ring-2 ring-orange-200'
+                    : 'bg-white text-[#171717] border-[#E5E7EB] hover:border-neutral-300'
                 }`}
               >
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className={`font-black ${selectedDayIndex === idx ? 'text-blue-100' : 'text-slate-900'}`}>
+                  <span className={`font-black ${selectedDayIndex === idx ? 'text-white' : 'text-[#171717]'}`}>
                     Day {day.day_number}
                   </span>
-                  <span className={`text-[10px] ${selectedDayIndex === idx ? 'text-blue-200' : 'text-slate-400'}`}>
+                  <span className={`text-[10px] ${selectedDayIndex === idx ? 'text-orange-100' : 'text-[#525252]'}`}>
                     {day.date}
                   </span>
                 </div>
-                <p className={`text-[11px] font-medium line-clamp-1 ${selectedDayIndex === idx ? 'text-white' : 'text-slate-600'}`}>
+                <p className={`text-[11px] font-medium line-clamp-1 ${selectedDayIndex === idx ? 'text-white' : 'text-[#525252]'}`}>
                   {day.theme || `Day ${day.day_number} highlights`}
                 </p>
               </button>
@@ -385,14 +385,14 @@ export const ItineraryPage: React.FC = () => {
 
           {/* Current Day Header Card */}
           {currentDay && (
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl bg-white border border-[#E5E7EB] shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-black text-slate-900">
+                  <h2 className="text-xl font-black text-[#171717]">
                     Day {currentDay.day_number}: {currentDay.theme}
                   </h2>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                <p className="text-xs text-[#525252] leading-relaxed max-w-2xl">
                   {currentDay.summary}
                 </p>
               </div>
@@ -400,8 +400,8 @@ export const ItineraryPage: React.FC = () => {
               {/* Weather & Day Actions */}
               <div className="flex items-center gap-3 self-end md:self-auto shrink-0">
                 {currentDay.weather_summary && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold">
-                    <Sun className="w-4 h-4 text-amber-500" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 text-xs font-semibold">
+                    <Sun className="w-4 h-4 text-[#F97316]" />
                     <span>{currentDay.weather_summary.temp_c}°C {currentDay.weather_summary.condition}</span>
                   </div>
                 )}
@@ -409,10 +409,10 @@ export const ItineraryPage: React.FC = () => {
                 <button
                   onClick={handleRegenerateDay}
                   disabled={isRegenerating}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E5E7EB] bg-white hover:bg-[#F3F4F6] text-[#171717] text-xs font-semibold shadow-sm transition-colors"
                   title="Ask AI to suggest alternative activities for this day"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isRegenerating ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 text-[#F97316] ${isRegenerating ? 'animate-spin' : ''}`} />
                   <span>Regenerate Day</span>
                 </button>
 
@@ -421,7 +421,7 @@ export const ItineraryPage: React.FC = () => {
                     setEditingActivity(null);
                     setEditModalOpen(true);
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold shadow-sm transition-colors active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Activity</span>
@@ -431,24 +431,24 @@ export const ItineraryPage: React.FC = () => {
           )}
 
           {/* Flight Ticket Charges Estimation Card */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Plane className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-[#171717] text-[#F97316] flex items-center justify-center shrink-0 shadow-sm">
+                <Plane className="w-5 h-5 text-[#F97316]" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold text-slate-900">✈️ Flight & Long-Distance Fare Estimate:</span>
-                  <span className="font-black text-blue-700 text-sm">
+                  <span className="font-bold text-[#171717]">✈️ Flight & Long-Distance Fare Estimate:</span>
+                  <span className="font-black text-[#171717] text-sm">
                     {flightEstimate?.cost === 0
                       ? `Local Traveling Only (${getCurrencySymbol(trip.currency)}0)`
                       : formatCurrency(flightEstimate?.cost || 0, trip.currency, true)}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-200">
-                    AI Live Market Rate
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 font-bold border border-orange-200">
+                    Live Rate
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-[11px] text-[#525252] mt-0.5">
                   {flightEstimate?.description || `Estimated round-trip airfare from ${trip.origin} to ${trip.destination}.`}
                   {flightEstimate?.airlines ? ` • Carrier: ${flightEstimate.airlines}` : ''}
                 </p>
@@ -458,10 +458,10 @@ export const ItineraryPage: React.FC = () => {
 
           {/* Activity Selection Controls Toolbar */}
           {dayActivities.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB] text-xs">
               <div className="flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-blue-600" />
-                <span className="font-bold text-slate-800">
+                <CheckSquare className="w-4 h-4 text-[#F97316]" />
+                <span className="font-bold text-[#171717]">
                   Select Activities to Include in Your Journey ({selectedActivityIds.size} of {dayActivities.length} selected)
                 </span>
               </div>
@@ -469,14 +469,14 @@ export const ItineraryPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={selectAllActivities}
-                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-bold text-[11px] border border-slate-300 shadow-2xs transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#F3F4F6] text-[#171717] font-bold text-[11px] border border-[#E5E7EB] shadow-sm transition-colors"
                 >
                   Select All
                 </button>
                 <button
                   type="button"
                   onClick={deselectAllActivities}
-                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-bold text-[11px] border border-slate-300 shadow-2xs transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#F3F4F6] text-[#171717] font-bold text-[11px] border border-[#E5E7EB] shadow-sm transition-colors"
                 >
                   Deselect All
                 </button>
@@ -509,10 +509,10 @@ export const ItineraryPage: React.FC = () => {
                 />
               ))
             ) : (
-              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200/80 space-y-3">
-                <Compass className="w-8 h-8 text-slate-400 mx-auto" />
-                <h4 className="text-sm font-bold text-slate-800">No Activities Scheduled for this Day</h4>
-                <p className="text-xs text-slate-500">
+              <div className="p-12 text-center bg-white rounded-2xl border border-[#E5E7EB] space-y-3 shadow-card">
+                <Compass className="w-8 h-8 text-neutral-400 mx-auto" />
+                <h4 className="text-sm font-bold text-[#171717]">No Activities Scheduled for this Day</h4>
+                <p className="text-xs text-[#525252]">
                   Click 'Add Activity' or use 'Regenerate Day' to automatically build a schedule with AI.
                 </p>
                 <button
@@ -520,7 +520,7 @@ export const ItineraryPage: React.FC = () => {
                     setEditingActivity(null);
                     setEditModalOpen(true);
                   }}
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                  className="px-4 py-2 rounded-xl bg-[#F97316] text-white text-xs font-bold"
                 >
                   Add First Activity
                 </button>
@@ -528,16 +528,16 @@ export const ItineraryPage: React.FC = () => {
             )}
           </div>
 
-          {/* User Confirmation & Start Trip Section */}
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white border border-indigo-500/30 shadow-xl space-y-4">
+          {/* User Confirmation & Start Trip Section (Selective Dark Section) */}
+          <div className="p-6 rounded-3xl bg-[#171717] text-white border border-neutral-800 shadow-xl space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30 mb-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-[#F97316] text-xs font-bold border border-orange-500/20 mb-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#F97316]" />
                   <span>Trip Ready for Acceptance</span>
                 </div>
                 <h3 className="text-lg font-black text-white">Accept & Start Your Trip</h3>
-                <p className="text-xs text-slate-300 max-w-lg mt-0.5">
+                <p className="text-xs text-neutral-300 max-w-lg mt-0.5">
                   Select the places you love, check "Yes" to confirm this itinerary, and start your real-world journey!
                 </p>
               </div>
@@ -548,34 +548,34 @@ export const ItineraryPage: React.FC = () => {
                   type="checkbox"
                   checked={isUserConfirmed}
                   onChange={(e) => setIsUserConfirmed(e.target.checked)}
-                  className="w-5 h-5 rounded text-emerald-500 accent-emerald-500 cursor-pointer"
+                  className="w-5 h-5 rounded text-[#F97316] accent-[#F97316] cursor-pointer"
                 />
                 <div>
                   <span className="text-xs font-black text-white block">
                     Yes, I accept this plan!
                   </span>
-                  <span className="text-[10px] text-slate-300">
+                  <span className="text-[10px] text-neutral-300">
                     Confirm {selectedActivityIds.size} selected spot(s)
                   </span>
                 </div>
               </label>
             </div>
 
-            {/* When user checks "Yes": The Start Trip button pops up! */}
+            {/* When user checks "Yes": The Start Trip button pops up */}
             {isUserConfirmed && (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs text-emerald-300 font-semibold">
-                  <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <div className="animate-in fade-in duration-300 pt-4 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-neutral-200 font-semibold">
+                  <Sparkles className="w-4 h-4 text-[#F97316] animate-pulse" />
                   <span>Plan accepted! All selected places are ready in your itinerary.</span>
                 </div>
 
                 <button
                   onClick={handleStartTrip}
                   disabled={isStartingTrip || selectedActivityIds.size === 0}
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                  className="px-6 py-3 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-black text-sm shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-102 active:scale-95 disabled:opacity-50"
                 >
-                  <Rocket className="w-4 h-4 text-slate-950" />
-                  <span>🚀 Start Trip (Accept & Activate)</span>
+                  <Rocket className="w-4 h-4 text-white" />
+                  <span>Start Trip (Accept & Activate)</span>
                 </button>
               </div>
             )}
@@ -654,35 +654,35 @@ export const ItineraryPage: React.FC = () => {
 
       {/* Trip Started Celebration Modal */}
       {tripStartedModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-5 shadow-2xl border border-slate-100">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
-              <Rocket className="w-8 h-8 animate-bounce text-emerald-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171717]/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-5 shadow-2xl border border-[#E5E7EB]">
+            <div className="w-16 h-16 rounded-2xl bg-orange-50 text-[#F97316] border border-orange-200 flex items-center justify-center mx-auto shadow-sm">
+              <Rocket className="w-8 h-8 animate-bounce text-[#F97316]" />
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-2xl font-black text-slate-900">
-                🎉 Trip Started & Accepted!
+              <h3 className="text-2xl font-black text-[#171717]">
+                Trip Started & Accepted!
               </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Your journey to <span className="font-bold text-slate-900">{trip.destination}</span> is now active with <span className="font-bold text-blue-600">{selectedActivityIds.size} places</span> confirmed.
+              <p className="text-xs text-[#525252] leading-relaxed">
+                Your journey to <span className="font-bold text-[#171717]">{trip.destination}</span> is now active with <span className="font-bold text-[#F97316]">{selectedActivityIds.size} places</span> confirmed.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1.5 text-left font-medium">
+            <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB] text-xs text-[#171717] space-y-1.5 text-left font-medium">
               <p className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
                 <span>Trip status updated to <strong>Active / Confirmed</strong></span>
               </p>
               <p className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
                 <span>Selected itinerary and daily schedule verified and locked</span>
               </p>
             </div>
 
             <button
               onClick={() => setTripStartedModalOpen(false)}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all"
+              className="w-full py-3 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-sm transition-all"
             >
               Continue Exploring My Itinerary
             </button>

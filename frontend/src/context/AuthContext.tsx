@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { normalizePhoneNumber } from '../lib/phone';
 import { UserProfile } from '../types';
 
 export interface SignUpPayload {
   fullName: string;
-  phone: string;
+  phone?: string;
   email: string;
   password: string;
   termsAccepted: boolean;
@@ -17,42 +18,32 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isDemoMode: boolean;
-  signInWithDemo: (role?: 'alice' | 'bob') => Promise<void>;
+  signInWithDemo: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error?: string }>;
-  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error?: string }>;
-  signUpWithDetails: (payload: SignUpPayload) => Promise<{ error?: string }>;
-  signInWithPhoneOrEmail: (identifier: string, password: string) => Promise<{ error?: string }>;
+  signUpWithDetails: (payload: SignUpPayload) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
 }
 
-const DEMO_PROFILES: Record<string, UserProfile> = {
-  alice: {
-    id: 'ae1f44dd-ce9b-44bb-a59b-ea089cc1fd81',
-    email: 'alice@trippilot.test',
-    phone: '+919876543210',
-    mobile_number: '+919876543210',
-    full_name: 'Alice Wanderlust',
-    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+const createDemoProfile = (): UserProfile => {
+  const now = new Date().toISOString();
+  return {
+    id: 'demo-local-user',
+    email: '',
     preferred_currency: 'INR',
     terms_accepted: true,
-    terms_accepted_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  bob: {
-    id: 'aa3dbd12-4e7a-4f86-aff1-bf2a26941045',
-    email: 'bob@trippilot.test',
-    phone: '+919876543211',
-    mobile_number: '+919876543211',
-    full_name: 'Bob Adventurer',
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    preferred_currency: 'INR',
-    terms_accepted: true,
-    terms_accepted_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
+    terms_accepted_at: now,
+    created_at: now,
+    updated_at: now,
+  };
 };
+
+const createDemoUser = (profile: UserProfile): User => ({
+  id: profile.id,
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: profile.created_at,
+} as unknown as User);
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -64,38 +55,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check if stored demo user exists
+    // Keep a local development session when the user explicitly chose the demo,
+    // or when this workspace has no Supabase configuration.
     const storedDemoUser = localStorage.getItem('trippilot_demo_user');
-    if (storedDemoUser && DEMO_PROFILES[storedDemoUser]) {
-      const demoProfile = DEMO_PROFILES[storedDemoUser];
+    if (storedDemoUser || !isSupabaseConfigured) {
+      const demoProfile = createDemoProfile();
       setProfile(demoProfile);
-      setUser({
-        id: demoProfile.id,
-        email: demoProfile.email,
-        phone: demoProfile.phone,
-        app_metadata: {},
-        user_metadata: { full_name: demoProfile.full_name, phone: demoProfile.phone },
-        aud: 'authenticated',
-        created_at: demoProfile.created_at,
-      } as unknown as User);
-      setIsDemoMode(true);
-      setLoading(false);
-      return;
-    }
-
-    if (!isSupabaseConfigured) {
-      // Default auto-login to Alice for instant smooth testing
-      const defaultProfile = DEMO_PROFILES.alice;
-      setProfile(defaultProfile);
-      setUser({
-        id: defaultProfile.id,
-        email: defaultProfile.email,
-        phone: defaultProfile.phone,
-        app_metadata: {},
-        user_metadata: { full_name: defaultProfile.full_name, phone: defaultProfile.phone },
-        aud: 'authenticated',
-        created_at: defaultProfile.created_at,
-      } as unknown as User);
+      setUser(createDemoUser(demoProfile));
       setIsDemoMode(true);
       setLoading(false);
       return;
@@ -143,133 +109,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithDemo = async (role: 'alice' | 'bob' = 'alice') => {
+  const signInWithDemo = async () => {
     setLoading(true);
-    const demoProfile = DEMO_PROFILES[role];
-    localStorage.setItem('trippilot_demo_user', role);
+    const demoProfile = createDemoProfile();
+    localStorage.setItem('trippilot_demo_user', 'true');
     setProfile(demoProfile);
-    setUser({
-      id: demoProfile.id,
-      email: demoProfile.email,
-      phone: demoProfile.phone,
-      app_metadata: {},
-      user_metadata: { full_name: demoProfile.full_name, phone: demoProfile.phone },
-      aud: 'authenticated',
-      created_at: demoProfile.created_at,
-    } as unknown as User);
+    setUser(createDemoUser(demoProfile));
     setIsDemoMode(true);
     setLoading(false);
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    return signInWithPhoneOrEmail(email, password);
-  };
-
-  const signInWithPhoneOrEmail = async (identifier: string, password: string) => {
-    const cleanId = identifier.trim();
+    const cleanEmail = email.trim().toLowerCase();
     if (!isSupabaseConfigured) {
-      // Find matching demo or default to Alice
-      const matched = Object.values(DEMO_PROFILES).find(
-        (p) => p.email.toLowerCase() === cleanId.toLowerCase() || p.phone === cleanId || p.mobile_number === cleanId
-      );
-      if (matched) {
-        const key = matched.full_name?.includes('Bob') ? 'bob' : 'alice';
-        await signInWithDemo(key as any);
-      } else {
-        // Create custom demo user on the fly
-        const customProfile: UserProfile = {
-          id: `demo-${Date.now()}`,
-          email: cleanId.includes('@') ? cleanId : `${cleanId.replace(/\D/g, '')}@phone.trippilot.test`,
-          phone: cleanId.includes('@') ? '+919876543210' : cleanId,
-          mobile_number: cleanId.includes('@') ? '+919876543210' : cleanId,
-          full_name: 'Traveler',
-          preferred_currency: 'INR',
-          terms_accepted: true,
-          terms_accepted_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setProfile(customProfile);
-        setUser({
-          id: customProfile.id,
-          email: customProfile.email,
-          phone: customProfile.phone,
-          app_metadata: {},
-          user_metadata: { full_name: customProfile.full_name, phone: customProfile.phone },
-          aud: 'authenticated',
-          created_at: customProfile.created_at,
-        } as unknown as User);
-        setIsDemoMode(true);
-      }
+      const now = new Date().toISOString();
+      const demoProfile: UserProfile = {
+        id: `demo-${Date.now()}`,
+        email: cleanEmail,
+        preferred_currency: 'INR',
+        terms_accepted: true,
+        terms_accepted_at: now,
+        created_at: now,
+        updated_at: now,
+      };
+      setProfile(demoProfile);
+      setUser({
+        id: demoProfile.id,
+        email: demoProfile.email,
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: demoProfile.created_at,
+      } as unknown as User);
+      setIsDemoMode(true);
+      setLoading(false);
       return {};
     }
 
-    // Supabase auth: Check if identifier is phone number
-    const isPhone = !cleanId.includes('@') && /^\+?[0-9\s-]{7,15}$/.test(cleanId);
-    let authEmail = cleanId;
-
-    if (isPhone) {
-      // Lookup profile email for this phone if using email auth, or sign in with phone
-      const formattedPhone = cleanId.startsWith('+') ? cleanId.replace(/\s+/g, '') : `+91${cleanId.replace(/\D/g, '')}`;
-      try {
-        const { data: profileMatch, error: lookupErr } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('phone', formattedPhone)
-          .maybeSingle();
-
-        if (!lookupErr && profileMatch?.email) {
-          authEmail = profileMatch.email;
-        } else {
-          // Check demo profile match
-          const demoMatch = Object.values(DEMO_PROFILES).find((p) => p.phone === formattedPhone);
-          if (demoMatch) {
-            await signInWithDemo(demoMatch.full_name?.includes('Bob') ? 'bob' : 'alice');
-            return {};
-          }
-          // Attempt native Supabase phone login
-          const { error: phoneErr } = await supabase.auth.signInWithPassword({
-            phone: formattedPhone,
-            password,
-          });
-          if (!phoneErr) return {};
-          authEmail = `${formattedPhone.replace(/\D/g, '')}@phone.trippilot.com`;
-        }
-      } catch {
-        authEmail = `${formattedPhone.replace(/\D/g, '')}@phone.trippilot.com`;
-      }
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password });
-    if (error) return { error: error.message };
-    return {};
-  };
-
-  const signUpWithEmail = async (email: string, password: string, fullName: string) => {
-    return signUpWithDetails({
-      fullName,
-      phone: '+919876543210',
-      email,
-      password,
-      termsAccepted: true,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+    return error ? { error: error.message } : {};
   };
 
   const signUpWithDetails = async ({ fullName, phone, email, password, termsAccepted }: SignUpPayload) => {
-    const formattedPhone = phone.startsWith('+') ? phone.replace(/\s+/g, '') : `+91${phone.replace(/\D/g, '')}`;
+    const rawPhone = phone?.trim() ?? '';
+    const formattedPhone = rawPhone ? normalizePhoneNumber(rawPhone) : '';
+    if (rawPhone && !formattedPhone) {
+      return { error: 'Enter the full phone number with its country code, starting with +.' };
+    }
 
     if (!isSupabaseConfigured) {
+      const now = new Date().toISOString();
       const customProfile: UserProfile = {
         id: `demo-${Date.now()}`,
         email: email.trim().toLowerCase(),
-        phone: formattedPhone,
-        mobile_number: formattedPhone,
+        ...(formattedPhone ? { phone: formattedPhone, mobile_number: formattedPhone } : {}),
         full_name: fullName.trim(),
         preferred_currency: 'INR',
         terms_accepted: termsAccepted,
-        terms_accepted_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        terms_accepted_at: now,
+        created_at: now,
+        updated_at: now,
       };
       setProfile(customProfile);
       setUser({
@@ -277,7 +176,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: customProfile.email,
         phone: customProfile.phone,
         app_metadata: {},
-        user_metadata: { full_name: customProfile.full_name, phone: customProfile.phone, terms_accepted: termsAccepted },
+        user_metadata: {
+          full_name: customProfile.full_name,
+          phone: customProfile.phone,
+          terms_accepted: termsAccepted,
+        },
         aud: 'authenticated',
         created_at: customProfile.created_at,
       } as unknown as User);
@@ -291,8 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: {
         data: {
           full_name: fullName.trim(),
-          phone: formattedPhone,
-          mobile_number: formattedPhone,
+          ...(formattedPhone ? { phone: formattedPhone, mobile_number: formattedPhone } : {}),
           terms_accepted: termsAccepted,
         },
       },
@@ -300,33 +202,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) return { error: error.message };
 
-    // Direct upsert to ensure profile row with phone is established immediately
-    if (data.user) {
-      try {
-        const { error: upsertErr } = await supabase.from('profiles').upsert({
-          id: data.user.id,
-          phone: formattedPhone,
-          mobile_number: formattedPhone,
-          email: email.trim().toLowerCase(),
-          full_name: fullName.trim(),
-          terms_accepted: termsAccepted,
-          terms_accepted_at: new Date().toISOString(),
-          preferred_currency: 'INR',
-        });
-        if (upsertErr) {
-          console.warn('Upsert with phone column failed, retrying without phone column:', upsertErr.message);
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            email: email.trim().toLowerCase(),
-            full_name: fullName.trim(),
-            preferred_currency: 'INR',
-          });
-        }
-      } catch (upsertCatch) {
-        console.warn('Profile upsert fallback triggered:', upsertCatch);
-      }
+    if (!data.user) {
+      return { error: 'Supabase did not return a new user. Please check your registration settings and try again.' };
     }
 
+    // Email confirmation may be enabled, in which case Supabase creates the auth
+    // user without issuing a session. The database trigger creates the profile;
+    // an unauthenticated browser request cannot safely write it under RLS.
+    if (!data.session) {
+      return {
+        message: 'Check your email for a confirmation link before signing in.',
+      };
+    }
+
+    // With an authenticated session, RLS permits the user to create/update only
+    // their own profile. Do not hide failures or retry with a reduced row: callers
+    // need to know when the schema or profile sync migration is missing.
+    const { data: savedProfile, error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: data.user.id,
+        ...(formattedPhone ? { phone: formattedPhone, mobile_number: formattedPhone } : {}),
+        email: email.trim().toLowerCase(),
+        full_name: fullName.trim(),
+        terms_accepted: termsAccepted,
+        terms_accepted_at: new Date().toISOString(),
+        preferred_currency: 'INR',
+      })
+      .select('*')
+      .single();
+
+    if (profileError || !savedProfile) {
+      const detail = profileError?.message ?? 'No profile row was returned.';
+      return {
+        error: `Your account was created, but its profile could not be saved: ${detail}. Check that the Supabase profile sync migration has been applied.`,
+      };
+    }
+
+    setSession(data.session);
+    setUser(data.user);
+    setProfile(savedProfile as UserProfile);
+    setIsDemoMode(false);
     return {};
   };
 
@@ -350,9 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isDemoMode,
         signInWithDemo,
         signInWithEmail,
-        signUpWithEmail,
         signUpWithDetails,
-        signInWithPhoneOrEmail,
         signOut,
       }}
     >

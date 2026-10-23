@@ -100,10 +100,10 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
       title={initialActivity ? 'Edit Activity' : 'Add New Activity'}
       maxWidth="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 text-[#171717]">
         {/* Title */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
             Activity Title *
           </label>
           <input
@@ -112,20 +112,20 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Asakusa Senso-ji Temple & Street Food"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
           />
         </div>
 
         {/* Category & Cost */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
               Category
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as ActivityCategory)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
             >
               <option value="sightseeing">Sightseeing</option>
               <option value="cultural">Cultural</option>
@@ -139,7 +139,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
               Estimated Cost
             </label>
             <input
@@ -147,7 +147,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               min="0"
               value={estimatedCost}
               onChange={(e) => setEstimatedCost(Number(e.target.value))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
             />
           </div>
         </div>
@@ -155,7 +155,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
         {/* Speciality of the Place & Dietary Preference */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
               ✨ Speciality of the Place
             </label>
             <input
@@ -163,18 +163,18 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               value={speciality}
               onChange={(e) => setSpeciality(e.target.value)}
               placeholder="e.g. Crispy Ghee Masala Dosa, 300m Skybridge"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
               Dietary Food Tag
             </label>
             <select
               value={dietaryTag}
               onChange={(e) => setDietaryTag(e.target.value as any)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
             >
               <option value="none">Not Applicable / None</option>
               <option value="veg">🥬 Pure Vegetarian (Veg)</option>
@@ -187,7 +187,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
         {/* Time start & end */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
               Start Time
             </label>
             <input
@@ -195,12 +195,12 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               required
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
               End Time
             </label>
             <input
@@ -208,14 +208,14 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               required
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
             />
           </div>
         </div>
 
         {/* Location Name & Address */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
             Location Name *
           </label>
           <input
@@ -224,12 +224,12 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={locationName}
             onChange={(e) => setLocationName(e.target.value)}
             placeholder="e.g. Senso-ji Temple"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
             Address / Neighborhood (Optional)
           </label>
           <input
@@ -237,13 +237,13 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={locationAddress}
             onChange={(e) => setLocationAddress(e.target.value)}
             placeholder="e.g. Asakusa, Taito City, Tokyo"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
             Description
           </label>
           <textarea
@@ -251,29 +251,29 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief overview of the activity..."
-            className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
           />
         </div>
 
         {/* Booking details */}
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
+        <div className="p-3 bg-[#F3F4F6] rounded-xl border border-[#E5E7EB] space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-slate-700">Requires advance booking/ticket?</label>
+            <label className="text-xs font-semibold text-[#171717]">Requires advance booking/ticket?</label>
             <input
               type="checkbox"
               checked={bookingRequired}
               onChange={(e) => setBookingRequired(e.target.checked)}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded text-[#F97316] focus:ring-[#F97316] accent-[#F97316]"
             />
           </div>
 
           {bookingRequired && (
             <div className="flex items-center gap-3 pt-2">
-              <label className="text-xs text-slate-600 font-medium">Status:</label>
+              <label className="text-xs text-[#525252] font-medium">Status:</label>
               <select
                 value={bookingStatus}
                 onChange={(e) => setBookingStatus(e.target.value as BookingStatus)}
-                className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white"
+                className="text-xs px-2.5 py-1.5 rounded-lg border border-[#E5E7EB] bg-white text-[#171717]"
               >
                 <option value="not_booked">Not Booked Yet</option>
                 <option value="booked">Booked & Confirmed</option>
@@ -285,7 +285,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
 
         {/* Local tips / notes */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
             Travel Notes & Tips
           </label>
           <input
@@ -293,22 +293,22 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Best photography spot is near five-story pagoda at 9 AM"
-            className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
           />
         </div>
 
         {/* Actions */}
-        <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+        <div className="pt-4 flex items-center justify-end gap-2 border-t border-[#E5E7EB]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="px-4 py-2 rounded-xl border border-[#E5E7EB] text-sm font-semibold text-[#171717] hover:bg-[#F3F4F6]"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-colors"
+            className="px-5 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-semibold shadow-sm transition-colors active:scale-95"
           >
             {initialActivity ? 'Save Changes' : 'Add Activity'}
           </button>

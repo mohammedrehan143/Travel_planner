@@ -1,101 +1,177 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Compass, LogOut } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Compass, LogOut, User, Plus, LayoutDashboard, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const Navbar: React.FC = () => {
-  const { user, profile, signOut, signInWithDemo } = useAuth();
+  const { user, profile, signOut, isDemoMode } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#E5E7EB] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo & Brand */}
-          <div className="flex items-center">
+          {/* Left: Logo & Brand */}
+          <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform duration-200">
-                <Compass className="w-5 h-5 text-white animate-spin-slow" />
+              <div className="w-9 h-9 rounded-xl bg-[#171717] flex items-center justify-center text-[#F97316] shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <Compass className="w-5 h-5 text-[#F97316]" />
               </div>
-              <div>
-                <span className="text-xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-950 to-blue-700 bg-clip-text text-transparent">
-                  TripPilot<span className="text-blue-600">.ai</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-black tracking-tight text-[#171717]">
+                  TripPilot<span className="text-[#F97316]">.ai</span>
                 </span>
-                <span className="hidden sm:inline-block ml-2 text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded bg-blue-100/70 text-blue-700 border border-blue-200">
+                <span className="hidden sm:inline-block text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#F3F4F6] text-[#525252] border border-[#E5E7EB]">
                   Agentic AI
                 </span>
               </div>
             </Link>
+
+            {/* Navigation Links with Orange Active Indicator */}
+            {user && (
+              <div className="hidden md:flex items-center gap-1">
+                <Link
+                  to="/dashboard"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
+                    isActive('/dashboard')
+                      ? 'text-[#171717] bg-[#F3F4F6]'
+                      : 'text-[#525252] hover:text-[#171717] hover:bg-[#F3F4F6]/60'
+                  }`}
+                >
+                  <LayoutDashboard className={`w-3.5 h-3.5 ${isActive('/dashboard') ? 'text-[#F97316]' : 'text-[#525252]'}`} />
+                  <span>Dashboard</span>
+                  {isActive('/dashboard') && (
+                    <span className="absolute -bottom-[17px] left-0 right-0 h-0.5 bg-[#F97316]" />
+                  )}
+                </Link>
+
+                <Link
+                  to="/wizard"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
+                    isActive('/wizard')
+                      ? 'text-[#171717] bg-[#F3F4F6]'
+                      : 'text-[#525252] hover:text-[#171717] hover:bg-[#F3F4F6]/60'
+                  }`}
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isActive('/wizard') ? 'text-[#F97316]' : 'text-[#525252]'}`} />
+                  <span>AI Wizard</span>
+                  {isActive('/wizard') && (
+                    <span className="absolute -bottom-[17px] left-0 right-0 h-0.5 bg-[#F97316]" />
+                  )}
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Right Actions: User Profile / Auth */}
+          {/* Right Actions: CTAs & User Profile */}
           <div className="flex items-center gap-3">
             {user ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
+              <>
+                {/* Orange Primary CTA Button */}
+                <Link
+                  to="/wizard"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold transition-all duration-200 shadow-sm active:scale-95"
                 >
-                  <img
-                    src={profile?.avatar_url || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80'}
-                    alt={profile?.full_name || 'User'}
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-blue-500/20"
-                  />
-                  <span className="text-sm font-medium text-slate-700 hidden sm:inline-block">
-                    {profile?.full_name || user.email?.split('@')[0]}
-                  </span>
-                </button>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New Trip</span>
+                </Link>
 
-                {profileDropdownOpen && (
-                  <div
-                    className="absolute right-0 mt-2 w-56 rounded-xl bg-white shadow-xl ring-1 ring-black ring-opacity-5 py-2 z-50 divide-y divide-slate-100 animate-in fade-in zoom-in-95 duration-100"
-                    onMouseLeave={() => setProfileDropdownOpen(false)}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-[#F3F4F6] transition-colors border border-transparent hover:border-[#E5E7EB]"
                   >
-                    <div className="px-4 py-2">
-                      <p className="text-xs text-slate-500 font-medium">Signed in as</p>
-                      <p className="text-sm font-semibold text-slate-900 truncate">{profile?.email || user.email}</p>
-                    </div>
+                    {profile?.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt={profile.full_name || 'Account profile'}
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-[#E5E7EB]"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-[#171717] text-white flex items-center justify-center font-bold text-xs">
+                        {(profile?.full_name || user.email || '').trim().charAt(0).toUpperCase() || <User className="w-4 h-4" />}
+                      </div>
+                    )}
+                    <span className="text-xs font-bold text-[#171717] hidden sm:inline-block max-w-[120px] truncate">
+                      {profile?.full_name || user.email?.split('@')[0] || (isDemoMode ? 'Demo User' : 'Account')}
+                    </span>
+                  </button>
 
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          signInWithDemo(profile?.full_name?.includes('Bob') ? 'alice' : 'bob');
-                          setProfileDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center justify-between"
-                      >
-                        <span>Switch Demo User</span>
-                        <span className="text-[10px] text-blue-600 font-medium">
-                          {profile?.full_name?.includes('Bob') ? 'Switch to Alice' : 'Switch to Bob'}
-                        </span>
-                      </button>
-                    </div>
+                  {profileDropdownOpen && (
+                    <div
+                      className="absolute right-0 mt-2 w-56 rounded-2xl bg-white shadow-xl py-2 z-50 divide-y divide-[#E5E7EB] border border-[#E5E7EB] animate-in fade-in duration-150"
+                      onMouseLeave={() => setProfileDropdownOpen(false)}
+                    >
+                      <div className="px-4 py-2.5">
+                        <p className="text-[11px] text-[#525252] font-medium">Signed in as</p>
+                        <p className="text-xs font-bold text-[#171717] truncate">
+                          {profile?.email || user.email || (isDemoMode ? 'Local Demo Session' : 'No email on file')}
+                        </p>
+                      </div>
 
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          signOut();
-                          setProfileDropdownOpen(false);
-                          navigate('/');
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Sign Out
-                      </button>
+                      {isDemoMode && (
+                        <div className="px-4 py-2 text-[11px] text-[#525252] bg-[#F3F4F6]">
+                          Local Development Mode
+                        </div>
+                      )}
+
+                      <div className="py-1">
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="w-full text-left px-4 py-2 text-xs text-[#171717] hover:bg-[#F3F4F6] flex items-center gap-2 font-medium"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5 text-[#525252]" />
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/wizard"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="w-full text-left px-4 py-2 text-xs text-[#171717] hover:bg-[#F3F4F6] flex items-center gap-2 font-medium"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-[#F97316]" />
+                          Create New Trip
+                        </Link>
+                      </div>
+
+                      <div className="py-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            signOut();
+                            setProfileDropdownOpen(false);
+                            navigate('/');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 font-semibold"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </>
             ) : (
-              <Link
-                to="/auth"
-                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-              >
-                Sign In
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/auth"
+                  className="px-4 py-2 rounded-xl border border-[#E5E7EB] bg-white text-[#171717] text-xs font-semibold hover:bg-[#F3F4F6] transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/auth"
+                  className="px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold transition-all shadow-sm active:scale-95"
+                >
+                  Get Started
+                </Link>
+              </div>
             )}
           </div>
         </div>

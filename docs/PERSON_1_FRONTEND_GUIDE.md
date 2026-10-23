@@ -27,7 +27,7 @@ When making API requests from React:
   ```http
   x-user-id: 00000000-0000-0000-0000-000000000001
   ```
-  The backend will automatically authenticate you as the default seed user (`Alice Wanderlust`) and return pre-seeded trips and itineraries!
+  The backend will automatically authenticate you as a local development user and return sample trips and itineraries.
 
 ---
 

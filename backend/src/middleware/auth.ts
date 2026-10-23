@@ -20,8 +20,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
   // 1. Check for development test override header
   if (devUserIdHeader) {
     req.user = {
-      id: devUserIdHeader,
-      email: `${devUserIdHeader}@dev.trippilot.test`
+      id: devUserIdHeader
     };
     return next();
   }
@@ -31,8 +30,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
     // If running in development without auth header, fall back to default demo user
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
       req.user = {
-        id: '00000000-0000-0000-0000-000000000001',
-        email: 'alice@trippilot.test'
+        id: '00000000-0000-0000-0000-000000000001'
       };
       return next();
     }
@@ -49,8 +47,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
   // In test or local mock mode with mock token
   if (token === 'mock-test-token' || token === 'mock-anon-key-for-development') {
     req.user = {
-      id: '00000000-0000-0000-0000-000000000001',
-      email: 'alice@trippilot.test'
+      id: '00000000-0000-0000-0000-000000000001'
     };
     return next();
   }

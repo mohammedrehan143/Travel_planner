@@ -1,7 +1,7 @@
 -- =====================================================================
--- TripPilot AI - Complete Production Schema & Migration (Phone-First)
+-- TripPilot AI - Complete Production Schema & Migration
 -- Safe for FRESH databases AND EXISTING databases.
--- Stores and indexes all user data & trips under Mobile Number.
+-- Stores account contact details only when provided by the account owner.
 -- =====================================================================
 
 -- 0. EXTENSIONS
@@ -24,29 +24,17 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Ensure Phone and Terms columns exist on existing table
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone VARCHAR(25);
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS mobile_number VARCHAR(25);
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT TRUE;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ DEFAULT now();
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_version VARCHAR(20) DEFAULT 'v1.0';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_version VARCHAR(20);
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
 
--- Backfill any existing profiles with phone numbers if NULL (e.g. Alice and Bob)
-UPDATE public.profiles 
-SET phone = '+919876543210', mobile_number = '+919876543210', terms_accepted = TRUE 
-WHERE id = '00000000-0000-0000-0000-000000000001' AND (phone IS NULL OR phone = '');
-
-UPDATE public.profiles 
-SET phone = '+919876543211', mobile_number = '+919876543211', terms_accepted = TRUE 
-WHERE id = '00000000-0000-0000-0000-000000000002' AND (phone IS NULL OR phone = '');
-
--- Fallback backfill for any other existing profiles
-UPDATE public.profiles 
-SET phone = '+91' || FLOOR(1000000000 + RANDOM() * 8999999999)::TEXT 
-WHERE phone IS NULL OR phone = '';
-
+-- Mirror only contact numbers already supplied by the account owner.
 UPDATE public.profiles 
 SET mobile_number = phone 
-WHERE mobile_number IS NULL OR mobile_number = '';
+WHERE phone IS NOT NULL AND phone <> ''
+  AND (mobile_number IS NULL OR mobile_number = '');
 
 -- Safe unique index on phone
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone);
