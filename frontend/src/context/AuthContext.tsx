@@ -91,6 +91,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (currentSession?.user) {
         setIsDemoMode(false);
         fetchProfile(currentSession.user.id);
+        if (_event === 'SIGNED_IN') {
+          const nowIso = new Date().toISOString();
+          supabase.from('profiles').update({ last_login_at: nowIso, updated_at: nowIso }).eq('id', currentSession.user.id).then();
+        }
       } else {
         setProfile(null);
       }
@@ -200,6 +204,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.user);
       setSession(data.session);
       setIsDemoMode(false);
+      const nowIso = new Date().toISOString();
+      supabase.from('profiles').update({ last_login_at: nowIso, updated_at: nowIso }).eq('id', data.user.id).then();
       await fetchProfile(data.user.id);
     }
     return error ? { error: error.message } : {};
@@ -240,6 +246,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(signinData.user);
           setSession(signinData.session);
           setIsDemoMode(false);
+          const nowIso = new Date().toISOString();
+          supabase.from('profiles').update({ last_login_at: nowIso, updated_at: nowIso }).eq('id', signinData.user.id).then();
           await fetchProfile(signinData.user.id);
           return {};
         }

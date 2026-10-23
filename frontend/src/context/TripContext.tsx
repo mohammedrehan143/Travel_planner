@@ -11,7 +11,7 @@ import {
   TripCreateWizardInput
 } from '../types';
 import { LocalStore } from '../lib/storage';
-import { TripPilotAPI } from '../lib/api';
+import { TripPilotAPI, isValidUUID, generateSafeUUID } from '../lib/api';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -134,8 +134,10 @@ export function normalizeActivityCategory(cat?: string): string {
 }
 
 function sanitizeTripForDb(trip: Trip, userId: string, phone: string | null): Record<string, any> {
+  const tripId = isValidUUID(trip.id) ? trip.id : generateSafeUUID();
+  const nowIso = new Date().toISOString();
   const payload: Record<string, any> = {
-    id: trip.id,
+    id: tripId,
     user_id: userId,
     title: trip.title,
     description: trip.description || '',
@@ -143,16 +145,18 @@ function sanitizeTripForDb(trip: Trip, userId: string, phone: string | null): Re
     destination: trip.destination,
     start_date: trip.start_date,
     end_date: trip.end_date,
-    duration_days: trip.duration_days,
-    traveler_count: trip.traveler_count || 1,
+    duration_days: Math.max(1, trip.duration_days || 1),
+    traveler_count: Math.max(1, trip.traveler_count || 1),
     travel_style: trip.travel_style || 'balanced',
-    interests: trip.interests || [],
-    total_budget: trip.total_budget || 0,
+    interests: Array.isArray(trip.interests) ? trip.interests : ['sightseeing'],
+    total_budget: Math.max(0, trip.total_budget || 0),
     currency: trip.currency || 'INR',
     status: trip.status || 'planning',
     cover_image_url: trip.cover_image_url || null,
     destination_lat: trip.destination_lat || null,
     destination_lng: trip.destination_lng || null,
+    created_at: trip.created_at || nowIso,
+    updated_at: nowIso,
   };
   if (phone) {
     payload.user_phone = phone;
@@ -161,8 +165,10 @@ function sanitizeTripForDb(trip: Trip, userId: string, phone: string | null): Re
 }
 
 function sanitizeActivityForDb(act: Activity, tripId: string, dayId: string, orderIndex: number): Record<string, any> {
+  const actId = isValidUUID(act.id) ? act.id : generateSafeUUID();
+  const nowIso = new Date().toISOString();
   return {
-    id: act.id,
+    id: actId,
     trip_id: tripId,
     trip_day_id: dayId,
     title: act.title,
@@ -170,14 +176,16 @@ function sanitizeActivityForDb(act: Activity, tripId: string, dayId: string, ord
     category: normalizeActivityCategory(act.category),
     start_time: act.start_time || '09:00',
     end_time: act.end_time || '10:00',
-    duration_minutes: act.duration_minutes || 60,
+    duration_minutes: Math.max(15, act.duration_minutes || 60),
     location_name: act.location_name || act.title,
     location_address: act.location_address || '',
     latitude: act.latitude || null,
     longitude: act.longitude || null,
-    estimated_cost: act.estimated_cost || 0,
+    estimated_cost: Math.max(0, act.estimated_cost || 0),
     currency: act.currency || 'INR',
     order_index: orderIndex,
+    created_at: act.created_at || nowIso,
+    updated_at: nowIso,
   };
 }
 
@@ -328,13 +336,16 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
           continue;
         }
 
+        const effectiveTripId = tripPayload.id;
+
         // Upsert days
         const days = tripDays[trip.id] || [];
         for (const day of days) {
+          const safeDayId = isValidUUID(day.id) ? day.id : generateSafeUUID();
           await supabase.from('trip_days').upsert({
-            id: day.id,
-            trip_id: trip.id,
-            day_number: day.day_number,
+            id: safeDayId,
+            trip_id: effectiveTripId,
+            day_number: Math.max(1, Number(day.day_number) || 1),
             date: day.date,
             theme: day.theme,
             summary: day.summary,
@@ -345,7 +356,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const dayActs = activities[day.id] || [];
           for (let idx = 0; idx < dayActs.length; idx++) {
             const act = dayActs[idx];
-            const actPayload = sanitizeActivityForDb(act, trip.id, day.id, idx);
+            const actPayload = sanitizeActivityForDb(act, effectiveTripId, safeDayId, idx);
             await supabase.from('activities').upsert(actPayload);
           }
         }
@@ -388,9 +399,11 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       try {
         const tripPayload = sanitizeTripForDb(newTrip, user.id, profile?.phone || profile?.mobile_number || null);
+        newTrip.id = tripPayload.id;
+
         const { data: savedTrip, error: tErr } = await supabase
           .from('trips')
-          .insert(tripPayload)
+          .upsert(tripPayload)
           .select()
           .single();
 
@@ -398,28 +411,38 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error inserting trip into Supabase:', tErr);
         }
 
-        if (!tErr && savedTrip) {
-          for (const day of newDays) {
-            const { data: savedDay } = await supabase.from('trip_days').insert({
-              id: day.id,
-              trip_id: savedTrip.id,
-              day_number: day.day_number,
-              date: day.date,
-              theme: day.theme,
-              summary: day.summary,
-              weather_summary: day.weather_summary,
-            }).select().single();
+        const effectiveTripId = savedTrip?.id || newTrip.id;
 
-            const dayActs = newActs[day.id] || [];
-            if (dayActs.length > 0 && savedDay) {
-              await supabase.from('activities').insert(
-                dayActs.map((act, idx) => sanitizeActivityForDb(act, savedTrip.id, savedDay.id, idx))
-              );
-            }
+        for (const day of newDays) {
+          const safeDayId = isValidUUID(day.id) ? day.id : generateSafeUUID();
+          const dayActs = newActs[day.id] || [];
+
+          day.id = safeDayId;
+          day.trip_id = effectiveTripId;
+
+          const { data: savedDay } = await supabase.from('trip_days').upsert({
+            id: safeDayId,
+            trip_id: effectiveTripId,
+            day_number: Math.max(1, Number(day.day_number) || 1),
+            date: day.date,
+            theme: day.theme,
+            summary: day.summary,
+            weather_summary: day.weather_summary,
+          }).select().single();
+
+          if (dayActs.length > 0) {
+            const actsToUpsert = dayActs.map((act, idx) => {
+              const actPayload = sanitizeActivityForDb(act, effectiveTripId, safeDayId, idx);
+              act.id = actPayload.id;
+              act.trip_id = effectiveTripId;
+              act.trip_day_id = safeDayId;
+              return actPayload;
+            });
+            await supabase.from('activities').upsert(actsToUpsert);
           }
-          setIsCloudSynced(true);
-          console.log('Successfully persisted trip and activities to Supabase cloud!');
         }
+        setIsCloudSynced(true);
+        console.log('Successfully persisted trip and activities to Supabase cloud!');
       } catch (err) {
         console.warn('Error saving trip directly to Supabase:', err);
       }
@@ -468,11 +491,13 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dayId: string,
     activityData: Omit<Activity, 'id' | 'created_at' | 'updated_at'>
   ) => {
+    const actId = generateSafeUUID();
+    const nowIso = new Date().toISOString();
     const newAct: Activity = {
       ...activityData,
-      id: `act-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      id: actId,
+      created_at: nowIso,
+      updated_at: nowIso,
     };
 
     const dayActs = activities[dayId] || [];
@@ -482,38 +507,25 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     LocalStore.saveActivities(updated);
 
     if (isSupabaseConfigured && user && activeTrip && !user.id.startsWith('demo-')) {
-      await supabase.from('activities').insert({
-        id: newAct.id,
-        trip_id: activeTrip.id,
-        trip_day_id: dayId,
-        title: newAct.title,
-        description: newAct.description,
-        category: newAct.category,
-        start_time: newAct.start_time,
-        end_time: newAct.end_time,
-        duration_minutes: newAct.duration_minutes,
-        location_name: newAct.location_name,
-        location_address: newAct.location_address,
-        latitude: newAct.latitude,
-        longitude: newAct.longitude,
-        estimated_cost: newAct.estimated_cost,
-        currency: newAct.currency,
-        order_index: updatedDayActs.length - 1,
-      });
+      const actPayload = sanitizeActivityForDb(newAct, activeTrip.id, dayId, updatedDayActs.length - 1);
+      await supabase.from('activities').upsert(actPayload);
     }
   };
 
   const addPlannedTrip = (plan: { trip: Trip; days: TripDay[]; activities: Record<string, Activity[]> }): Trip => {
     const { trip, days, activities: planActs } = plan;
 
+    const safeTripId = isValidUUID(trip.id) ? trip.id : generateSafeUUID();
+    trip.id = safeTripId;
+
     const nextTrips = [trip, ...trips.filter((t) => t.id !== trip.id)];
-    const nextDays = { ...tripDays, [trip.id]: days };
+    const nextDays = { ...tripDays, [safeTripId]: days };
     const nextActivities = { ...activities, ...planActs };
 
     setTrips(nextTrips);
     setTripDays(nextDays);
     setActivities(nextActivities);
-    setActiveTripIdState(trip.id);
+    setActiveTripIdState(safeTripId);
 
     LocalStore.saveTrips(nextTrips);
     LocalStore.saveTripDays(nextDays);
@@ -526,10 +538,14 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await supabase.from('trips').upsert(tripPayload);
 
           for (const day of days) {
+            const safeDayId = isValidUUID(day.id) ? day.id : generateSafeUUID();
+            day.id = safeDayId;
+            day.trip_id = safeTripId;
+
             await supabase.from('trip_days').upsert({
-              id: day.id,
-              trip_id: trip.id,
-              day_number: day.day_number,
+              id: safeDayId,
+              trip_id: safeTripId,
+              day_number: Math.max(1, Number(day.day_number) || 1),
               date: day.date,
               theme: day.theme,
               summary: day.summary,
@@ -538,9 +554,14 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const dayActs = planActs[day.id] || [];
             if (dayActs.length > 0) {
-              await supabase.from('activities').upsert(
-                dayActs.map((act, idx) => sanitizeActivityForDb(act, trip.id, day.id, idx))
-              );
+              const actsToUpsert = dayActs.map((act, idx) => {
+                const actPayload = sanitizeActivityForDb(act, safeTripId, safeDayId, idx);
+                act.id = actPayload.id;
+                act.trip_id = safeTripId;
+                act.trip_day_id = safeDayId;
+                return actPayload;
+              });
+              await supabase.from('activities').upsert(actsToUpsert);
             }
           }
           setIsCloudSynced(true);
@@ -646,7 +667,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!activeTrip) return;
     const newExp: TripExpense = {
       ...expenseData,
-      id: `exp-${Date.now()}`,
+      id: generateSafeUUID(),
       created_at: new Date().toISOString(),
     };
     const current = expenses[activeTrip.id] || [];
@@ -684,9 +705,9 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addCollaborator = async (email: string, role: 'viewer' | 'editor') => {
     if (!activeTrip) return;
     const newCollab: TripCollaborator = {
-      id: `collab-${Date.now()}`,
+      id: generateSafeUUID(),
       trip_id: activeTrip.id,
-      user_id: `user-${Date.now()}`,
+      user_id: generateSafeUUID(),
       role,
       invited_email: email,
       created_at: new Date().toISOString(),
@@ -698,6 +719,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       await supabase.from('trip_collaborators').insert({
+        id: newCollab.id,
         trip_id: activeTrip.id,
         role,
         invited_email: email,
