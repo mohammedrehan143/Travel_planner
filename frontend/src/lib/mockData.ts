@@ -22,6 +22,12 @@ export const INITIAL_TRIPS: Trip[] = [
     destination_lng: 139.6503,
     transport_preference: 'Traveling & Train',
     accommodation_preference: 'Modern Boutique Hotel',
+    flight_ticket_estimate: {
+      cost: 920,
+      currency: 'USD',
+      airlines: 'All Nippon Airways (ANA) / United Airlines',
+      description: 'Estimated round-trip international flight fare (SFO ⇄ HND/NRT)'
+    },
     created_at: '2026-10-22T08:00:00Z',
     updated_at: '2026-10-22T08:00:00Z',
   },
@@ -46,6 +52,12 @@ export const INITIAL_TRIPS: Trip[] = [
     destination_lng: 2.3522,
     transport_preference: 'Traveling & Walking',
     accommodation_preference: 'Charming Marais Loft',
+    flight_ticket_estimate: {
+      cost: 650,
+      currency: 'EUR',
+      airlines: 'Air France / Delta Air Lines',
+      description: 'Estimated round-trip transatlantic international airfare (JFK ⇄ CDG)'
+    },
     created_at: '2026-10-22T08:00:00Z',
     updated_at: '2026-10-22T08:00:00Z',
   },
@@ -70,6 +82,12 @@ export const INITIAL_TRIPS: Trip[] = [
     destination_lng: 7.7491,
     transport_preference: 'Swiss Travel Rail Pass',
     accommodation_preference: 'Alpine Chalet',
+    flight_ticket_estimate: {
+      cost: 160,
+      currency: 'CHF',
+      airlines: 'SWISS / British Airways',
+      description: 'Estimated round-trip European flight fare (LHR ⇄ ZRH/GVA)'
+    },
     created_at: '2026-10-22T08:00:00Z',
     updated_at: '2026-10-22T08:00:00Z',
   }

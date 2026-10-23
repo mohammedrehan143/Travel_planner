@@ -66,27 +66,48 @@ export interface Database {
         Row: {
           id: string;
           email: string;
+          phone: string | null;
+          mobile_number: string | null;
           full_name: string | null;
           avatar_url: string | null;
           preferred_currency: string;
+          terms_accepted: boolean;
+          terms_accepted_at: string | null;
+          terms_version: string | null;
+          phone_verified: boolean;
+          last_login_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id: string;
           email: string;
+          phone?: string | null;
+          mobile_number?: string | null;
           full_name?: string | null;
           avatar_url?: string | null;
           preferred_currency?: string;
+          terms_accepted?: boolean;
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
+          phone_verified?: boolean;
+          last_login_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           email?: string;
+          phone?: string | null;
+          mobile_number?: string | null;
           full_name?: string | null;
           avatar_url?: string | null;
           preferred_currency?: string;
+          terms_accepted?: boolean;
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
+          phone_verified?: boolean;
+          last_login_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

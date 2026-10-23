@@ -1,5 +1,6 @@
 import { PlannedDay, PlannedActivity } from '../types/trip.types.js';
 import { generateWithGemini, isLLMConfigured } from './llm.client.js';
+import { getAccurateFlightEstimate } from './flightPricing.js';
 
 export interface FlightEstimateResult {
   estimatedCost: number;
@@ -61,8 +62,17 @@ STRICT ACCURACY & QUALITY RULES:
    - If Non-Vegetarian: recommend famous regional meat/poultry specialties and iconic biryanis/grills.
    - Set "dietaryTag" to "veg", "non-veg", or "both" on each dining activity, and state the signature dish in "speciality".
 6. FLIGHT TICKET CHARGES ESTIMATION:
-   - Estimate realistic round-trip / one-way flight ticket fare from "${params.origin}" to "${params.destination}" in ${params.currency} based on current airline market rates (e.g. IndiGo, Air India, Saudia, Emirates).
-   - If origin and destination are in the same city or local outing (e.g. Bangalore to Bangalore), set flight cost to 0 and note "Intra-city travel - no flight required".
+   - Provide realistic, market-benchmarked round-trip airfare from "${params.origin}" to "${params.destination}" in ${params.currency} based on verified commercial airline market rates:
+     * Intra-city / local outing (same city): set flight cost to 0 and note "Intra-city travel - no flight required".
+     * Domestic flights (within same country): ₹5,500-₹7,500 INR (~$70-$90 USD) / US domestic ~$280-$360 USD.
+     * UAE / Gulf (Dubai, Abu Dhabi, Doha): ₹22,000-₹28,000 INR (~$260-$340 USD) via Emirates, flydubai, IndiGo.
+     * Saudi Arabia (Riyadh, Jeddah): ₹28,000-₹36,000 INR (~$340-$430 USD) via Saudia, Flynas, Air India.
+     * Southeast Asia (Thailand, Singapore, Malaysia): ₹16,000-₹24,000 INR (~$190-$290 USD) via Singapore Airlines, Thai Airways, Scoot.
+     * Bali / Indonesia: ₹32,000-₹42,000 INR (~$380-$500 USD) via Batik Air, AirAsia.
+     * Western Europe / UK (London, Paris, Switzerland, Rome): ₹55,000-₹75,000 INR (~$660-$900 USD / €610-€830 EUR / £520-£710 GBP) via Air France, British Airways, SWISS, Lufthansa.
+     * Japan / East Asia (Tokyo): ₹48,000-₹68,000 INR (~$580-$820 USD) via ANA, JAL, Air India.
+     * North America (USA, Canada): ₹78,000-₹1,10,000 INR (~$930-$1,300 USD) via Air India, United, Emirates.
+     * Australia / New Zealand: ₹62,000-₹88,000 INR (~$740-$1,050 USD) via Qantas, Singapore Airlines.
 7. TRANSIT: Refer to transit simply as "Traveling" (do not use "metro").
 8. OUTPUT FORMAT: Output ONLY valid JSON matching this exact structure without markdown backticks:
 {
@@ -174,12 +184,24 @@ STRICT ACCURACY & QUALITY RULES:
       };
     });
 
-    const flightEstimate: FlightEstimateResult | undefined = parsed.flightEstimate ? {
-      estimatedCost: typeof parsed.flightEstimate.estimatedCost === 'number' ? parsed.flightEstimate.estimatedCost : 0,
-      currency: parsed.flightEstimate.currency || params.currency,
-      airlines: parsed.flightEstimate.airlines || 'Estimated Commercial Airlines',
-      description: parsed.flightEstimate.description || 'Estimated intercity travel fare'
-    } : undefined;
+    const validatedFlight = getAccurateFlightEstimate(
+      params.origin,
+      params.destination,
+      params.currency,
+      parsed.flightEstimate ? {
+        cost: parsed.flightEstimate.estimatedCost,
+        currency: parsed.flightEstimate.currency,
+        airlines: parsed.flightEstimate.airlines,
+        description: parsed.flightEstimate.description
+      } : undefined
+    );
+
+    const flightEstimate: FlightEstimateResult = {
+      estimatedCost: validatedFlight.cost,
+      currency: validatedFlight.currency,
+      airlines: validatedFlight.airlines,
+      description: validatedFlight.description
+    };
 
     return {
       days: formattedDays,

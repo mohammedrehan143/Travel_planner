@@ -17,6 +17,9 @@ export interface UserProfile {
   preferred_currency: string;
   terms_accepted?: boolean;
   terms_accepted_at?: string;
+  terms_version?: string;
+  phone_verified?: boolean;
+  last_login_at?: string;
   created_at: string;
   updated_at: string;
 }

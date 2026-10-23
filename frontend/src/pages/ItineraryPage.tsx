@@ -41,7 +41,8 @@ import { PackingChecklist } from '../components/itinerary/PackingChecklist';
 import { PDFExportView } from '../components/itinerary/PDFExportView';
 import { Activity, TripDay } from '../types';
 import { TripPilotAPI } from '../lib/api';
-import { formatCurrency } from '../lib/currency';
+import { formatCurrency, getCurrencySymbol } from '../lib/currency';
+import { getAccurateFlightEstimate } from '../lib/flightPricing';
 
 export const ItineraryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +69,16 @@ export const ItineraryPage: React.FC = () => {
 
   // Find target trip
   const trip = trips.find((t) => t.id === id) || trips[0];
+
+  // Accurate flight estimate computation
+  const flightEstimate = trip
+    ? getAccurateFlightEstimate(
+        trip.origin,
+        trip.destination,
+        trip.currency,
+        trip.flight_ticket_estimate
+      )
+    : null;
 
   // Set active trip in context whenever id or trip changes
   React.useEffect(() => {
@@ -249,9 +260,9 @@ export const ItineraryPage: React.FC = () => {
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-200 border border-sky-400/30 flex items-center gap-1 backdrop-blur-sm">
                 <Plane className="w-3 h-3 text-sky-300" />
                 <span>
-                  Flight: {trip.flight_ticket_estimate?.cost === 0
-                    ? 'Local (₹0)'
-                    : formatCurrency(trip.flight_ticket_estimate?.cost || (trip.destination.toLowerCase().includes('saudi') ? 26000 : 5800), trip.currency, true)}
+                  Flight: {flightEstimate?.cost === 0
+                    ? `Local (${getCurrencySymbol(trip.currency)}0)`
+                    : formatCurrency(flightEstimate?.cost || 0, trip.currency, true)}
                 </span>
               </span>
               {trip.status === 'confirmed' ? (
@@ -429,17 +440,17 @@ export const ItineraryPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-bold text-slate-900">✈️ Flight & Long-Distance Fare Estimate:</span>
                   <span className="font-black text-blue-700 text-sm">
-                    {trip.flight_ticket_estimate?.cost === 0
-                      ? 'Local Traveling Only (₹0)'
-                      : formatCurrency(trip.flight_ticket_estimate?.cost || (trip.destination.toLowerCase().includes('saudi') ? 26000 : 5800), trip.currency, true)}
+                    {flightEstimate?.cost === 0
+                      ? `Local Traveling Only (${getCurrencySymbol(trip.currency)}0)`
+                      : formatCurrency(flightEstimate?.cost || 0, trip.currency, true)}
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-200">
-                    AI Live Rate
+                    AI Live Market Rate
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  {trip.flight_ticket_estimate?.description || `Estimated round-trip airfare from ${trip.origin} to ${trip.destination}.`}
-                  {trip.flight_ticket_estimate?.airlines ? ` • Carrier: ${trip.flight_ticket_estimate.airlines}` : ''}
+                  {flightEstimate?.description || `Estimated round-trip airfare from ${trip.origin} to ${trip.destination}.`}
+                  {flightEstimate?.airlines ? ` • Carrier: ${flightEstimate.airlines}` : ''}
                 </p>
               </div>
             </div>

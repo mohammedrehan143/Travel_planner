@@ -1,5 +1,6 @@
 import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput } from '../types';
 import { supabase } from './supabase';
+import { getAccurateFlightEstimate } from './flightPricing';
 
 const API_URL = (
   import.meta.env.VITE_API_URL ||
@@ -360,7 +361,7 @@ function mapBackendItineraryToFrontend(data: any): PlanGenerationResponse {
       currency: itin.flightEstimate.currency || itin.currency,
       airlines: itin.flightEstimate.airlines,
       description: itin.flightEstimate.description
-    } : undefined,
+    } : getAccurateFlightEstimate(itin.origin, itin.destination, itin.currency),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -699,38 +700,11 @@ async function simulateAgenticTripPlanning(
   }
 
   // Realistic Flight Ticket Charges Calculation
-  const origLower = (input.origin || '').toLowerCase();
-  const isSameCity =
-    origLower.includes(destLower) ||
-    destLower.includes(origLower) ||
-    (origLower.includes('bangalore') && destLower.includes('bangalore')) ||
-    (origLower.includes('bengaluru') && destLower.includes('bengaluru')) ||
-    (origLower.includes('riyadh') && destLower.includes('riyadh'));
-
-  let flightCost = 0;
-  let flightAirlines = 'Local Traveling (No Flight Needed)';
-  let flightDesc = 'Intra-city outing — zero flight charges';
-
-  if (!isSameCity) {
-    if (destLower.includes('saudi') || origLower.includes('saudi')) {
-      flightCost = input.currency === 'INR' ? 26000 : 320;
-      flightAirlines = 'Saudia / Emirates / Air India';
-      flightDesc = 'Estimated round-trip international flight fare per passenger';
-    } else if (
-      destLower.includes('paris') ||
-      destLower.includes('tokyo') ||
-      destLower.includes('new york') ||
-      destLower.includes('london')
-    ) {
-      flightCost = input.currency === 'INR' ? 62000 : 750;
-      flightAirlines = 'Commercial Airlines (Air France, ANA, British Airways)';
-      flightDesc = 'Estimated round-trip long-haul international airfare';
-    } else {
-      flightCost = input.currency === 'INR' ? 5800 : 70;
-      flightAirlines = 'IndiGo / Air India / Domestic Carrier';
-      flightDesc = 'Estimated domestic intercity round-trip airfare per person';
-    }
-  }
+  const accurateFlightEstimate = getAccurateFlightEstimate(
+    input.origin,
+    input.destination,
+    input.currency
+  );
 
   const generatedTrip: Trip = {
     id: tripId,
@@ -756,10 +730,10 @@ async function simulateAgenticTripPlanning(
     accommodation_preference: input.accommodation_preference || 'None (Single Day Outing)',
     dietary_preference: input.dietary_preference || 'veg',
     flight_ticket_estimate: {
-      cost: flightCost,
-      currency: input.currency,
-      airlines: flightAirlines,
-      description: flightDesc,
+      cost: accurateFlightEstimate.cost,
+      currency: accurateFlightEstimate.currency,
+      airlines: accurateFlightEstimate.airlines,
+      description: accurateFlightEstimate.description,
     },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

@@ -4,6 +4,7 @@ import { RoutesAdapter } from '../../integrations/routes.adapter.js';
 import { AccommodationAdapter } from '../../integrations/accommodation.adapter.js';
 import { CurrencyAdapter } from '../../integrations/currency.adapter.js';
 import { generateItineraryWithGemini } from '../gemini.generator.js';
+import { getAccurateFlightEstimate } from '../flightPricing.js';
 import { ItineraryValidator } from '../validator.js';
 import { getAdminSupabase } from '../../db/supabase.js';
 import {
@@ -305,41 +306,15 @@ export class ToolHandlers {
       }
     }
 
-    // Realistic Flight Ticket Charges Estimation
-    const origLower = (params.origin || '').toLowerCase();
-    const destLower = (params.destination || '').toLowerCase();
-    const isSameCity =
-      origLower.includes(destLower) ||
-      destLower.includes(origLower) ||
-      (origLower.includes('bangalore') && destLower.includes('bangalore')) ||
-      (origLower.includes('bengaluru') && destLower.includes('bengaluru')) ||
-      (origLower.includes('riyadh') && destLower.includes('riyadh'));
-
-    let flightCost = 0;
-    let flightAirlines = 'Intra-City Traveling (No Flight Needed)';
-    let flightDesc = 'Local traveling only — zero flight ticket expense';
-
-    if (!isSameCity) {
-      if (destLower.includes('saudi') || origLower.includes('saudi')) {
-        flightCost = Math.round(340 * currencyRate);
-        flightAirlines = 'Saudia / Emirates / Air India';
-        flightDesc = 'Estimated round-trip international flight ticket fare per passenger';
-      } else if (
-        destLower.includes('paris') ||
-        destLower.includes('tokyo') ||
-        destLower.includes('new york') ||
-        destLower.includes('london')
-      ) {
-        flightCost = Math.round(780 * currencyRate);
-        flightAirlines = 'Commercial Airlines (Air France, ANA, British Airways)';
-        flightDesc = 'Estimated round-trip long-haul international airfare';
-      } else {
-        // Domestic intercity flight
-        flightCost = Math.round(75 * currencyRate);
-        flightAirlines = 'IndiGo / Air India / Domestic Carrier';
-        flightDesc = 'Estimated domestic intercity round-trip airfare per person';
-      }
-    }
+    // Accurate Flight Ticket Charges Estimation
+    const accurateFlightEstimate = getAccurateFlightEstimate(
+      params.origin,
+      params.destination,
+      params.currency
+    );
+    const flightCost = accurateFlightEstimate.cost;
+    const flightAirlines = accurateFlightEstimate.airlines;
+    const flightDesc = accurateFlightEstimate.description;
 
     const startDateObj = new Date(params.startDate);
     const days: PlannedDay[] = [];

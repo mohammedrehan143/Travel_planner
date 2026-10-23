@@ -28,6 +28,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFA
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ DEFAULT now();
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_version VARCHAR(20) DEFAULT 'v1.0';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
 
 -- Backfill any existing profiles with phone numbers if NULL (e.g. Alice and Bob)
 UPDATE public.profiles 
@@ -315,12 +316,11 @@ BEGIN
     -- Safely convert NEW to JSONB to prevent "record new has no field phone" errors
     new_json := to_jsonb(NEW);
 
-    extracted_phone := COALESCE(
+    extracted_phone := NULLIF(COALESCE(
         new_json->>'phone',
         NEW.raw_user_meta_data->>'phone',
-        NEW.raw_user_meta_data->>'mobile_number',
-        '+91' || FLOOR(1000000000 + RANDOM() * 8999999999)::TEXT
-    );
+        NEW.raw_user_meta_data->>'mobile_number'
+    ), '');
 
     extracted_full_name := COALESCE(
         NEW.raw_user_meta_data->>'full_name',
@@ -329,8 +329,12 @@ BEGIN
     );
 
     extracted_terms := COALESCE(
-        (NEW.raw_user_meta_data->>'terms_accepted')::BOOLEAN,
-        TRUE
+        CASE LOWER(NEW.raw_user_meta_data->>'terms_accepted')
+            WHEN 'true' THEN TRUE
+            WHEN 'false' THEN FALSE
+            ELSE NULL
+        END,
+        FALSE
     );
 
     BEGIN
@@ -343,6 +347,7 @@ BEGIN
             preferred_currency,
             terms_accepted,
             terms_accepted_at,
+            last_login_at,
             created_at,
             updated_at
         )
@@ -350,11 +355,16 @@ BEGIN
             NEW.id,
             extracted_phone,
             extracted_phone,
-            COALESCE(new_json->>'email', extracted_phone || '@phone.trippilot.com'),
+            COALESCE(
+                NULLIF(new_json->>'email', ''),
+                NULLIF(extracted_phone, '') || '@phone-auth.local',
+                'user-' || NEW.id::TEXT || '@auth.local'
+            ),
             extracted_full_name,
             COALESCE(NEW.raw_user_meta_data->>'preferred_currency', 'INR'),
             extracted_terms,
             now(),
+            NEW.last_sign_in_at,
             now(),
             now()
         )
@@ -363,7 +373,15 @@ BEGIN
             mobile_number = COALESCE(EXCLUDED.mobile_number, public.profiles.mobile_number),
             email = COALESCE(EXCLUDED.email, public.profiles.email),
             full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
-            terms_accepted = EXCLUDED.terms_accepted,
+            terms_accepted = CASE
+                WHEN NEW.raw_user_meta_data ? 'terms_accepted' THEN EXCLUDED.terms_accepted
+                ELSE public.profiles.terms_accepted
+            END,
+            phone_verified = CASE
+                WHEN extracted_phone IS NOT NULL THEN (NEW.phone_confirmed_at IS NOT NULL)
+                ELSE public.profiles.phone_verified
+            END,
+            last_login_at = COALESCE(EXCLUDED.last_login_at, public.profiles.last_login_at),
             updated_at = now();
     EXCEPTION WHEN OTHERS THEN
         RAISE WARNING 'handle_new_auth_user warning: %', SQLERRM;
@@ -376,6 +394,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
+CREATE TRIGGER on_auth_user_updated
+    AFTER UPDATE OF email, phone, raw_user_meta_data, last_sign_in_at ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
 
 -- ---------------------------------------------------------------------
@@ -444,10 +467,12 @@ $$ LANGUAGE plpgsql;
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "Profiles readable by authenticated users" ON public.profiles;
-CREATE POLICY "Profiles readable by authenticated users"
+DROP POLICY IF EXISTS "Profiles are readable by authenticated users" ON public.profiles;
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
+CREATE POLICY "Users can read own profile"
     ON public.profiles FOR SELECT
     TO authenticated
-    USING (true);
+    USING (id = auth.uid());
 
 DROP POLICY IF EXISTS "Users can manage own profile" ON public.profiles;
 CREATE POLICY "Users can manage own profile"

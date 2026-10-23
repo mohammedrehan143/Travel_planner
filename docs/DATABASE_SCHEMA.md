@@ -178,10 +178,20 @@ erDiagram
 Links 1:1 with Supabase Auth `auth.users`.
 - `id` (UUID, Primary Key, Foreign Key to `auth.users(id) ON DELETE CASCADE`)
 - `email` (TEXT, NOT NULL)
+- `phone`, `mobile_number` (TEXT, NULL; application login identifiers when supplied)
 - `full_name` (TEXT, NULL)
 - `avatar_url` (TEXT, NULL)
 - `preferred_currency` (TEXT, DEFAULT `'USD'`)
+- `terms_accepted`, `terms_accepted_at`, `terms_version` (terms-consent metadata)
+- `phone_verified` (BOOLEAN, DEFAULT `FALSE`)
+- `last_login_at` (TIMESTAMPTZ, mirrored from `auth.users.last_sign_in_at`)
 - `created_at`, `updated_at` (TIMESTAMPTZ, DEFAULT `now()`)
+
+Supabase Auth remains the system of record for credentials. Passwords, password
+hashes, access tokens, and refresh tokens are never copied into `public.profiles`.
+The `sync_auth_user_profile` trigger creates a profile for every new Auth user,
+updates account metadata on Auth changes, and backfills existing users when the
+auth-profile migration is applied.
 
 ### 2.2 `trips`
 Top-level itinerary metadata and user planning preferences.
@@ -244,7 +254,7 @@ RLS is enabled on **all 9 tables**. PostgreSQL enforces access controls at the d
 
 | Table | Operation | Permission Rule |
 |---|---|---|
-| `profiles` | SELECT | Any authenticated user |
+| `profiles` | SELECT | Only the owning user (`auth.uid() = id`) |
 | `profiles` | INSERT / UPDATE | Only the owning user (`auth.uid() = id`) |
 | `trips` | SELECT | Owner (`user_id = auth.uid()`) OR Collaborator (`is_trip_member`) |
 | `trips` | INSERT | Authenticated user (`user_id = auth.uid()`) |
