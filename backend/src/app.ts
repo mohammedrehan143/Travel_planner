@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import agentRoutes from './routes/agent.routes.js';
 import tripRoutes from './routes/trip.routes.js';
 import integrationRoutes from './routes/integration.routes.js';
+import authRoutes from './routes/auth.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { env } from './config/env.js';
 import { getActiveProvider, isLLMConfigured } from './agent/llm.client.js';
@@ -53,6 +54,7 @@ export function createApp(): Express {
   app.use('/api', agentRoutes);
   app.use('/api/trips', tripRoutes);
   app.use('/api/integrations', integrationRoutes);
+  app.use('/api/auth', authRoutes);
 
   // 404 Handler
   app.use((req: Request, res: Response) => {

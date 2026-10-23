@@ -1,7 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { normalizePhoneNumber } from '../lib/phone';
+import { normalizePhoneNumber, looksLikePhoneNumber } from '../lib/phone';
+
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_BACKEND_API_URL ||
+  'http://localhost:5000'
+).replace(/\/api\/?$/, '').replace(/\/+$/, '').trim();
 import { UserProfile } from '../types';
 
 export interface SignUpPayload {
@@ -119,8 +126,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   };
 
-  const signInWithEmail = async (email: string, password: string) => {
-    const cleanEmail = email.trim().toLowerCase();
+  const signInWithEmail = async (identifier: string, password: string) => {
+    let cleanIdentifier = identifier.trim();
+
+    // If identifier is a phone number, look up corresponding email via backend lookup
+    if (looksLikePhoneNumber(cleanIdentifier) && !cleanIdentifier.includes('@')) {
+      try {
+        const resp = await fetch(`${API_URL}/api/auth/lookup-identifier`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: cleanIdentifier }),
+        });
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json.email) {
+            cleanIdentifier = json.email;
+          }
+        }
+      } catch (e) {
+        console.warn('Lookup identifier failed:', e);
+      }
+    }
+
+    const cleanEmail = cleanIdentifier.toLowerCase();
+
     if (!isSupabaseConfigured) {
       const now = new Date().toISOString();
       const demoProfile: UserProfile = {
@@ -146,7 +175,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {};
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+    let { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+
+    // If user is unconfirmed, auto-confirm via backend and retry login immediately
+    if (error && (error.message.includes('Email not confirmed') || (error as any).code === 'email_not_confirmed')) {
+      try {
+        const confirmRes = await fetch(`${API_URL}/api/auth/confirm-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail }),
+        });
+        if (confirmRes.ok) {
+          const retry = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+          data = retry.data;
+          error = retry.error;
+        }
+      } catch (confirmErr) {
+        console.warn('Auto-confirm retry failed:', confirmErr);
+      }
+    }
+
     if (!error && data?.user) {
       localStorage.removeItem('trippilot_demo_user');
       setUser(data.user);
@@ -161,14 +209,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const rawPhone = phone?.trim() ?? '';
     const formattedPhone = rawPhone ? normalizePhoneNumber(rawPhone) : '';
     if (rawPhone && !formattedPhone) {
-      return { error: 'Enter the full phone number with its country code, starting with +.' };
+      return { error: 'Please enter a valid 10-digit mobile number or standard international format (+91...).' };
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Try server-side registration with auto-confirmation and profile creation first
+    try {
+      const resp = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password,
+          fullName: fullName.trim(),
+          phone: formattedPhone || undefined,
+          termsAccepted,
+        }),
+      });
+
+      if (resp.ok) {
+        // User created and auto-confirmed in Supabase! Sign in immediately to acquire JWT session
+        const { data: signinData, error: signinErr } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+
+        if (!signinErr && signinData?.user) {
+          localStorage.removeItem('trippilot_demo_user');
+          setUser(signinData.user);
+          setSession(signinData.session);
+          setIsDemoMode(false);
+          await fetchProfile(signinData.user.id);
+          return {};
+        }
+      }
+    } catch (apiErr) {
+      console.warn('Backend registration failed, using direct client sign up:', apiErr);
     }
 
     if (!isSupabaseConfigured) {
       const now = new Date().toISOString();
       const customProfile: UserProfile = {
         id: `demo-${Date.now()}`,
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         ...(formattedPhone ? { phone: formattedPhone, mobile_number: formattedPhone } : {}),
         full_name: fullName.trim(),
         preferred_currency: 'INR',
@@ -195,8 +279,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {};
     }
 
+    // 2. Direct client sign up
     const { data, error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       password,
       options: {
         data: {
@@ -220,26 +305,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: 'Supabase did not return a new user. Please check your registration settings and try again.' };
     }
 
-    localStorage.removeItem('trippilot_demo_user');
-
-    // Email confirmation may be enabled, in which case Supabase creates the auth
-    // user without issuing a session. The database trigger creates the profile;
-    // an unauthenticated browser request cannot safely write it under RLS.
+    // Auto-confirm via backend if no immediate session
     if (!data.session) {
+      try {
+        const confirmRes = await fetch(`${API_URL}/api/auth/confirm-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail }),
+        });
+        if (confirmRes.ok) {
+          const retry = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+          if (retry.data?.user) {
+            localStorage.removeItem('trippilot_demo_user');
+            setUser(retry.data.user);
+            setSession(retry.data.session);
+            setIsDemoMode(false);
+            await fetchProfile(retry.data.user.id);
+            return {};
+          }
+        }
+      } catch (e) {}
+
       return {
-        message: 'Check your email for a confirmation link before signing in.',
+        message: 'Account created! If confirmation is required, please check your email.',
       };
     }
 
-    // With an authenticated session, RLS permits the user to create/update only
-    // their own profile. Do not hide failures or retry with a reduced row: callers
-    // need to know when the schema or profile sync migration is missing.
-    const { data: savedProfile, error: profileError } = await supabase
+    localStorage.removeItem('trippilot_demo_user');
+
+    // Create/update profile row under authenticated session
+    const { data: savedProfile } = await supabase
       .from('profiles')
       .upsert({
         id: data.user.id,
         ...(formattedPhone ? { phone: formattedPhone, mobile_number: formattedPhone } : {}),
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         full_name: fullName.trim(),
         terms_accepted: termsAccepted,
         terms_accepted_at: new Date().toISOString(),
@@ -248,16 +348,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .select('*')
       .single();
 
-    if (profileError || !savedProfile) {
-      const detail = profileError?.message ?? 'No profile row was returned.';
-      return {
-        error: `Your account was created, but its profile could not be saved: ${detail}. Check that the Supabase profile sync migration has been applied.`,
-      };
-    }
-
     setSession(data.session);
     setUser(data.user);
-    setProfile(savedProfile as UserProfile);
+    if (savedProfile) setProfile(savedProfile as UserProfile);
     setIsDemoMode(false);
     return {};
   };

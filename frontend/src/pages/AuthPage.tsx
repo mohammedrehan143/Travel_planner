@@ -227,28 +227,28 @@ export const AuthPage: React.FC = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       autoComplete="tel"
-                      placeholder="+ country code and number"
+                      placeholder="e.g. 9876543210 or +919876543210"
                       className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717] placeholder:text-neutral-400 font-mono"
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-[#525252] mt-1">Include your country code. Your profile and trips are stored under your account.</p>
+                <p className="text-[10px] text-[#525252] mt-1">Enter your 10-digit mobile number or full international format (+91...).</p>
               </div>
             )}
 
-            {/* Email Address */}
+            {/* Email Address or Mobile for Signin */}
             <div>
               <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1.5">
-                Email Address <span className="text-[#DC2626]">*</span>
+                {mode === 'signin' ? 'Email or Mobile Number' : 'Email Address'} <span className="text-[#DC2626]">*</span>
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
                 <input
-                  type="email"
+                  type={mode === 'signin' ? 'text' : 'email'}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  placeholder={mode === 'signin' ? 'name@example.com or mobile number' : 'name@example.com'}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717] placeholder:text-neutral-400"
                 />
               </div>
