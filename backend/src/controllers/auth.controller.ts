@@ -62,14 +62,17 @@ export class AuthController {
       }
 
       // Upsert profile row into public.profiles
+      const nowIso = new Date().toISOString();
       const profileData: Record<string, any> = {
         id: userId,
         email: cleanEmail,
         full_name: fullName || 'Traveler',
         preferred_currency: 'INR',
         terms_accepted: termsAccepted ?? true,
-        terms_accepted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        terms_accepted_at: nowIso,
+        last_login_at: nowIso,
+        created_at: nowIso,
+        updated_at: nowIso
       };
       if (phone) {
         profileData.phone = phone;

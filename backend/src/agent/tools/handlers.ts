@@ -15,6 +15,21 @@ import {
   ValidationReport
 } from '../../types/trip.types.js';
 
+function normalizeBackendCategory(cat?: string): string {
+  if (!cat) return 'sightseeing';
+  const c = cat.toLowerCase().trim();
+  const valid = new Set(['sightseeing', 'dining', 'cultural', 'outdoor', 'transit', 'shopping', 'entertainment', 'relaxation']);
+  if (valid.has(c)) return c;
+  if (c.includes('food') || c.includes('eat') || c.includes('dining') || c.includes('culinary') || c.includes('cafe') || c.includes('meal')) return 'dining';
+  if (c.includes('nature') || c.includes('park') || c.includes('hike') || c.includes('outdoor') || c.includes('beach')) return 'outdoor';
+  if (c.includes('art') || c.includes('museum') || c.includes('temple') || c.includes('history') || c.includes('historic') || c.includes('heritage')) return 'cultural';
+  if (c.includes('night') || c.includes('bar') || c.includes('club') || c.includes('entertainment') || c.includes('show')) return 'entertainment';
+  if (c.includes('shop') || c.includes('market') || c.includes('mall')) return 'shopping';
+  if (c.includes('transit') || c.includes('flight') || c.includes('train') || c.includes('bus') || c.includes('commute')) return 'transit';
+  if (c.includes('relax') || c.includes('spa') || c.includes('wellness')) return 'relaxation';
+  return 'sightseeing';
+}
+
 export class ToolHandlers {
   /**
    * Tool 1: search_places
@@ -811,25 +826,38 @@ export class ToolHandlers {
       const supabase = getAdminSupabase();
       const itin = params.itinerary;
 
+      // Ensure valid UUID for user_id
+      const isValidUUID = (str?: string) => Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str));
+      if (!params.userId || !isValidUUID(params.userId)) {
+        return {
+          success: false,
+          error: 'Invalid or missing user UUID',
+          itinerary: itin
+        };
+      }
+
+      const validStyles = ['budget', 'backpacking', 'balanced', 'cultural', 'luxury', 'adventure', 'relaxed'];
+      const safeStyle = validStyles.includes(itin.travelStyle) ? itin.travelStyle : 'balanced';
+
       // 1. Insert Trip
       const { data: tripData, error: tripError } = await (supabase.from('trips') as any)
         .insert({
           user_id: params.userId,
-          title: itin.title,
-          description: itin.description,
+          title: itin.title || `${itin.destination} Trip`,
+          description: itin.description || '',
           origin: itin.origin,
           destination: itin.destination,
           start_date: itin.startDate,
           end_date: itin.endDate,
-          duration_days: itin.durationDays,
-          traveler_count: itin.travelerCount,
-          travel_style: itin.travelStyle,
-          interests: itin.interests,
-          total_budget: itin.totalBudget,
-          currency: itin.currency,
+          duration_days: Math.max(1, itin.durationDays || 1),
+          traveler_count: Math.max(1, itin.travelerCount || 1),
+          travel_style: safeStyle,
+          interests: Array.isArray(itin.interests) ? itin.interests : ['sightseeing', 'cultural'],
+          total_budget: Math.max(0, itin.totalBudget || 0),
+          currency: itin.currency || 'INR',
           status: 'planning',
-          destination_lat: itin.destinationCoordinates?.lat,
-          destination_lng: itin.destinationCoordinates?.lng
+          destination_lat: itin.destinationCoordinates?.lat || null,
+          destination_lng: itin.destinationCoordinates?.lng || null
         })
         .select()
         .single();
@@ -849,7 +877,7 @@ export class ToolHandlers {
         const { data: dayData, error: dayError } = await (supabase.from('trip_days') as any)
           .insert({
             trip_id: tripId,
-            day_number: day.dayNumber,
+            day_number: Math.max(1, Number(day.dayNumber) || 1),
             date: day.date,
             theme: day.theme,
             summary: day.summary,
@@ -870,21 +898,21 @@ export class ToolHandlers {
               trip_id: tripId,
               trip_day_id: dayData.id,
               title: a.title,
-              description: a.description,
-              category: a.category,
-              start_time: a.startTime,
-              end_time: a.endTime,
-              duration_minutes: a.durationMinutes,
-              location_name: a.locationName,
-              location_address: a.locationAddress,
-              latitude: a.latitude,
-              longitude: a.longitude,
-              estimated_cost: a.estimatedCost,
-              currency: a.currency || itin.currency,
-              booking_required: a.bookingRequired,
-              booking_status: a.bookingStatus || 'not_booked',
+              description: a.description || '',
+              category: normalizeBackendCategory(a.category),
+              start_time: a.startTime || '09:00',
+              end_time: a.endTime || '10:30',
+              duration_minutes: Math.max(15, Number(a.durationMinutes) || 60),
+              location_name: a.locationName || a.title,
+              location_address: a.locationAddress || '',
+              latitude: a.latitude || null,
+              longitude: a.longitude || null,
+              estimated_cost: Math.max(0, Number(a.estimatedCost) || 0),
+              currency: a.currency || itin.currency || 'INR',
+              booking_required: Boolean(a.bookingRequired),
+              booking_status: a.bookingStatus && ['not_booked', 'booked', 'optional'].includes(a.bookingStatus) ? a.bookingStatus : 'not_booked',
               notes: extraNotes || null,
-              order_index: a.orderIndex || idx + 1
+              order_index: a.orderIndex !== undefined ? a.orderIndex : idx
             };
           });
 
