@@ -146,7 +146,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {};
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+    if (!error && data?.user) {
+      localStorage.removeItem('trippilot_demo_user');
+      setUser(data.user);
+      setSession(data.session);
+      setIsDemoMode(false);
+      await fetchProfile(data.user.id);
+    }
     return error ? { error: error.message } : {};
   };
 
@@ -200,11 +207,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
 
-    if (error) return { error: error.message };
+    if (error) {
+      if (error.message.includes('Database error') || error.message.includes('unexpected_failure')) {
+        return {
+          error: 'Supabase Database Error: The auth trigger requires missing schema columns. Please run the script in supabase/QUICK_FIX.sql in your Supabase SQL editor.'
+        };
+      }
+      return { error: error.message };
+    }
 
     if (!data.user) {
       return { error: 'Supabase did not return a new user. Please check your registration settings and try again.' };
     }
+
+    localStorage.removeItem('trippilot_demo_user');
 
     // Email confirmation may be enabled, in which case Supabase creates the auth
     // user without issuing a session. The database trigger creates the profile;

@@ -54,6 +54,133 @@ interface TripContextType {
 
 const TripContext = createContext<TripContextType | undefined>(undefined);
 
+const VALID_DB_CATEGORIES = new Set([
+  'sightseeing',
+  'dining',
+  'cultural',
+  'outdoor',
+  'transit',
+  'shopping',
+  'entertainment',
+  'relaxation',
+]);
+
+export function normalizeActivityCategory(cat?: string): string {
+  if (!cat) return 'sightseeing';
+  const c = cat.toLowerCase().trim();
+  if (VALID_DB_CATEGORIES.has(c)) return c;
+  if (
+    c.includes('food') ||
+    c.includes('eat') ||
+    c.includes('dining') ||
+    c.includes('culinary') ||
+    c.includes('cafe') ||
+    c.includes('meal') ||
+    c.includes('breakfast') ||
+    c.includes('lunch') ||
+    c.includes('dinner')
+  ) {
+    return 'dining';
+  }
+  if (
+    c.includes('nature') ||
+    c.includes('park') ||
+    c.includes('hike') ||
+    c.includes('outdoor') ||
+    c.includes('beach') ||
+    c.includes('adventure')
+  ) {
+    return 'outdoor';
+  }
+  if (
+    c.includes('art') ||
+    c.includes('museum') ||
+    c.includes('temple') ||
+    c.includes('shrine') ||
+    c.includes('monument') ||
+    c.includes('history') ||
+    c.includes('historic') ||
+    c.includes('heritage')
+  ) {
+    return 'cultural';
+  }
+  if (
+    c.includes('night') ||
+    c.includes('bar') ||
+    c.includes('pub') ||
+    c.includes('club') ||
+    c.includes('entertainment') ||
+    c.includes('show')
+  ) {
+    return 'entertainment';
+  }
+  if (c.includes('shop') || c.includes('market') || c.includes('mall') || c.includes('bazaar')) {
+    return 'shopping';
+  }
+  if (
+    c.includes('transit') ||
+    c.includes('flight') ||
+    c.includes('train') ||
+    c.includes('bus') ||
+    c.includes('commute') ||
+    c.includes('travel')
+  ) {
+    return 'transit';
+  }
+  if (c.includes('relax') || c.includes('spa') || c.includes('leisure') || c.includes('wellness')) {
+    return 'relaxation';
+  }
+  return 'sightseeing';
+}
+
+function sanitizeTripForDb(trip: Trip, userId: string, phone: string | null): Record<string, any> {
+  const payload: Record<string, any> = {
+    id: trip.id,
+    user_id: userId,
+    title: trip.title,
+    description: trip.description || '',
+    origin: trip.origin,
+    destination: trip.destination,
+    start_date: trip.start_date,
+    end_date: trip.end_date,
+    duration_days: trip.duration_days,
+    traveler_count: trip.traveler_count || 1,
+    travel_style: trip.travel_style || 'balanced',
+    interests: trip.interests || [],
+    total_budget: trip.total_budget || 0,
+    currency: trip.currency || 'INR',
+    status: trip.status || 'planning',
+    cover_image_url: trip.cover_image_url || null,
+    destination_lat: trip.destination_lat || null,
+    destination_lng: trip.destination_lng || null,
+  };
+  if (phone) {
+    payload.user_phone = phone;
+  }
+  return payload;
+}
+
+function sanitizeActivityForDb(act: Activity, tripId: string, dayId: string, orderIndex: number): Record<string, any> {
+  return {
+    id: act.id,
+    trip_id: tripId,
+    trip_day_id: dayId,
+    title: act.title,
+    description: act.description || '',
+    category: normalizeActivityCategory(act.category),
+    start_time: act.start_time || '09:00',
+    end_time: act.end_time || '10:00',
+    duration_minutes: act.duration_minutes || 60,
+    location_name: act.location_name || act.title,
+    location_address: act.location_address || '',
+    latitude: act.latitude || null,
+    longitude: act.longitude || null,
+    estimated_cost: act.estimated_cost || 0,
+    currency: act.currency || 'INR',
+    order_index: orderIndex,
+  };
+}
+
 export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, profile } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -192,30 +319,9 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       let syncedCount = 0;
       for (const trip of trips) {
-        // Upsert trip
-        const { error: tErr } = await supabase.from('trips').upsert({
-          id: trip.id,
-          user_id: user.id,
-          user_phone: profile?.phone || profile?.mobile_number || null,
-          title: trip.title,
-          description: trip.description,
-          origin: trip.origin,
-          destination: trip.destination,
-          start_date: trip.start_date,
-          end_date: trip.end_date,
-          duration_days: trip.duration_days,
-          traveler_count: trip.traveler_count,
-          travel_companion: trip.travel_companion,
-          travel_style: trip.travel_style,
-          interests: trip.interests,
-          total_budget: trip.total_budget,
-          currency: trip.currency,
-          status: trip.status || 'planning',
-          cover_image_url: trip.cover_image_url,
-          destination_lat: trip.destination_lat,
-          destination_lng: trip.destination_lng,
-          flight_ticket_estimate: trip.flight_ticket_estimate,
-        });
+        // Upsert trip using sanitized payload compatible with Supabase schema
+        const tripPayload = sanitizeTripForDb(trip, user.id, profile?.phone || profile?.mobile_number || null);
+        const { error: tErr } = await supabase.from('trips').upsert(tripPayload);
 
         if (tErr) {
           console.warn(`Could not sync trip ${trip.id}:`, tErr.message);
@@ -235,28 +341,12 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
             weather_summary: day.weather_summary,
           });
 
-          // Upsert activities
+          // Upsert activities with normalized category
           const dayActs = activities[day.id] || [];
           for (let idx = 0; idx < dayActs.length; idx++) {
             const act = dayActs[idx];
-            await supabase.from('activities').upsert({
-              id: act.id,
-              trip_id: trip.id,
-              trip_day_id: day.id,
-              title: act.title,
-              description: act.description,
-              category: act.category,
-              start_time: act.start_time,
-              end_time: act.end_time,
-              duration_minutes: act.duration_minutes,
-              location_name: act.location_name,
-              location_address: act.location_address,
-              latitude: act.latitude,
-              longitude: act.longitude,
-              estimated_cost: act.estimated_cost,
-              currency: act.currency,
-              order_index: idx,
-            });
+            const actPayload = sanitizeActivityForDb(act, trip.id, day.id, idx);
+            await supabase.from('activities').upsert(actPayload);
           }
         }
         syncedCount++;
@@ -297,29 +387,16 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Direct Supabase sync if user is authenticated
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       try {
-        const { data: savedTrip, error: tErr } = await supabase.from('trips').insert({
-          id: newTrip.id,
-          user_id: user.id,
-          user_phone: profile?.phone || profile?.mobile_number || null,
-          title: newTrip.title,
-          description: newTrip.description,
-          origin: newTrip.origin,
-          destination: newTrip.destination,
-          start_date: newTrip.start_date,
-          end_date: newTrip.end_date,
-          duration_days: newTrip.duration_days,
-          traveler_count: newTrip.traveler_count,
-          travel_companion: newTrip.travel_companion,
-          travel_style: newTrip.travel_style,
-          interests: newTrip.interests,
-          total_budget: newTrip.total_budget,
-          currency: newTrip.currency,
-          status: newTrip.status || 'planning',
-          cover_image_url: newTrip.cover_image_url,
-          destination_lat: newTrip.destination_lat,
-          destination_lng: newTrip.destination_lng,
-          flight_ticket_estimate: newTrip.flight_ticket_estimate,
-        }).select().single();
+        const tripPayload = sanitizeTripForDb(newTrip, user.id, profile?.phone || profile?.mobile_number || null);
+        const { data: savedTrip, error: tErr } = await supabase
+          .from('trips')
+          .insert(tripPayload)
+          .select()
+          .single();
+
+        if (tErr) {
+          console.error('Error inserting trip into Supabase:', tErr);
+        }
 
         if (!tErr && savedTrip) {
           for (const day of newDays) {
@@ -336,28 +413,12 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const dayActs = newActs[day.id] || [];
             if (dayActs.length > 0 && savedDay) {
               await supabase.from('activities').insert(
-                dayActs.map((act, idx) => ({
-                  id: act.id,
-                  trip_id: savedTrip.id,
-                  trip_day_id: savedDay.id,
-                  title: act.title,
-                  description: act.description,
-                  category: act.category,
-                  start_time: act.start_time,
-                  end_time: act.end_time,
-                  duration_minutes: act.duration_minutes,
-                  location_name: act.location_name,
-                  location_address: act.location_address,
-                  latitude: act.latitude,
-                  longitude: act.longitude,
-                  estimated_cost: act.estimated_cost,
-                  currency: act.currency,
-                  order_index: idx,
-                }))
+                dayActs.map((act, idx) => sanitizeActivityForDb(act, savedTrip.id, savedDay.id, idx))
               );
             }
           }
           setIsCloudSynced(true);
+          console.log('Successfully persisted trip and activities to Supabase cloud!');
         }
       } catch (err) {
         console.warn('Error saving trip directly to Supabase:', err);
@@ -461,29 +522,8 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       (async () => {
         try {
-          await supabase.from('trips').upsert({
-            id: trip.id,
-            user_id: user.id,
-            user_phone: profile?.phone || profile?.mobile_number || null,
-            title: trip.title,
-            description: trip.description,
-            origin: trip.origin,
-            destination: trip.destination,
-            start_date: trip.start_date,
-            end_date: trip.end_date,
-            duration_days: trip.duration_days,
-            traveler_count: trip.traveler_count,
-            travel_companion: trip.travel_companion,
-            travel_style: trip.travel_style,
-            interests: trip.interests,
-            total_budget: trip.total_budget,
-            currency: trip.currency,
-            status: trip.status || 'planning',
-            cover_image_url: trip.cover_image_url,
-            destination_lat: trip.destination_lat,
-            destination_lng: trip.destination_lng,
-            flight_ticket_estimate: trip.flight_ticket_estimate,
-          });
+          const tripPayload = sanitizeTripForDb(trip, user.id, profile?.phone || profile?.mobile_number || null);
+          await supabase.from('trips').upsert(tripPayload);
 
           for (const day of days) {
             await supabase.from('trip_days').upsert({
@@ -499,29 +539,11 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const dayActs = planActs[day.id] || [];
             if (dayActs.length > 0) {
               await supabase.from('activities').upsert(
-                dayActs.map((act, idx) => ({
-                  id: act.id,
-                  trip_id: trip.id,
-                  trip_day_id: day.id,
-                  title: act.title,
-                  description: act.description,
-                  category: act.category,
-                  start_time: act.start_time,
-                  end_time: act.end_time,
-                  duration_minutes: act.duration_minutes,
-                  location_name: act.location_name,
-                  location_address: act.location_address,
-                  latitude: act.latitude,
-                  longitude: act.longitude,
-                  estimated_cost: act.estimated_cost,
-                  currency: act.currency,
-                  speciality: act.speciality,
-                  dietary_tag: act.dietary_tag,
-                  order_index: idx,
-                }))
+                dayActs.map((act, idx) => sanitizeActivityForDb(act, trip.id, day.id, idx))
               );
             }
           }
+          setIsCloudSynced(true);
         } catch (err: any) {
           console.warn('Could not sync planned trip to Supabase:', err);
         }

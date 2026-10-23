@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Compass,
@@ -32,6 +32,23 @@ export const TripWizardPage: React.FC = () => {
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [agentLogs, setAgentLogs] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const timersRef = useRef<number[]>([]);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll the terminal stream to latest message
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [agentLogs]);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, []);
 
   // Wizard state
   const [origin, setOrigin] = useState('');
@@ -111,8 +128,30 @@ export const TripWizardPage: React.FC = () => {
     if (isGenerating) return;
     setIsGenerating(true);
     setErrorMsg(null);
-    setProgressPercent(10);
-    setAgentLogs([`Initializing TripPilot AI Agent for ${destination.trim()}...`]);
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    const dest = destination.trim() || 'your destination';
+    setProgressPercent(12);
+    setAgentLogs([`Initializing TripPilot AI Agent for ${dest}...`]);
+
+    // Schedule realistic tool-execution progression while awaiting backend AI synthesis
+    const stages = [
+      { delay: 1200, percent: 28, log: `Interpreting trip preferences & travel style for ${dest}...` },
+      { delay: 3200, percent: 46, log: `Querying Google Places & OpenStreetMap for top spots in ${dest}...` },
+      { delay: 5800, percent: 64, log: `Analyzing real-time weather forecasts & ideal visiting windows...` },
+      { delay: 8400, percent: 79, log: `Optimizing route coordinates, transit connections & commute times...` },
+      { delay: 11000, percent: 89, log: `Balancing budget limits, meal allocations & activity expenses...` },
+      { delay: 13800, percent: 95, log: `Synthesizing AI schedule & assembling daily itinerary...` },
+    ];
+
+    stages.forEach(({ delay, percent, log }) => {
+      const t = window.setTimeout(() => {
+        setProgressPercent((prev) => Math.max(prev, percent));
+        setAgentLogs((prev) => (prev.includes(log) ? prev : [...prev, log]));
+      }, delay);
+      timersRef.current.push(t);
+    });
 
     const input: TripCreateWizardInput = {
       origin,
@@ -135,16 +174,26 @@ export const TripWizardPage: React.FC = () => {
         input,
         (stepName, percent, logMsg) => {
           setCurrentAgentStep(stepName);
-          setProgressPercent(percent);
-          setAgentLogs((prev) => [...prev, logMsg]);
+          setProgressPercent((prev) => Math.max(prev, percent));
+          setAgentLogs((prev) => (prev.includes(logMsg) ? prev : [...prev, logMsg]));
         }
       );
+
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setProgressPercent(100);
+      setAgentLogs((prev) => [
+        ...prev,
+        `Finalized itinerary successfully for ${dest}! Redirecting...`,
+      ]);
 
       // Navigate to the newly generated trip
       setTimeout(() => {
         navigate(`/trip/${generatedTrip.id}`);
-      }, 400);
+      }, 700);
     } catch (err: any) {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
       console.error('Trip generation error', err);
       setErrorMsg(err?.message || 'Failed to generate itinerary. Please try again.');
       setIsGenerating(false);
@@ -202,15 +251,28 @@ export const TripWizardPage: React.FC = () => {
       <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-card p-6 sm:p-8">
         {/* Live Agent Generation Screen */}
         {isGenerating ? (
-          <div className="py-8 space-y-6 text-center">
-            <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#F97316] text-white flex items-center justify-center shadow-lg">
-                <Compass className="w-8 h-8 animate-spin" />
+          <div className="py-10 space-y-6 text-center animate-in fade-in zoom-in-95 duration-300">
+            {/* Animated Compass with Glowing Radar Rings */}
+            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+              {/* Outer Ripple / Radar Rings */}
+              <div className="absolute inset-0 rounded-3xl bg-orange-500/20 animate-ping opacity-60" />
+              <div className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-orange-500 to-amber-400 opacity-25 blur-lg animate-pulse" />
+              <div className="absolute inset-1 rounded-2xl border-2 border-dashed border-orange-400/50 animate-[spin_8s_linear_infinite]" />
+              
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#EA580C] to-[#F97316] text-white flex items-center justify-center shadow-xl shadow-orange-500/25">
+                <Compass className="w-8 h-8 animate-[spin_4s_linear_infinite]" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-[#171717]">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                </span>
+                <span>Active Agent Pipeline Running</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-[#171717]">
                 TripPilot AI is Orchestrating Your Itinerary
               </h3>
               <p className="text-xs text-[#525252] max-w-md mx-auto">
@@ -218,25 +280,64 @@ export const TripWizardPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full max-w-md mx-auto bg-[#F3F4F6] rounded-full h-2.5 overflow-hidden border border-[#E5E7EB]">
-              <div
-                className="h-full bg-[#F97316] transition-all duration-300 rounded-full"
-                style={{ width: `${progressPercent}%` }}
-              />
+            {/* Progress Bar with smooth animated glow & shimmer */}
+            <div className="w-full max-w-md mx-auto space-y-1.5">
+              <div className="flex justify-between items-center text-[11px] font-mono font-medium text-[#525252] px-1">
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="w-3 h-3 animate-spin text-[#F97316]" />
+                  <span>Synthesizing trip parameters...</span>
+                </span>
+                <span className="font-bold text-[#F97316]">{Math.round(progressPercent)}%</span>
+              </div>
+              <div className="w-full bg-[#F3F4F6] rounded-full h-3 overflow-hidden border border-[#E5E7EB] p-0.5 shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 transition-all duration-500 ease-out rounded-full relative overflow-hidden shadow-sm"
+                  style={{ width: `${Math.max(6, progressPercent)}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/30 animate-pulse" />
+                </div>
+              </div>
             </div>
 
             {/* Live Terminal-style Agent Logs (Dark Section) */}
-            <div className="max-w-md mx-auto text-left p-4 rounded-2xl bg-[#171717] text-neutral-300 font-mono text-[11px] space-y-1.5 shadow-inner max-h-48 overflow-y-auto border border-neutral-800">
-              <div className="flex items-center gap-1.5 text-[#F97316] border-b border-neutral-800 pb-1 font-bold">
-                <Sparkles className="w-3 h-3 text-[#F97316]" />
-                <span>Agent Execution Stream</span>
+            <div className="max-w-md mx-auto text-left p-4 rounded-2xl bg-[#171717] text-neutral-300 font-mono text-[11px] space-y-2 shadow-2xl max-h-56 overflow-y-auto border border-neutral-800">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                <div className="flex items-center gap-1.5 text-[#F97316] font-bold">
+                  <Sparkles className="w-3.5 h-3.5 text-[#F97316] animate-pulse" />
+                  <span>Agent Execution Stream</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">STREAMING</span>
+                </div>
               </div>
-              {agentLogs.map((log, i) => (
-                <p key={i} className="leading-relaxed">
-                  <span className="text-[#16A34A]">✓</span> {log}
-                </p>
-              ))}
+              <div className="space-y-1.5 pt-1">
+                {agentLogs.map((log, i) => {
+                  const isLast = i === agentLogs.length - 1;
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-start gap-2 leading-relaxed transition-all duration-200"
+                    >
+                      {isLast ? (
+                        <Loader2 className="w-3.5 h-3.5 mt-0.5 text-[#F97316] animate-spin flex-shrink-0" />
+                      ) : (
+                        <span className="text-[#16A34A] font-bold flex-shrink-0">✓</span>
+                      )}
+                      <span className={isLast ? 'text-white font-medium' : 'text-neutral-400'}>
+                        {log}
+                        {isLast && (
+                          <span className="inline-block w-1.5 h-3 ml-1 bg-[#F97316] animate-pulse align-middle" />
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div ref={logsEndRef} />
+              </div>
             </div>
           </div>
         ) : (
