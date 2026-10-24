@@ -5,6 +5,7 @@ import { AgentRunService } from '../services/agentRun.service.js';
 import { TripService } from '../services/trip.service.js';
 import { PlanTripRequest } from '../types/trip.types.js';
 import { processAgentChat, generateChatReply } from '../agent/llm.client.js';
+import { detectCurrencyForDestination, getDefaultBudgetForCurrency } from '../integrations/currency.adapter.js';
 
 export class AgentController {
   /** POST /api/agent/chat — conversational endpoint usable with local or saved trips. */
@@ -31,12 +32,11 @@ export class AgentController {
         const endDateObj = new Date(startDateObj.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000);
         const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
-        const isIndianDest = /bangalore|bengaluru|goa|mumbai|delhi|jaipur|rajasthan|kerala|hyderabad|chennai|kolkata|manali|shimla|kashmir|agra|varanasi|rishikesh|ladakh|ooty|darjeeling|munnar|udaipur|jodhpur|amritsar|india/i.test(dest);
-        const currency = chatResult.tripParams.currency || (context?.currency as string) || (isIndianDest ? 'INR' : 'USD');
+        const detectedDestCurrency = detectCurrencyForDestination(dest);
+        const currency = (context?.currency as string) || chatResult.tripParams.currency || detectedDestCurrency || 'USD';
         const isBudget = chatResult.tripParams.travelStyle === 'budget' || /budget|cheap/i.test(message);
-        const defaultBudget = currency === 'INR'
-          ? (durationDays === 1 ? (isBudget ? 1200 : 2500) : (isBudget ? 6000 : 15000))
-          : (durationDays === 1 ? (isBudget ? 80 : 150) : (isBudget ? 800 : 2000));
+        const baseDefault = getDefaultBudgetForCurrency(currency, durationDays);
+        const defaultBudget = chatResult.tripParams.budget || (isBudget ? Math.round(baseDefault * 0.65) : baseDefault);
 
         const planReq: PlanTripRequest = {
           userId,

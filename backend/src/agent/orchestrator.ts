@@ -11,6 +11,7 @@ import { AgentRunService } from '../services/agentRun.service.js';
 import { ItineraryValidator } from './validator.js';
 import { sanitizeUserInput } from './prompts.js';
 import { isLLMConfigured, callLLMWithTools, ChatMessage, generateChatReply } from './llm.client.js';
+import { detectCurrencyForDestination } from '../integrations/currency.adapter.js';
 
 export class AgentOrchestrator {
   /**
@@ -57,7 +58,8 @@ export class AgentOrchestrator {
       const durationDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1);
       const travelerCount = request.travelerCount || 1;
       const budget = request.budget || 2500;
-      const currency = (request.currency || 'USD').toUpperCase();
+      const destinationCurrency = detectCurrencyForDestination(sanitizedDest);
+      const currency = (request.currency || destinationCurrency || 'USD').toUpperCase();
       const travelStyle = request.travelStyle || 'balanced';
       const interests = request.interests || ['sightseeing', 'culinary', 'culture'];
 

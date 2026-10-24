@@ -19,7 +19,16 @@ import {
 } from 'lucide-react';
 import { useTrips } from '../context/TripContext';
 import { TravelStyle, TripCreateWizardInput } from '../types';
-import { getCurrencySymbol, formatCurrency, SUPPORTED_CURRENCIES } from '../lib/currency';
+import {
+  getCurrencySymbol,
+  formatCurrency,
+  SUPPORTED_CURRENCIES,
+  detectCurrencyForDestination,
+  getCountryForDestination,
+  getDefaultBudgetForCurrency,
+  getBudgetPresetsForCurrency,
+  getMinBudgetForCurrency
+} from '../lib/currency';
 import { PlaceAutocomplete } from '../components/common/PlaceAutocomplete';
 
 export const TripWizardPage: React.FC = () => {
@@ -56,6 +65,7 @@ export const TripWizardPage: React.FC = () => {
     (location.state as any)?.destination ||
     new URLSearchParams(location.search).get('destination') ||
     '';
+  const initialCurrency = detectCurrencyForDestination(initialDest);
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState(initialDest);
   const [startDate, setStartDate] = useState('2026-11-10');
@@ -63,8 +73,8 @@ export const TripWizardPage: React.FC = () => {
   const [travelerCount, setTravelerCount] = useState<number>(1);
   const [travelCompanion, setTravelCompanion] = useState<string>('solo');
   const [dietaryPreference, setDietaryPreference] = useState<string>('veg');
-  const [totalBudget, setTotalBudget] = useState<number>(500);
-  const [currency, setCurrency] = useState('INR');
+  const [currency, setCurrency] = useState(initialCurrency);
+  const [totalBudget, setTotalBudget] = useState<number>(() => getDefaultBudgetForCurrency(initialCurrency, 1));
   const [travelStyle, setTravelStyle] = useState<TravelStyle>('balanced');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([
     'culinary',
@@ -75,6 +85,16 @@ export const TripWizardPage: React.FC = () => {
   const [accommodationPreference, setAccommodationPreference] = useState('None (Single Day Outing)');
 
   const isOneDay = startDate === endDate;
+  const durationDays = Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1);
+
+  const handleDestinationChange = (newDest: string) => {
+    setDestination(newDest);
+    const detected = detectCurrencyForDestination(newDest);
+    if (detected && detected !== currency) {
+      setCurrency(detected);
+      setTotalBudget(getDefaultBudgetForCurrency(detected, isOneDay ? 1 : durationDays));
+    }
+  };
 
   const setDurationDays = (days: number) => {
     const [y, m, d] = startDate.split('-').map(Number);
@@ -82,8 +102,10 @@ export const TripWizardPage: React.FC = () => {
     const formattedEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
     setEndDate(formattedEnd);
     if (days === 1) {
-      if (currency === 'INR') setTotalBudget(500);
+      setTotalBudget(getDefaultBudgetForCurrency(currency, 1));
       setAccommodationPreference('None (Single Day Outing)');
+    } else {
+      setTotalBudget(getDefaultBudgetForCurrency(currency, days));
     }
   };
 
@@ -370,14 +392,27 @@ export const TripWizardPage: React.FC = () => {
                     icon={<MapPin className="w-4 h-4 text-neutral-400" />}
                   />
 
-                  <PlaceAutocomplete
-                    label="Target Destination"
-                    value={destination}
-                    onChange={setDestination}
-                    placeholder="e.g. Goa, Paris, Tokyo, Manali, Jaipur"
-                    icon={<Compass className="w-4 h-4 text-[#F97316]" />}
-                    required
-                  />
+                  <div>
+                    <PlaceAutocomplete
+                      label="Target Destination"
+                      value={destination}
+                      onChange={handleDestinationChange}
+                      placeholder="e.g. Goa, Paris, Tokyo, Manali, Jaipur"
+                      icon={<Compass className="w-4 h-4 text-[#F97316]" />}
+                      required
+                    />
+                    {destination.trim() && (
+                      <div className="flex items-center gap-2 mt-1.5 px-3 py-1.5 rounded-xl bg-orange-50/70 border border-orange-200/60 text-xs text-[#171717] animate-in fade-in">
+                        <span className="font-bold text-[#F97316]">📍 Country:</span>
+                        <span className="font-semibold">{getCountryForDestination(destination) || 'Global Destination'}</span>
+                        <span className="text-neutral-300">•</span>
+                        <span className="text-[#525252]">Currency:</span>
+                        <span className="font-bold text-[#171717] px-1.5 py-0.5 rounded-md bg-white border border-[#E5E7EB]">
+                          {currency} ({getCurrencySymbol(currency)})
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -576,44 +611,58 @@ export const TripWizardPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
-                        Total Planned Budget (Min: 500)
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
+                          Total Planned Budget (Min: {getMinBudgetForCurrency(currency).toLocaleString()})
+                        </label>
+                        <span className="text-[10px] text-[#525252]">
+                          In local {currency} ({getCurrencySymbol(currency)})
+                        </span>
+                      </div>
                       <div className="relative">
-                        <span className="w-5 text-center font-bold text-sm text-[#171717] absolute left-3 top-2.5 select-none">
+                        <span className="w-8 text-center font-bold text-sm text-[#171717] absolute left-2.5 top-2.5 select-none">
                           {getCurrencySymbol(currency)}
                         </span>
                         <input
                           type="number"
-                          min="500"
-                          step="100"
+                          min={getMinBudgetForCurrency(currency)}
+                          step={['JPY', 'KRW', 'IDR', 'VND'].includes(currency) ? '1000' : '50'}
                           value={totalBudget}
                           onChange={(e) => setTotalBudget(Number(e.target.value))}
-                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] font-semibold text-[#171717]"
+                          className="w-full pl-11 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] font-semibold text-[#171717]"
                         />
                       </div>
-                      <div className="flex items-center gap-1.5 mt-2">
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         <span className="text-[10px] font-semibold text-[#525252]">Presets:</span>
-                        {[500, 1500, 5000, 15000].map((amt) => (
+                        {getBudgetPresetsForCurrency(currency).map((amt) => (
                           <button
                             key={amt}
                             type="button"
                             onClick={() => setTotalBudget(amt)}
                             className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#F3F4F6] hover:bg-neutral-200 text-[#171717] border border-[#E5E7EB] transition-colors"
                           >
-                            {getCurrencySymbol(currency)}{amt.toLocaleString()}
+                            {formatCurrency(amt, currency, false)}
                           </button>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
-                        Currency
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
+                          Currency
+                        </label>
+                        <span className="text-[10px] font-semibold text-[#F97316]">
+                          {getCountryForDestination(destination) ? `for ${getCountryForDestination(destination)}` : 'Auto-detected'}
+                        </span>
+                      </div>
                       <select
                         value={currency}
-                        onChange={(e) => setCurrency(e.target.value)}
+                        onChange={(e) => {
+                          const newCurr = e.target.value;
+                          setCurrency(newCurr);
+                          setTotalBudget(getDefaultBudgetForCurrency(newCurr, isOneDay ? 1 : durationDays));
+                        }}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white font-medium text-[#171717]"
                       >
                         {SUPPORTED_CURRENCIES.map((c) => (
@@ -799,8 +848,9 @@ export const TripWizardPage: React.FC = () => {
                         return;
                       }
                     } else if (step === 2) {
-                      if (!totalBudget || totalBudget < 500) {
-                        setErrorMsg('Please enter a total planned budget of at least 500.');
+                      const minBudget = getMinBudgetForCurrency(currency);
+                      if (!totalBudget || totalBudget < minBudget) {
+                        setErrorMsg(`Please enter a total planned budget of at least ${formatCurrency(minBudget, currency, true)}.`);
                         return;
                       }
                       if (travelerCount < 1) {

@@ -14,6 +14,7 @@ import { LocalStore } from '../lib/storage';
 import { TripPilotAPI, isValidUUID, generateSafeUUID } from '../lib/api';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { detectCurrencyForDestination } from '../lib/currency';
 
 interface TripContextType {
   trips: Trip[];
@@ -150,7 +151,7 @@ function sanitizeTripForDb(trip: Trip, userId: string, phone: string | null): Re
     travel_style: trip.travel_style || 'balanced',
     interests: Array.isArray(trip.interests) ? trip.interests : ['sightseeing'],
     total_budget: Math.max(0, trip.total_budget || 0),
-    currency: trip.currency || 'INR',
+    currency: trip.currency || detectCurrencyForDestination(trip.destination) || 'USD',
     status: trip.status || 'planning',
     cover_image_url: trip.cover_image_url || null,
     destination_lat: trip.destination_lat || null,
@@ -182,7 +183,7 @@ function sanitizeActivityForDb(act: Activity, tripId: string, dayId: string, ord
     latitude: act.latitude || null,
     longitude: act.longitude || null,
     estimated_cost: Math.max(0, act.estimated_cost || 0),
-    currency: act.currency || 'INR',
+    currency: act.currency || 'USD',
     order_index: orderIndex,
     created_at: act.created_at || nowIso,
     updated_at: nowIso,

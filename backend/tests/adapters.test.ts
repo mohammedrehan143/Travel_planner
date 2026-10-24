@@ -51,6 +51,26 @@ describe('External Integration Adapters Suite', () => {
     expect(same.rate).toBe(1.0);
   });
 
+  it('CurrencyAdapter: accurately maps destination countries to their official currencies', () => {
+    expect(CurrencyAdapter.detectCurrencyForDestination('Tokyo, Japan')).toBe('JPY');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Paris, France')).toBe('EUR');
+    expect(CurrencyAdapter.detectCurrencyForDestination('London, UK')).toBe('GBP');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Dubai, United Arab Emirates')).toBe('AED');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Bangkok, Thailand')).toBe('THB');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Goa, India')).toBe('INR');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Sydney, Australia')).toBe('AUD');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Toronto, Canada')).toBe('CAD');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Zurich, Switzerland')).toBe('CHF');
+    expect(CurrencyAdapter.detectCurrencyForDestination('Bali, Indonesia')).toBe('IDR');
+    expect(CurrencyAdapter.detectCurrencyForDestination('New York City, NY, USA')).toBe('USD');
+
+    expect(CurrencyAdapter.getCountryForDestination('Tokyo, Japan')).toBe('Japan');
+    expect(CurrencyAdapter.getCountryForDestination('Paris, France')).toBe('Eurozone');
+    expect(CurrencyAdapter.getCountryForDestination('London, UK')).toBe('United Kingdom');
+    expect(CurrencyAdapter.getCountryForDestination('Dubai, UAE')).toBe('United Arab Emirates');
+    expect(CurrencyAdapter.getCountryForDestination('Goa, India')).toBe('India');
+  });
+
   it('AccommodationAdapter: returns realistic lodging suggestions with not_booked status and INR scaling', async () => {
     const stays = await AccommodationAdapter.searchLodging('Tokyo, Japan', 4, 'balanced', 'USD');
     expect(stays.length).toBeGreaterThanOrEqual(2);

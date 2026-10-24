@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { GoogleGenAI } from '@google/genai';
 import { env } from '../config/env.js';
 import { AGENT_TOOLS } from './tools/definitions.js';
+import { detectCurrencyForDestination, getDefaultBudgetForCurrency } from '../integrations/currency.adapter.js';
 
 let openaiClient: OpenAI | null = null;
 let openaiClientConfig = '';
@@ -419,12 +420,13 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
 
   if (isPlanRequest && destMatch) {
     const dest = destMatch[1].trim();
-    const isIndian = /india|goa|bangalore|bengaluru|mumbai|delhi|jaipur|rajasthan|kerala|manali|shimla|kashmir/i.test(dest);
+    const destCurrency = detectCurrencyForDestination(dest);
     const durationMatch = prompt.match(/(\d+)\s*[- ]*(?:day|night)/i);
     const duration = durationMatch ? parseInt(durationMatch[1], 10) : (p.includes('weekend') ? 2 : (p.includes('day') && !p.includes('days') ? 1 : 3));
     const isBudget = p.includes('budget') || p.includes('cheap') || p.includes('backpack');
+    const defaultBudget = getDefaultBudgetForCurrency(destCurrency, duration);
     const budgetMatch = prompt.match(/(?:budget|cost|for)\s*(?:of|is|around)?\s*(?:rs\.?|inr|\$|€|£)?\s*(\d[\d,]*)/i);
-    const budgetVal = budgetMatch ? parseInt(budgetMatch[1].replace(/,/g, ''), 10) : (isIndian ? (isBudget ? 6000 : 15000) : (isBudget ? 800 : 2500));
+    const budgetVal = budgetMatch ? parseInt(budgetMatch[1].replace(/,/g, ''), 10) : (isBudget ? Math.round(defaultBudget * 0.65) : defaultBudget);
 
     return {
       action: 'plan_new_trip',
@@ -435,7 +437,7 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
         travelerCount: p.includes('couple') ? 2 : (p.includes('solo') ? 1 : 2),
         travelCompanion: p.includes('couple') ? 'couple' : (p.includes('solo') ? 'solo' : 'friends'),
         budget: budgetVal,
-        currency: isIndian ? 'INR' : 'USD',
+        currency: destCurrency,
         travelStyle: isBudget ? 'budget' : 'balanced',
         interests: p.includes('beach') ? ['beaches', 'seafood', 'relaxation'] :
                    p.includes('history') || p.includes('heritage') ? ['history', 'cultural', 'architecture'] :
