@@ -35,12 +35,12 @@ export const TripWizardPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const timersRef = useRef<number[]>([]);
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll the terminal stream to latest message
+  // Auto-scroll the terminal stream box to latest message without scrolling the main window/page
   useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
     }
   }, [agentLogs]);
 
@@ -312,7 +312,10 @@ export const TripWizardPage: React.FC = () => {
             </div>
 
             {/* Live Terminal-style Agent Logs (Dark Section) */}
-            <div className="max-w-md mx-auto text-left p-4 rounded-2xl bg-[#171717] text-neutral-300 font-mono text-[11px] space-y-2 shadow-2xl max-h-56 overflow-y-auto border border-neutral-800">
+            <div
+              ref={logsContainerRef}
+              className="max-w-md mx-auto text-left p-4 rounded-2xl bg-[#171717] text-neutral-300 font-mono text-[11px] space-y-2 shadow-2xl max-h-56 overflow-y-auto border border-neutral-800"
+            >
               <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                 <div className="flex items-center gap-1.5 text-[#F97316] font-bold">
                   <Sparkles className="w-3.5 h-3.5 text-[#F97316] animate-pulse" />
@@ -348,7 +351,6 @@ export const TripWizardPage: React.FC = () => {
                     </div>
                   );
                 })}
-                <div ref={logsEndRef} />
               </div>
             </div>
           </div>
