@@ -7,13 +7,16 @@ import { CurrencyAdapter } from '../integrations/currency.adapter.js';
 export class IntegrationController {
   /**
    * GET /api/integrations/places/search
+   * Supports destination, query, single category, or multiple categories (categories=beaches,restaurants,historical_places).
+   * Guarantees at least 10 relevant places per category whenever sufficient results are available.
    */
   static async searchPlaces(req: Request, res: Response): Promise<void> {
     try {
-      const query = (req.query.query as string) || 'attractions';
+      const query = (req.query.query as string) || '';
       const destination = req.query.destination as string;
       const category = req.query.category as string | undefined;
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const rawCategories = req.query.categories;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 14;
       const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
       const lng = req.query.lng ? parseFloat(req.query.lng as string) : undefined;
 
@@ -22,7 +25,25 @@ export class IntegrationController {
         return;
       }
 
-      const result = await PlacesAdapter.searchPlaces(query, destination, category, limit, lat, lng);
+      let categoriesList: string[] | undefined;
+      if (Array.isArray(rawCategories)) {
+        categoriesList = rawCategories.map(String).map(s => s.trim()).filter(Boolean);
+      } else if (typeof rawCategories === 'string' && rawCategories.trim() !== '') {
+        categoriesList = rawCategories.split(',').map(s => s.trim()).filter(Boolean);
+      } else if (category && category.includes(',')) {
+        categoriesList = category.split(',').map(s => s.trim()).filter(Boolean);
+      }
+
+      const result = await PlacesAdapter.searchPlaces(
+        query || 'top highlights',
+        destination,
+        category,
+        limit,
+        lat,
+        lng,
+        categoriesList
+      );
+
       res.status(200).json(result);
     } catch (err: any) {
       res.status(500).json({ error: 'Place Search Failed', message: err.message });

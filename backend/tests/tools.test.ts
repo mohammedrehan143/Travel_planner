@@ -201,4 +201,67 @@ describe('Agent Tools Suite (10 Core Tools)', () => {
       expect(t.venues[0]).toHaveProperty('speciality');
     });
   });
+
+  it('Feature: Category Search returns >= 10 unique places per category with Google Maps links', async () => {
+    const { PlacesAdapter } = await import('../src/integrations/places.adapter.js');
+
+    // Test restaurants in Goa
+    const diningRes = await PlacesAdapter.searchPlaces('restaurants', 'Goa, India', 'restaurants', 14);
+    expect(diningRes.places.length).toBeGreaterThanOrEqual(10);
+    expect(diningRes.places[0].googleMapsUrl).toBeDefined();
+    expect(diningRes.places[0].googleMapsUrl).toContain('google.com/maps');
+
+    // Test beaches in Goa
+    const beachesRes = await PlacesAdapter.searchPlaces('beaches', 'Goa, India', 'beaches', 14);
+    expect(beachesRes.places.length).toBeGreaterThanOrEqual(10);
+    expect(beachesRes.places.some(p => p.name.toLowerCase().includes('beach') || p.name.toLowerCase().includes('palolem') || p.name.toLowerCase().includes('anjuna'))).toBe(true);
+
+    // Test cafes in Goa
+    const cafesRes = await PlacesAdapter.searchPlaces('cafes', 'Goa, India', 'cafes', 12);
+    expect(cafesRes.places.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('Feature: Multi-category search returns separate lists with >= 10 places per category', async () => {
+    const { PlacesAdapter } = await import('../src/integrations/places.adapter.js');
+
+    const multiRes = await PlacesAdapter.searchMultipleCategories(
+      'Goa, India',
+      ['beaches', 'restaurants', 'historical_places'],
+      12
+    );
+
+    expect(multiRes.categories).toBeDefined();
+    expect(multiRes.categories.length).toBe(3);
+
+    // Check each category has separate list with >= 10 places
+    for (const catResult of multiRes.categories) {
+      expect(catResult.count).toBeGreaterThanOrEqual(10);
+      expect(catResult.places.length).toBeGreaterThanOrEqual(10);
+      catResult.places.forEach(p => {
+        expect(p.googleMapsUrl).toBeDefined();
+        expect(p.googleMapsUrl).toContain('google.com/maps');
+      });
+    }
+
+    // Total deduped places should be greater than a single category
+    expect(multiRes.totalPlaces).toBeGreaterThanOrEqual(30);
+  });
+
+  it('Feature: Destination-specific searches produce distinct places', async () => {
+    const { PlacesAdapter } = await import('../src/integrations/places.adapter.js');
+
+    const goaRes = await PlacesAdapter.searchPlaces('restaurants', 'Goa, India', 'restaurants', 10);
+    const tokyoRes = await PlacesAdapter.searchPlaces('restaurants', 'Tokyo, Japan', 'restaurants', 10);
+
+    expect(goaRes.places.length).toBeGreaterThanOrEqual(10);
+    expect(tokyoRes.places.length).toBeGreaterThanOrEqual(10);
+
+    const goaNames = new Set(goaRes.places.map(p => p.name));
+    const tokyoNames = new Set(tokyoRes.places.map(p => p.name));
+
+    // Zero overlap between Goa and Tokyo
+    for (const name of goaNames) {
+      expect(tokyoNames.has(name)).toBe(false);
+    }
+  });
 });

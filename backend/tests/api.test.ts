@@ -146,6 +146,39 @@ describe('TripPilot Backend REST API Suite', () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.places)).toBe(true);
+    expect(res.body.places.length).toBeGreaterThan(0);
+  });
+
+  it('GET /api/integrations/places/search with category returns >= 10 places and Google Maps links', async () => {
+    const res = await request(app)
+      .get('/api/integrations/places/search')
+      .query({ destination: 'Goa, India', category: 'beaches', limit: 14 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.places.length).toBeGreaterThanOrEqual(10);
+    expect(res.body.places[0].googleMapsUrl).toBeDefined();
+    expect(res.body.places[0].googleMapsUrl).toContain('google.com/maps');
+    expect(res.body.categories).toBeDefined();
+    expect(res.body.categories[0].count).toBeGreaterThanOrEqual(10);
+  });
+
+  it('GET /api/integrations/places/search with multiple categories returns separate lists of 10+ places', async () => {
+    const res = await request(app)
+      .get('/api/integrations/places/search')
+      .query({
+        destination: 'Goa, India',
+        categories: 'beaches,restaurants,historical_places',
+        limit: 12
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.categories).toBeDefined();
+    expect(res.body.categories.length).toBe(3);
+    for (const cat of res.body.categories) {
+      expect(cat.count).toBeGreaterThanOrEqual(10);
+      expect(cat.places.length).toBeGreaterThanOrEqual(10);
+    }
+    expect(res.body.totalPlaces).toBeGreaterThanOrEqual(30);
   });
 
   it('GET /api/integrations/weather returns weather forecast', async () => {

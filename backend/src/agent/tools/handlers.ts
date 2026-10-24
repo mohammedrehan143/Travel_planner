@@ -39,12 +39,16 @@ export class ToolHandlers {
     destination: string;
     category?: string;
     limit?: number;
+    categories?: string[];
   }) {
     return await PlacesAdapter.searchPlaces(
       params.query,
       params.destination,
       params.category,
-      params.limit || 10
+      params.limit || 14,
+      undefined,
+      undefined,
+      params.categories
     );
   }
 

@@ -75,11 +75,37 @@ export interface CuratedVenueItem {
   description?: string;
   photoUrl?: string;
   selected?: boolean;
+  googleMapsUrl?: string;
+  placeDetailsUrl?: string;
+  source?: string;
   openingHours?: {
     openTime: string;
     closeTime: string;
     daysOpen: string[];
     isOpenToday?: boolean;
+  };
+}
+
+export interface CategoryPlacesResult {
+  category: string;
+  categoryLabel: string;
+  count: number;
+  places: CuratedVenueItem[];
+  hasMore?: boolean;
+  nextPageToken?: string;
+}
+
+export interface PlacesSearchResponse {
+  destination: string;
+  categories: CategoryPlacesResult[];
+  totalPlaces: number;
+  source: 'google_places' | 'curated_catalog' | 'osm_geocoder' | 'destination_engine';
+  places: CuratedVenueItem[];
+  diagnostics?: {
+    requestedCategories: string[];
+    rawCount: number;
+    dedupedCount: number;
+    queriesProcessed: number;
   };
 }
 
@@ -129,6 +155,7 @@ export interface Activity {
   selected?: boolean;
   booking_required: boolean;
   booking_url?: string;
+  google_maps_url?: string;
   booking_status: BookingStatus;
   notes?: string;
   order_index: number;

@@ -19,7 +19,8 @@ import {
   Trees,
   Coffee,
   ShoppingBag,
-  PartyPopper
+  PartyPopper,
+  ExternalLink
 } from 'lucide-react';
 import { Trip, TripDay, Activity, VenueTopic, CuratedVenueItem } from '../../types';
 import { TripPilotAPI } from '../../lib/api';
@@ -245,16 +246,31 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
 
   const getTopicIcon = (topicId: string) => {
     switch (topicId) {
+      case 'tourist_attractions':
       case 'sightseeing':
         return <Landmark className="w-4 h-4 text-[#F97316]" />;
+      case 'restaurants':
       case 'dining':
         return <Utensils className="w-4 h-4 text-emerald-600" />;
-      case 'cultural':
-        return <Compass className="w-4 h-4 text-purple-600" />;
-      case 'outdoor':
-        return <Trees className="w-4 h-4 text-teal-600" />;
+      case 'cafes':
       case 'hangouts':
         return <Coffee className="w-4 h-4 text-amber-600" />;
+      case 'beaches':
+      case 'relaxation':
+        return <Compass className="w-4 h-4 text-cyan-600" />;
+      case 'historical_places':
+      case 'cultural':
+        return <Landmark className="w-4 h-4 text-purple-600" />;
+      case 'museums':
+        return <Sparkles className="w-4 h-4 text-indigo-600" />;
+      case 'shopping':
+        return <ShoppingBag className="w-4 h-4 text-rose-600" />;
+      case 'nature_adventure':
+      case 'outdoor':
+        return <Trees className="w-4 h-4 text-teal-600" />;
+      case 'family_friendly':
+        return <Sparkles className="w-4 h-4 text-blue-600" />;
+      case 'nightlife':
       case 'entertainment':
         return <PartyPopper className="w-4 h-4 text-pink-600" />;
       default:
@@ -471,9 +487,22 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
 
                 {/* Venue Name & Description */}
                 <div>
-                  <h4 className="text-sm font-black text-[#171717] line-clamp-1 leading-snug">
-                    {venue.name}
-                  </h4>
+                  <a
+                    href={
+                      venue.googleMapsUrl ||
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${venue.name} ${venue.address || trip.destination}`.trim()
+                      )}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View place on Google Maps"
+                    className="text-sm font-black text-[#171717] hover:text-[#F97316] line-clamp-1 leading-snug inline-flex items-center gap-1.5 group/link transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="hover:underline">{venue.name}</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover/link:text-[#F97316] shrink-0" />
+                  </a>
                   <p className="text-xs text-[#525252] line-clamp-2 mt-1 leading-relaxed">
                     {venue.description}
                   </p>
@@ -494,7 +523,21 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
                   {venue.address && (
                     <div className="flex items-center gap-1 line-clamp-1">
                       <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
-                      <span className="truncate">{venue.address}</span>
+                      <a
+                        href={
+                          venue.googleMapsUrl ||
+                          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${venue.name} ${venue.address || trip.destination}`.trim()
+                          )}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="View address on Google Maps"
+                        className="truncate hover:text-[#F97316] hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {venue.address}
+                      </a>
                     </div>
                   )}
 

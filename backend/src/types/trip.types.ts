@@ -48,7 +48,33 @@ export interface PlaceItem {
   description?: string;
   photoUrl?: string;
   speciality?: string;
-  dietaryTag?: 'veg' | 'non-veg' | 'both';
+  dietaryTag?: 'veg' | 'non-veg' | 'non_veg' | 'both';
+  googleMapsUrl?: string;
+  placeDetailsUrl?: string;
+  source?: string;
+}
+
+export interface CategoryPlacesResult {
+  category: string;
+  categoryLabel: string;
+  count: number;
+  places: PlaceItem[];
+  hasMore?: boolean;
+  nextPageToken?: string;
+}
+
+export interface PlacesSearchResponse {
+  destination: string;
+  categories: CategoryPlacesResult[];
+  totalPlaces: number;
+  source: 'google_places' | 'curated_catalog' | 'osm_geocoder' | 'destination_engine';
+  places: PlaceItem[];
+  diagnostics?: {
+    requestedCategories: string[];
+    rawCount: number;
+    dedupedCount: number;
+    queriesProcessed: number;
+  };
 }
 
 export interface CuratedTopicVenues {

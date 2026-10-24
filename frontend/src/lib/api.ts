@@ -1,4 +1,4 @@
-import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput, VenueTopic } from '../types';
+import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput, VenueTopic, PlacesSearchResponse, CuratedVenueItem } from '../types';
 import { supabase } from './supabase';
 import { getAccurateFlightEstimate } from './flightPricing';
 
@@ -92,6 +92,31 @@ export const TripPilotAPI = {
     if (!response.ok) throw new Error('Could not find nearby places right now.');
     const data = await response.json();
     return Array.isArray(data.places) ? data.places : [];
+  },
+
+  async searchPlacesByCategory(options: {
+    destination: string;
+    categories?: string[];
+    category?: string;
+    query?: string;
+    limit?: number;
+  }): Promise<PlacesSearchResponse> {
+    const params = new URLSearchParams({ destination: options.destination });
+    if (options.categories && options.categories.length > 0) {
+      params.set('categories', options.categories.join(','));
+    } else if (options.category) {
+      params.set('category', options.category);
+    }
+    if (options.query) {
+      params.set('query', options.query);
+    }
+    if (options.limit) {
+      params.set('limit', String(options.limit));
+    }
+
+    const response = await fetch(`${API_URL}/api/integrations/places/search?${params}`);
+    if (!response.ok) throw new Error('Could not search places by category right now.');
+    return await response.json();
   },
 
   async getCuratedVenuesByTopic(destination: string, limit = 12): Promise<VenueTopic[]> {

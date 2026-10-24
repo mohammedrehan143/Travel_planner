@@ -1,6 +1,12 @@
-import { PlaceItem, CuratedTopicVenues } from '../types/trip.types.js';
+import { PlaceItem, CuratedTopicVenues, CategoryPlacesResult, PlacesSearchResponse } from '../types/trip.types.js';
 import { env } from '../config/env.js';
-import { fetchCuratedVenuesByTopic } from './curatedVenuesByTopic.js';
+import {
+  fetchCuratedVenuesByTopic,
+  fetchPlacesForCategory,
+  normalizeCategory,
+  SUB_TOPICS,
+  TopicBlueprint
+} from './curatedVenuesByTopic.js';
 
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRadians = (degrees: number) => degrees * Math.PI / 180;
@@ -849,7 +855,203 @@ const CURATED_PLACES: CuratedPlaceCatalog = {
 
 export class PlacesAdapter {
   /**
+   * Helper to deduplicate places while keeping the most complete records.
+   */
+  private static deduplicatePlaces(places: PlaceItem[]): PlaceItem[] {
+    const seen = new Map<string, PlaceItem>();
+
+    for (const place of places) {
+      const normalizedKey = (
+        place.id ||
+        place.name.toLowerCase().replace(/[^a-z0-9]/g, '')
+      ).trim();
+
+      if (!seen.has(normalizedKey)) {
+        seen.set(normalizedKey, place);
+      } else {
+        // Merge records: preserve the one with higher ratings or fuller details
+        const existing = seen.get(normalizedKey)!;
+        if ((place.rating && !existing.rating) || (place.reviewCount || 0) > (existing.reviewCount || 0)) {
+          seen.set(normalizedKey, { ...existing, ...place });
+        }
+      }
+    }
+
+    return Array.from(seen.values());
+  }
+
+  /**
+   * Search for places for a single category, targeting a minimum of 10 and up to 20 places.
+   */
+  static async searchPlacesByCategory(
+    destination: string,
+    category: string,
+    limit = 14,
+    coords?: { lat: number; lng: number }
+  ): Promise<{ places: PlaceItem[]; source: 'google_places' | 'curated_catalog' | 'osm_geocoder' | 'destination_engine' }> {
+    const targetLimit = Math.max(10, Math.min(20, limit));
+    const normCategory = normalizeCategory(category);
+    let resolvedCoords = coords;
+
+    if (!resolvedCoords) {
+      try {
+        resolvedCoords = await this.getDestinationCoordinates(destination);
+      } catch {
+        resolvedCoords = { lat: 15.4925, lng: 73.7738 };
+      }
+    }
+
+    // Category query formulating
+    const categoryQueryMap: Record<string, string> = {
+      tourist_attractions: `Top tourist attractions and landmarks in ${destination}`,
+      restaurants: `Popular restaurants and local food in ${destination}`,
+      cafes: `Best cafes and specialty coffee in ${destination}`,
+      beaches: `Best beaches and waterfronts in ${destination}`,
+      historical_places: `Historical places and heritage monuments in ${destination}`,
+      museums: `Famous museums and art galleries in ${destination}`,
+      shopping: `Popular shopping markets and night bazaars in ${destination}`,
+      nature_adventure: `Nature and adventure activities in ${destination}`,
+      family_friendly: `Family-friendly attractions and activities in ${destination}`,
+      nightlife: `Popular nightlife, lounges and sunset hangouts in ${destination}`
+    };
+
+    const searchQuery = categoryQueryMap[normCategory] || `${category} in ${destination}`;
+    let rawPlaces: PlaceItem[] = [];
+    let source: 'google_places' | 'curated_catalog' | 'osm_geocoder' | 'destination_engine' = 'curated_catalog';
+
+    // 1. Google Places API (if API Key is configured)
+    if (env.MAPS_API_KEY) {
+      try {
+        const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
+          searchQuery
+        )}${resolvedCoords ? `&location=${resolvedCoords.lat},${resolvedCoords.lng}&radius=15000` : ''}&key=${env.MAPS_API_KEY}`;
+
+        const res = await fetch(url, { signal: AbortSignal.timeout(4500) });
+        if (res.ok) {
+          const data = (await res.json()) as { results?: any[]; next_page_token?: string; status?: string };
+          if (data.results && data.results.length > 0) {
+            rawPlaces = data.results.map((r: any) => ({
+              id: r.place_id,
+              name: r.name,
+              category: normCategory,
+              address: r.formatted_address,
+              lat: r.geometry?.location?.lat || resolvedCoords!.lat,
+              lng: r.geometry?.location?.lng || resolvedCoords!.lng,
+              rating: r.rating || 4.5,
+              reviewCount: r.user_ratings_total || 120,
+              priceLevel: r.price_level || 2,
+              estimatedCost: (r.price_level || 2) * 15,
+              photoUrl: r.photos?.[0]?.photo_reference
+                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${r.photos[0].photo_reference}&key=${env.MAPS_API_KEY}`
+                : undefined,
+              description: `${r.name} is a renowned ${normCategory.replace('_', ' ')} spot in ${destination}.`,
+              googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                `${r.name} ${r.formatted_address || destination}`
+              )}&query_place_id=${r.place_id}`,
+              source: 'google_places',
+              openingHours: {
+                openTime: normCategory === 'nightlife' ? '18:00' : '09:00',
+                closeTime: normCategory === 'nightlife' ? '02:00' : '20:00',
+                daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                isOpenToday: r.opening_hours?.open_now ?? true
+              }
+            }));
+            source = 'google_places';
+          }
+        }
+      } catch (err: any) {
+        console.warn(`[PlacesAdapter] Google Places query error: ${err.message}`);
+      }
+    }
+
+    // 2. Curated & Localized Catalog Fallback (guarantees >= 10 results per category)
+    if (rawPlaces.length < targetLimit) {
+      const curatedResults = await fetchPlacesForCategory(destination, normCategory, targetLimit, resolvedCoords);
+      if (rawPlaces.length === 0) {
+        rawPlaces = curatedResults;
+        source = 'curated_catalog';
+      } else {
+        // Merge curated places to fill up to targetLimit
+        rawPlaces = [...rawPlaces, ...curatedResults];
+      }
+    }
+
+    // Deduplicate without losing results
+    const deduped = this.deduplicatePlaces(rawPlaces);
+    const finalPlaces = deduped.slice(0, targetLimit);
+
+    // Diagnostics log (never logs API keys)
+    console.log(
+      `[PlacesAdapter] Search for "${destination}" [Category: ${normCategory}] -> Raw: ${rawPlaces.length}, Deduped: ${deduped.length}, Returned: ${finalPlaces.length} (Source: ${source})`
+    );
+
+    return { places: finalPlaces, source };
+  }
+
+  /**
+   * Search across multiple categories independently and return separate lists of 10-20 places per category.
+   */
+  static async searchMultipleCategories(
+    destination: string,
+    categories: string[],
+    limitPerCategory = 14
+  ): Promise<PlacesSearchResponse> {
+    const coords = await this.getDestinationCoordinates(destination);
+    const targetLimit = Math.max(10, Math.min(20, limitPerCategory));
+    const categoryResults: CategoryPlacesResult[] = [];
+    const allPlaces: PlaceItem[] = [];
+
+    let totalRawCount = 0;
+    let primarySource: 'google_places' | 'curated_catalog' | 'osm_geocoder' | 'destination_engine' = 'curated_catalog';
+
+    for (const cat of categories) {
+      const normCat = normalizeCategory(cat);
+      const blueprint = SUB_TOPICS.find(t => t.topicId === normCat) || {
+        topicId: normCat,
+        title: normCat.replace('_', ' ').toUpperCase(),
+        icon: '📍',
+        description: `Curated ${normCat} places in ${destination}`
+      };
+
+      const result = await this.searchPlacesByCategory(destination, normCat, targetLimit, coords);
+      totalRawCount += result.places.length;
+      if (result.source === 'google_places') primarySource = 'google_places';
+
+      categoryResults.push({
+        category: normCat,
+        categoryLabel: blueprint.title,
+        count: result.places.length,
+        places: result.places,
+        hasMore: false
+      });
+
+      allPlaces.push(...result.places);
+    }
+
+    const dedupedAll = this.deduplicatePlaces(allPlaces);
+
+    console.log(
+      `[PlacesAdapter] Multi-Category Search for "${destination}" (${categories.length} categories) -> Total Raw: ${totalRawCount}, Unique Places: ${dedupedAll.length}`
+    );
+
+    return {
+      destination,
+      categories: categoryResults,
+      totalPlaces: dedupedAll.length,
+      source: primarySource,
+      places: dedupedAll,
+      diagnostics: {
+        requestedCategories: categories,
+        rawCount: totalRawCount,
+        dedupedCount: dedupedAll.length,
+        queriesProcessed: categories.length
+      }
+    };
+  }
+
+  /**
    * Search for places matching a query and category in a destination.
+   * Guarantees at least 10 relevant places per category whenever requested.
    */
   static async searchPlaces(
     query: string,
@@ -857,196 +1059,150 @@ export class PlacesAdapter {
     category?: string,
     limit = 10,
     lat?: number,
-    lng?: number
-  ): Promise<{ places: PlaceItem[]; source: 'google_places' | 'curated_catalog' | 'osm_geocoder' }> {
+    lng?: number,
+    categories?: string[]
+  ): Promise<{
+    places: PlaceItem[];
+    categories?: CategoryPlacesResult[];
+    totalPlaces?: number;
+    destination?: string;
+    source: 'google_places' | 'curated_catalog' | 'osm_geocoder' | 'destination_engine';
+    diagnostics?: {
+      requestedCategories: string[];
+      rawCount: number;
+      dedupedCount: number;
+      queriesProcessed: number;
+    };
+  }> {
+    const targetLimit = Math.max(10, Math.min(20, limit));
+
+    // Check if multiple categories were provided as an array or comma-separated string
+    const multiCats = categories && categories.length > 0
+      ? categories
+      : category && category.includes(',')
+      ? category.split(',').map(s => s.trim()).filter(Boolean)
+      : null;
+
+    if (multiCats && multiCats.length > 1) {
+      return await this.searchMultipleCategories(destination, multiCats, targetLimit);
+    }
+
+    const targetCategory = category || (query && normalizeCategory(query) !== 'tourist_attractions' ? query : undefined);
+
+    if (targetCategory) {
+      const res = await this.searchPlacesByCategory(
+        destination,
+        targetCategory,
+        targetLimit,
+        lat !== undefined && lng !== undefined ? { lat, lng } : undefined
+      );
+
+      const blueprint = SUB_TOPICS.find(t => t.topicId === normalizeCategory(targetCategory));
+      return {
+        places: res.places,
+        categories: [
+          {
+            category: normalizeCategory(targetCategory),
+            categoryLabel: blueprint?.title || targetCategory,
+            count: res.places.length,
+            places: res.places
+          }
+        ],
+        totalPlaces: res.places.length,
+        destination,
+        source: res.source,
+        diagnostics: {
+          requestedCategories: [targetCategory],
+          rawCount: res.places.length,
+          dedupedCount: res.places.length,
+          queriesProcessed: 1
+        }
+      };
+    }
+
+    // General query search
+    const coords = lat !== undefined && lng !== undefined
+      ? { lat, lng }
+      : await this.getDestinationCoordinates(destination);
+
+    // Retrieve rich multi-topic places
+    const defaultCategories = ['tourist_attractions', 'restaurants', 'cafes', 'beaches'];
+    const multiRes = await this.searchMultipleCategories(destination, defaultCategories, Math.ceil(targetLimit / 2));
+
+    let filtered = multiRes.places;
     const destLower = destination.toLowerCase().trim();
-    let catalogKey: string | undefined = undefined;
 
-    if (destLower.includes('bangalore') || destLower.includes('bengaluru')) catalogKey = 'bangalore';
-    else if (destLower.includes('saudi') || destLower.includes('riyadh')) catalogKey = 'saudi';
-    else if (destLower.includes('paris')) catalogKey = 'paris';
-    else if (destLower.includes('tokyo') || destLower.includes('japan')) catalogKey = 'tokyo';
-    else if (destLower.includes('goa')) catalogKey = 'goa';
-    else if (destLower.includes('rajasthan') || destLower.includes('jaipur') || destLower.includes('jodhpur') || destLower.includes('udaipur')) catalogKey = 'rajasthan';
-    else if (destLower.includes('manali') || destLower.includes('himachal')) catalogKey = 'manali';
-    else {
-      const firstWord = destLower.split(/[, ]+/)[0];
-      if (CURATED_PLACES[firstWord]) catalogKey = firstWord;
-    }
+    // Check if known city catalog has specific matches for this query
+    if (query && query.trim() !== '') {
+      const qLower = query.toLowerCase().trim();
+      const matchingCurated: PlaceItem[] = [];
 
-    // 1. If Google Maps API Key is provided, use Google Places API
-    if (env.MAPS_API_KEY) {
-      try {
-        const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
-          `${query} in ${destination}`
-        )}${lat !== undefined && lng !== undefined ? `&location=${lat},${lng}&radius=5000` : ''}&key=${env.MAPS_API_KEY}`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
-        if (res.ok) {
-          const data = (await res.json()) as { results?: any[] };
-          if (data.results && data.results.length > 0) {
-            const places: PlaceItem[] = data.results.slice(0, limit).map((r: any) => ({
-              id: r.place_id,
-              name: r.name,
-              category: category || (r.types?.[0]?.replace('_', ' ') ?? 'sightseeing'),
-              address: r.formatted_address,
-              lat: r.geometry.location.lat,
-              lng: r.geometry.location.lng,
-              rating: r.rating || 4.5,
-              reviewCount: r.user_ratings_total || 100,
-              priceLevel: r.price_level || 2,
-              estimatedCost: (r.price_level || 2) * 15,
-              openingHours: {
-                openTime: '09:00',
-                closeTime: '18:00',
-                daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                isOpenToday: r.opening_hours?.open_now ?? true
-              },
-              description: `Popular spot in ${destination}`
-            }));
-            return { places, source: 'google_places' };
+      for (const [cityKey, cityData] of Object.entries(CURATED_PLACES)) {
+        if (destLower.includes(cityKey)) {
+          for (const cp of cityData.places) {
+            const cpText = `${cp.name} ${cp.description || ''} ${cp.category}`.toLowerCase();
+            if (cpText.includes(qLower)) {
+              matchingCurated.push({
+                ...cp,
+                googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${cp.name} ${cp.address || destination}`)}`,
+                source: 'curated_catalog'
+              });
+            }
           }
         }
-      } catch {
-        // Fall back gracefully
       }
+
+      const matches = multiRes.places.filter(
+        p => p.name.toLowerCase().includes(qLower) || p.description?.toLowerCase().includes(qLower) || p.category.toLowerCase().includes(qLower)
+      );
+
+      const combined = this.deduplicatePlaces([...matchingCurated, ...matches, ...multiRes.places]);
+      filtered = combined;
     }
 
-    // 2. Check Curated High-Fidelity Catalog
-    const catalog = catalogKey ? CURATED_PLACES[catalogKey] : undefined;
-    if (catalog) {
-      let filtered = catalog.places;
-      if (category) {
-        filtered = filtered.filter(p => p.category.toLowerCase() === category.toLowerCase());
-      }
-      if (query && query.trim() !== '') {
-        const qLower = query.toLowerCase();
-        const queryMatches = filtered.filter(
-          p => p.name.toLowerCase().includes(qLower) || p.description?.toLowerCase().includes(qLower)
-        );
-        if (queryMatches.length > 0) {
-          filtered = queryMatches;
-        }
-      }
-      if (lat !== undefined && lng !== undefined) {
-        filtered = filtered.sort((a, b) => distanceKm(lat, lng, a.lat, a.lng) - distanceKm(lat, lng, b.lat, b.lng));
-      }
-      return { places: filtered.slice(0, limit), source: 'curated_catalog' };
-    }
+    const finalPlaces = filtered.slice(0, targetLimit);
 
-    // 3. OpenStreetMap Nominatim Geocoder & Dynamic Fallback
-    try {
-      const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        `${query} ${destination}`
-      )}&limit=${limit}${lat !== undefined && lng !== undefined ? `&viewbox=${lng - 0.05},${lat + 0.05},${lng + 0.05},${lat - 0.05}&bounded=1` : ''}`;
-      const res = await fetch(geoUrl, {
-        headers: { 'User-Agent': 'TripPilotAI/1.0' },
-        signal: AbortSignal.timeout(3500)
-      });
-      if (res.ok) {
-        const data = (await res.json()) as any[];
-        if (Array.isArray(data) && data.length > 0) {
-          const places: PlaceItem[] = data.map((item, idx) => ({
-            id: `osm-${item.osm_id || idx}`,
-            name: item.display_name.split(',')[0],
-            category: category || 'sightseeing',
-            address: item.display_name,
-            lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon),
-            rating: 4.5,
-            reviewCount: 350,
-            priceLevel: 2,
-            estimatedCost: 15,
-            openingHours: {
-              openTime: '09:00',
-              closeTime: '18:00',
-              daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-              isOpenToday: true
-            },
-            description: `${item.type || 'Attraction'} in ${destination}`
-          }));
-          if (lat !== undefined && lng !== undefined) {
-            places.sort((a, b) => distanceKm(lat, lng, a.lat, a.lng) - distanceKm(lat, lng, b.lat, b.lng));
-          }
-          return { places, source: 'osm_geocoder' };
-        }
+    return {
+      places: finalPlaces,
+      categories: multiRes.categories,
+      totalPlaces: finalPlaces.length,
+      destination,
+      source: multiRes.source,
+      diagnostics: {
+        requestedCategories: defaultCategories,
+        rawCount: multiRes.places.length,
+        dedupedCount: finalPlaces.length,
+        queriesProcessed: defaultCategories.length
       }
-    } catch {
-      // Fall through to synthetic generation
-    }
-
-    // 4. City-Centered Synthesized POIs for arbitrary destinations
-    const center = await this.getDestinationCoordinates(destination);
-    const baseLat = center.lat;
-    const baseLng = center.lng;
-    const samplePlaces: PlaceItem[] = [
-      {
-        id: 'synth-001',
-        name: `${destination} Historic Heritage Center`,
-        category: 'cultural',
-        address: `Central Heritage Promenade, ${destination}`,
-        lat: baseLat + 0.005,
-        lng: baseLng + 0.005,
-        rating: 4.7,
-        reviewCount: 1200,
-        priceLevel: 1,
-        estimatedCost: 0,
-        openingHours: {
-          openTime: '08:00',
-          closeTime: '20:00',
-          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-          isOpenToday: true
-        },
-        description: `Historic heart of ${destination} filled with cultural landmarks, paved pedestrian paths, and local heritage.`
-      },
-      {
-        id: 'synth-002',
-        name: `${destination} Central Cultural Museum`,
-        category: 'cultural',
-        address: `Museum Avenue, ${destination}`,
-        lat: baseLat + 0.012,
-        lng: baseLng - 0.008,
-        rating: 4.6,
-        reviewCount: 890,
-        priceLevel: 2,
-        estimatedCost: 18,
-        openingHours: {
-          openTime: '10:00',
-          closeTime: '17:30',
-          daysOpen: ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-          isOpenToday: true
-        },
-        description: `Premier regional gallery showcasing art, historic treasures, and local exhibitions in ${destination}.`
-      },
-      {
-        id: 'synth-003',
-        name: `${destination} Panoramic Vista Point & Gardens`,
-        category: 'sightseeing',
-        address: `Skyline Boulevard, ${destination}`,
-        lat: baseLat - 0.015,
-        lng: baseLng + 0.01,
-        rating: 4.8,
-        reviewCount: 1540,
-        priceLevel: 1,
-        estimatedCost: 0,
-        openingHours: {
-          openTime: '06:00',
-          closeTime: '22:00',
-          daysOpen: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-          isOpenToday: true
-        },
-        description: `Scenic viewpoint offering sweeping views of the cityscape and natural surrounding horizon in ${destination}.`
-      }
-    ];
-
-    return { places: samplePlaces.slice(0, limit), source: 'curated_catalog' };
+    };
   }
 
   /**
    * Get specific details for a place.
    */
   static async getPlaceDetails(placeName: string, destination: string): Promise<PlaceItem | null> {
-    const { places } = await this.searchPlaces(placeName, destination, undefined, 5);
-    const exact = places.find(p => p.name.toLowerCase().includes(placeName.toLowerCase()));
+    const destLower = destination.toLowerCase().trim();
+    const pLower = placeName.toLowerCase().trim();
+
+    // 1. Check known high-fidelity curated catalog first
+    for (const [cityKey, cityData] of Object.entries(CURATED_PLACES)) {
+      if (destLower.includes(cityKey)) {
+        const found = cityData.places.find(
+          p => p.name.toLowerCase().includes(pLower) || pLower.includes(p.name.toLowerCase())
+        );
+        if (found) {
+          const item = { ...found };
+          if (!item.googleMapsUrl) {
+            item.googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.name} ${item.address || destination}`)}`;
+          }
+          return item;
+        }
+      }
+    }
+
+    // 2. Search places
+    const { places } = await this.searchPlaces(placeName, destination, undefined, 10);
+    const exact = places.find(p => p.name.toLowerCase().includes(pLower) || pLower.includes(p.name.toLowerCase()));
     return exact || places[0] || null;
   }
 

@@ -5,7 +5,8 @@ export const searchPlacesInputSchema = z.object({
   query: z.string().min(1, 'Search query is required'),
   destination: z.string().min(1, 'Destination is required'),
   category: z.string().optional(),
-  limit: z.number().int().min(1).max(25).default(10)
+  categories: z.array(z.string()).optional(),
+  limit: z.number().int().min(1).max(50).default(14)
 });
 
 export const getPlaceDetailsInputSchema = z.object({

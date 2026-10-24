@@ -82,6 +82,11 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   onMoveDown,
 }) => {
   const catConfig = CATEGORY_CONFIG[activity.category] || CATEGORY_CONFIG.sightseeing;
+  const googleMapsSearchUrl =
+    activity.google_maps_url ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${activity.location_name || activity.title} ${activity.location_address || ''}`.trim()
+    )}`;
 
   // Extract speciality or dietary from notes if present
   let displaySpeciality = activity.speciality;
@@ -207,9 +212,17 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
       {/* Main Content */}
       <div className="p-5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-base font-bold text-[#171717] group-hover:text-[#F97316] transition-colors">
-            {activity.title}
-          </h4>
+          <a
+            href={googleMapsSearchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View place on Google Maps"
+            className="text-base font-bold text-[#171717] hover:text-[#F97316] transition-colors inline-flex items-center gap-1.5 group/link"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="hover:underline">{activity.title}</span>
+            <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover/link:text-[#F97316] shrink-0" />
+          </a>
 
           {displaySpeciality && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-50 border border-orange-200 text-xs font-bold text-orange-900 shadow-sm">
@@ -227,7 +240,17 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         <div className="flex items-start gap-2 text-xs text-[#525252]">
           <MapPin className="w-4 h-4 text-[#F97316] shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold text-[#171717]">{activity.location_name}</span>
+            <a
+              href={googleMapsSearchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open location on Google Maps"
+              className="font-semibold text-[#171717] hover:text-[#F97316] hover:underline inline-flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span>{activity.location_name}</span>
+              <ExternalLink className="w-3 h-3 text-neutral-400 shrink-0" />
+            </a>
             {activity.location_address && (
               <span className="block text-[#525252]">{activity.location_address}</span>
             )}
