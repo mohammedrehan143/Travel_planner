@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "allowScripts": {
+    "esbuild": true
+  },
   "scripts": {
     "build": "npm --prefix backend run build",
     "build:backend": "npm --prefix backend run build",
