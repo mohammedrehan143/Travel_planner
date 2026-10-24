@@ -16,6 +16,7 @@ without making the role documents ambiguous.
 | **Bug Finder** | [`./bugfixer/bug_finder.md`](./bugfixer/bug_finder.md) | Investigating UI/runtime issues and isolating root causes. |
 | **Bug Fixer** | [`./bugfixer/bug_fixer.md`](./bugfixer/bug_fixer.md) | Implementing minimal, surgical fixes for verified root causes. |
 | **Bug Tester** | [`./bugfixer/bug_tester.md`](./bugfixer/bug_tester.md) | Validating fixes against tests and guarding against regressions. |
+| **Chatbot Fine-Tuner** | [`./chat_bot.md`](./chat_bot.md) | Fine-tuning conversational prompts, calibrating intent classification, and testing chatbot responses. |
 | **Git Deployment** | [`./deployment.md`](./deployment.md) | Staging and pushing approved, tested code changes to remote Git. |
 
 Read [`./AGENTS.md`](./AGENTS.md) first for rules shared by every role, then read the

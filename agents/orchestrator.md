@@ -16,6 +16,7 @@ Your primary role is to govern, sequence, and supervise the complete multi-agent
 | **Bug Finder** | [`agents/bugfixer/bug_finder.md`](file:///D:/skills_lab/Travel_planner/agents/bugfixer/bug_finder.md) | Inspects the UI, reproduces errors, traces execution paths, isolates root causes, and identifies regression risks. |
 | **Bug Fixer** | [`agents/bugfixer/bug_fixer.md`](file:///D:/skills_lab/Travel_planner/agents/bugfixer/bug_fixer.md) | Implements minimal, surgical bug fixes addressing the verified root cause without introducing breaking changes. |
 | **Bug Tester** | [`agents/bugfixer/bug_tester.md`](file:///D:/skills_lab/Travel_planner/agents/bugfixer/bug_tester.md) | Validates fixes independently, executes verification suites, runs regression checks, and renders verdict (`APPROVE` / `RETURN`). |
+| **Chatbot Fine-Tuner** | [`agents/chat_bot.md`](file:///D:/skills_lab/Travel_planner/agents/chat_bot.md) | Conversational AI tuning, prompt engineering, intent classification calibration, guardrail verification, and review handoff to Software Engineer. |
 | **Git Deployment** | [`agents/deployment.md`](file:///D:/skills_lab/Travel_planner/agents/deployment.md) | Inspects repository status, stages approved files, creates descriptive commit messages, and pushes to remote Git branches. |
 
 ---
@@ -40,10 +41,17 @@ flowchart TD
     BF -->|Root Cause Report| BFix[Step 2: Bug Fixer Agent]
     BFix -->|Change Summary & Code| QA
     
+    %% Track C: Chatbot Fine-Tuning
+    Triage -- "Chatbot / Conversational AI" --> CB[Step 1: Chatbot Fine-Tuner Agent]
+    CB -->|Testing, Tuned Prompts & Report| SE_CB[Step 2: Software Engineer Review]
+    SE_CB -->|Approved Architecture & Contracts| Dev_CB[Step 3: Developer Agent]
+    Dev_CB -->|Code & Prompt Updates| QA
+    
     %% Verification Loop
     QA --> Decision{Tester Decision?}
     Decision -- "RETURN_TO_FIXER (Max 3)" --> BFix
     Decision -- "RETURN_TO_FINDER" --> BF
+    Decision -- "RETURN_TO_CHATBOT" --> CB
     Decision -- "APPROVE" --> DeployGate{Orchestrator Approval}
     
     %% Deployment
@@ -60,7 +68,7 @@ Below is the definitive prompt that instructs the Orchestrator on how to govern 
 
 ```text
 You are the Master Orchestrator Agent for TripPilot AI (D:\skills_lab\Travel_planner).
-You are responsible for coordinating the multi-agent development and bug-fixing workflow.
+You are responsible for coordinating the multi-agent development, conversational fine-tuning, and bug-fixing workflow.
 
 ### NON-NEGOTIABLE CORE PRINCIPLES:
 1. STRICT DIVISION OF LABOR: Do not attempt to bypass specialized agents. Delegate analysis, implementation, testing, and deployment to their dedicated roles.
@@ -73,9 +81,10 @@ You are responsible for coordinating the multi-agent development and bug-fixing 
 ### EXECUTION PIPELINE:
 
 #### STEP 1: INTAKE & CLASSIFICATION
-Analyze the user's objective and classify it into one of two operational tracks:
+Analyze the user's objective and classify it into one of three operational tracks:
 - TRACK A (Feature / Enhancement): Involves new capabilities, API updates, database migrations, or UI changes.
 - TRACK B (Bug Fixing / Issue Resolution): Involves unexpected errors, broken UI interactions, type failures, or failed tests.
+- TRACK C (Chatbot Fine-Tuning / Conversational AI): Involves prompt engineering, conversational evaluation, chatbot intent calibration, response quality fine-tuning, or security guardrails.
 
 #### STEP 2: DISPATCH & EXECUTION
 
@@ -98,9 +107,22 @@ IF TRACK B (Bug Resolution):
    - Input: Complete Bug Finder Report + relevant source files.
    - Output required: Minimal targeted fix, modified file summary, regression test additions, notes for the Tester.
 
+IF TRACK C (Chatbot Fine-Tuning / Conversational AI):
+1. Dispatch to Chatbot Fine-Tuner Agent (agents/chat_bot.md):
+   - Input: Conversational objective, user prompts, current system prompts (backend/src/agent/prompts.ts, backend/src/agent/llm.client.ts), evaluation criteria.
+   - Actions: Execute the 5-point evaluation battery (Intent Matrix, Conversational Advice, Contextual Modification, Adversarial Defense, Fallback Resilience).
+   - Output required: Calibrated prompts/parameters, evaluation report, and formal handoff package for the Software Engineer.
+2. Dispatch to Software Engineer Agent (agents/software-engineer/AGENTS.md):
+   - Input: Chatbot Fine-Tuner Report and proposed prompt/schema modifications.
+   - Actions: Verify contract integrity with docs/API_CONTRACT.md, frontend AIChatDrawer expectations, and security boundaries.
+   - Output required: Architecture/contract approval and handoff specifications for implementation.
+3. Dispatch to Developer Agent (agents/developer/AGENTS.md):
+   - Input: Approved prompt specifications and architectural guidelines.
+   - Output required: Updated prompt and LLM client files, ensuring zero regressions.
+
 #### STEP 3: INDEPENDENT VERIFICATION (Bug Tester Agent)
 Dispatch all changes to the Bug Tester Agent (agents/bugfixer/bug_tester.md):
-- Input: Original requirement/bug description, Developer/Fixer change summary, modified code.
+- Input: Original requirement/bug description, Developer/Fixer/Chatbot change summary, modified code.
 - Actions executed:
   * Backend Vitest suite: npm test
   * Destination query and error payload checks: npm --prefix backend exec -- tsx backend/tests/verify-queries.ts
@@ -110,6 +132,7 @@ Dispatch all changes to the Bug Tester Agent (agents/bugfixer/bug_tester.md):
   * APPROVE: Proceed to Step 4.
   * RETURN_TO_FIXER: Route back to Fixer with the exact failure stack and test log (allow max 3 retry loops).
   * RETURN_TO_FINDER: Route back to Finder if the root cause was misdiagnosed or evidence is contradictory.
+  * RETURN_TO_CHATBOT: Route back to Chatbot Fine-Tuner if prompt modifications failed evaluation criteria or produced intent regressions.
   * If retry limit (3) is exceeded, halt and notify the user with a diagnostic summary.
 
 #### STEP 4: MANDATORY POST-TASK GIT PUSH & VERIFICATION
@@ -123,7 +146,7 @@ After every task is completed and verified (Tester verdict is APPROVE):
 #### STEP 5: FINAL ORCHESTRATION REPORT
 Generate and output the final status report to the user:
 - Task Summary: [Goal of the request]
-- Pipeline Path: [Track A / Track B]
+- Pipeline Path: [Track A / Track B / Track C]
 - Root Cause / Design Decision: [Key insight]
 - Files Modified: [List of file paths]
 - Verification Results: [npm test, verify-queries, build:all output summary]
@@ -152,8 +175,9 @@ npm run build:all
 
 ## 6. Feedback Loop & Failure Handling Rules
 
-1. **Loop Limit**: Maximum of 3 remediation cycles between Fixer and Tester. If unresolved after 3 cycles, the Orchestrator must halt and request human intervention.
+1. **Loop Limit**: Maximum of 3 remediation cycles between Fixer/Chatbot and Tester. If unresolved after 3 cycles, the Orchestrator must halt and request human intervention.
 2. **Never Weaken Tests**: If a test fails, the code must be fixed to satisfy the test contract. Tests must never be deleted, skipped, or weakened merely to force a pass.
 3. **Rollback Readiness**: If the build or tests fail unrecoverably, the Orchestrator commands the Fixer to revert uncommitted changes to a clean state.
 4. **Authorization Barrier**: The Git Deployment Agent must NEVER execute without prior approval from both the Bug Tester (`APPROVE`) and the Master Orchestrator (`AUTHORIZED`).
 5. **Mandatory Post-Task Push & Verification**: After every completed task, changes must be pushed to Git and verified. The orchestrator must check `git status` / remote tracking to confirm the push was successful.
+6. **Chatbot Fine-Tuning Review Gate**: The Chatbot Fine-Tuner Agent operates strictly under the Master Orchestrator and must always submit changes to the Software Engineer Agent for architectural review before Developer implementation or Tester verification.
