@@ -30,6 +30,26 @@ export class IntegrationController {
   }
 
   /**
+   * GET /api/integrations/places/by-topic
+   */
+  static async getVenuesByTopic(req: Request, res: Response): Promise<void> {
+    try {
+      const destination = req.query.destination as string;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 12;
+
+      if (!destination) {
+        res.status(400).json({ error: 'Missing destination parameter' });
+        return;
+      }
+
+      const topics = await PlacesAdapter.getCuratedVenuesByTopic(destination, limit);
+      res.status(200).json({ destination, topics });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to fetch curated venues by topic', message: err.message });
+    }
+  }
+
+  /**
    * GET /api/integrations/weather
    */
   static async getWeather(req: Request, res: Response): Promise<void> {

@@ -105,6 +105,9 @@ describe('Agent Tools Suite (10 Core Tools)', () => {
     expect(res.days.length).toBe(3);
     expect(res.days[0].activities.length).toBeGreaterThanOrEqual(3);
     expect(res.accommodationSuggestions.length).toBeGreaterThan(0);
+    expect(res.curatedVenuesByTopic).toBeDefined();
+    expect(res.curatedVenuesByTopic!.length).toBeGreaterThanOrEqual(4);
+    expect(res.curatedVenuesByTopic![0].venues.length).toBeGreaterThanOrEqual(10);
   });
 
   it('Tool 8: validate_itinerary - detects validity of days', async () => {
@@ -185,5 +188,17 @@ describe('Agent Tools Suite (10 Core Tools)', () => {
     });
 
     expect(saveRes).toBeDefined();
+  });
+
+  it('Feature: Curated Venues by Topic provides > 10 venues per sub-topic', async () => {
+    const { PlacesAdapter } = await import('../src/integrations/places.adapter.js');
+    const topics = await PlacesAdapter.getCuratedVenuesByTopic('Goa, India', 12);
+    expect(topics).toBeDefined();
+    expect(topics.length).toBeGreaterThanOrEqual(6);
+    topics.forEach((t) => {
+      expect(t.venues.length).toBeGreaterThanOrEqual(10);
+      expect(t.venues[0]).toHaveProperty('name');
+      expect(t.venues[0]).toHaveProperty('speciality');
+    });
   });
 });

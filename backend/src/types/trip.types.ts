@@ -47,6 +47,16 @@ export interface PlaceItem {
   };
   description?: string;
   photoUrl?: string;
+  speciality?: string;
+  dietaryTag?: 'veg' | 'non-veg' | 'both';
+}
+
+export interface CuratedTopicVenues {
+  topicId: string;
+  title: string;
+  icon: string;
+  description: string;
+  venues: PlaceItem[];
 }
 
 export interface WeatherDay {
@@ -161,6 +171,7 @@ export interface CompleteItinerary {
   };
   packingList?: string[];
   localTips?: string[];
+  curatedVenuesByTopic?: CuratedTopicVenues[];
 }
 
 export interface ValidationIssue {

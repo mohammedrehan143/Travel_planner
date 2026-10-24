@@ -230,6 +230,7 @@ export class ToolHandlers {
     currency: string;
   }): Promise<CompleteItinerary> {
     const coords = await PlacesAdapter.getDestinationCoordinates(params.destination);
+    const curatedVenuesByTopic = await PlacesAdapter.getCuratedVenuesByTopic(params.destination, 12);
     const nights = params.durationDays <= 1 ? 0 : params.durationDays - 1;
     const lodging = nights > 0
       ? await AccommodationAdapter.searchLodging(params.destination, nights, params.travelStyle, params.currency)
@@ -300,7 +301,8 @@ export class ToolHandlers {
             `Verify opening hours and booking availability for popular sites in ${params.destination}.`,
             `Keep local emergency contacts and offline maps downloaded.`,
             `Use recommended digital payment cards or modest amounts of cash in ${params.currency}.`
-          ]
+          ],
+          curatedVenuesByTopic
         };
       }
     } catch (err) {
@@ -778,7 +780,8 @@ export class ToolHandlers {
         `Verify opening hours and booking availability for popular sites in ${params.destination}.`,
         `Keep local emergency contacts and offline maps downloaded.`,
         `Use recommended digital payment cards or modest amounts of cash in ${params.currency}.`
-      ]
+      ],
+      curatedVenuesByTopic
     };
   }
 

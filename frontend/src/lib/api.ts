@@ -1,4 +1,4 @@
-import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput } from '../types';
+import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput, VenueTopic } from '../types';
 import { supabase } from './supabase';
 import { getAccurateFlightEstimate } from './flightPricing';
 
@@ -92,6 +92,14 @@ export const TripPilotAPI = {
     if (!response.ok) throw new Error('Could not find nearby places right now.');
     const data = await response.json();
     return Array.isArray(data.places) ? data.places : [];
+  },
+
+  async getCuratedVenuesByTopic(destination: string, limit = 12): Promise<VenueTopic[]> {
+    const params = new URLSearchParams({ destination, limit: String(limit) });
+    const response = await fetch(`${API_URL}/api/integrations/places/by-topic?${params}`);
+    if (!response.ok) throw new Error('Could not fetch curated venues by topic.');
+    const data = await response.json();
+    return Array.isArray(data.topics) ? data.topics : [];
   },
 
   /**
@@ -379,6 +387,7 @@ function mapBackendItineraryToFrontend(data: any): PlanGenerationResponse {
       airlines: itin.flightEstimate.airlines,
       description: itin.flightEstimate.description
     } : getAccurateFlightEstimate(itin.origin, itin.destination, itin.currency),
+    curated_venues_by_topic: itin.curatedVenuesByTopic,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };

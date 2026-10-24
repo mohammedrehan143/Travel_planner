@@ -54,8 +54,41 @@ export interface Trip {
     airlines?: string;
     description?: string;
   };
+  curated_venues_by_topic?: VenueTopic[];
   created_at: string;
   updated_at: string;
+}
+
+export interface CuratedVenueItem {
+  id: string;
+  name: string;
+  category: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  rating?: number;
+  reviewCount?: number;
+  priceLevel?: 1 | 2 | 3 | 4;
+  estimatedCost?: number;
+  speciality?: string;
+  dietaryTag?: 'veg' | 'non_veg' | 'both' | 'none';
+  description?: string;
+  photoUrl?: string;
+  selected?: boolean;
+  openingHours?: {
+    openTime: string;
+    closeTime: string;
+    daysOpen: string[];
+    isOpenToday?: boolean;
+  };
+}
+
+export interface VenueTopic {
+  topicId: string;
+  title: string;
+  icon: string;
+  description: string;
+  venues: CuratedVenueItem[];
 }
 
 export interface TripDay {

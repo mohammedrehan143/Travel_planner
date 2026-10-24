@@ -1,5 +1,6 @@
-import { PlaceItem } from '../types/trip.types.js';
+import { PlaceItem, CuratedTopicVenues } from '../types/trip.types.js';
 import { env } from '../config/env.js';
+import { fetchCuratedVenuesByTopic } from './curatedVenuesByTopic.js';
 
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRadians = (degrees: number) => degrees * Math.PI / 180;
@@ -1187,5 +1188,16 @@ export class PlacesAdapter {
     }
 
     return { isOpen: true };
+  }
+
+  /**
+   * Return curated venues organized by sub-topic with > 10 venues per topic.
+   */
+  static async getCuratedVenuesByTopic(
+    destination: string,
+    limitPerTopic = 12
+  ): Promise<CuratedTopicVenues[]> {
+    const coords = await this.getDestinationCoordinates(destination);
+    return await fetchCuratedVenuesByTopic(destination, limitPerTopic, coords);
   }
 }

@@ -39,6 +39,7 @@ import { AIChatDrawer } from '../components/itinerary/AIChatDrawer';
 import { CollaborationModal } from '../components/itinerary/CollaborationModal';
 import { PackingChecklist } from '../components/itinerary/PackingChecklist';
 import { PDFExportView } from '../components/itinerary/PDFExportView';
+import { CuratedVenuesSection } from '../components/itinerary/CuratedVenuesSection';
 import { Activity, TripDay } from '../types';
 import { TripPilotAPI } from '../lib/api';
 import { formatCurrency, getCurrencySymbol } from '../lib/currency';
@@ -157,8 +158,8 @@ export const ItineraryPage: React.FC = () => {
     }
   };
 
-  // Tab view: 'schedule' | 'map' | 'budget' | 'checklist'
-  const [activeTab, setActiveTab] = useState<'schedule' | 'map' | 'budget' | 'checklist'>('schedule');
+  // Tab view: 'schedule' | 'venues' | 'map' | 'budget' | 'checklist'
+  const [activeTab, setActiveTab] = useState<'schedule' | 'venues' | 'map' | 'budget' | 'checklist'>('schedule');
 
   if (!trip) {
     return (
@@ -311,6 +312,18 @@ export const ItineraryPage: React.FC = () => {
           >
             <Calendar className={`w-4 h-4 ${activeTab === 'schedule' ? 'text-[#F97316]' : ''}`} />
             <span>Day Schedule</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('venues')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all ${
+              activeTab === 'venues'
+                ? 'bg-white text-[#171717] shadow-sm border border-[#E5E7EB]'
+                : 'text-[#525252] hover:text-[#171717]'
+            }`}
+          >
+            <Compass className={`w-4 h-4 ${activeTab === 'venues' ? 'text-[#F97316]' : ''}`} />
+            <span>Select Venues (10+ per topic)</span>
           </button>
 
           <button
@@ -618,6 +631,15 @@ export const ItineraryPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* CURATED VENUES & SELECTION VIEW */}
+      {activeTab === 'venues' && (
+        <CuratedVenuesSection
+          trip={trip}
+          days={days}
+          currentDay={currentDay}
+        />
       )}
 
       {/* MAP VIEW */}
