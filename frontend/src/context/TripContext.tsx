@@ -44,7 +44,7 @@ interface TripContextType {
   updateActivity: (dayId: string, activityId: string, updates: Partial<Activity>) => Promise<void>;
   deleteActivity: (dayId: string, activityId: string) => Promise<void>;
   reorderActivities: (dayId: string, orderedActivities: Activity[]) => Promise<void>;
-  regenerateDay: (dayId: string, prompt?: string) => Promise<void>;
+  regenerateDay: (dayId: string, prompt?: string, dayNumber?: number) => Promise<void>;
   addExpense: (expense: Omit<TripExpense, 'id' | 'created_at'>) => Promise<void>;
   deleteExpense: (expenseId: string) => Promise<void>;
   addCollaborator: (email: string, role: 'viewer' | 'editor') => Promise<void>;
@@ -199,6 +199,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [expenses, setExpenses] = useState<Record<string, TripExpense[]>>({});
   const [collaborators, setCollaborators] = useState<Record<string, TripCollaborator[]>>({});
   const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
+  const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
 
@@ -376,7 +377,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const activeAccommodations = activeTrip ? (accommodations[activeTrip.id] || []) : [];
   const activeExpenses = activeTrip ? (expenses[activeTrip.id] || []) : [];
   const activeCollaborators = activeTrip ? (collaborators[activeTrip.id] || []) : [];
-  const activeChecklist = activeTrip ? LocalStore.getChecklist(activeTrip.id) : [];
+  const activeChecklist = activeTrip ? (checklists[activeTrip.id] || LocalStore.getChecklist(activeTrip.id)) : [];
 
   const setActiveTripId = (tripId: string) => {
     setActiveTripIdState(tripId);
@@ -655,12 +656,21 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const regenerateDay = async (dayId: string, prompt?: string) => {
+  const regenerateDay = async (dayId: string, prompt?: string, dayNumber?: number) => {
     if (!activeTrip) return;
-    const newActs = await TripPilotAPI.regenerateDay(activeTrip.id, dayId, prompt);
+    const resolvedDayNumber =
+      dayNumber || tripDays[activeTrip.id]?.find((d) => d.id === dayId)?.day_number || 1;
+    const newActs = await TripPilotAPI.regenerateDay(activeTrip.id, dayId, prompt, resolvedDayNumber);
     const updated = { ...activities, [dayId]: newActs };
     setActivities(updated);
     LocalStore.saveActivities(updated);
+
+    if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
+      for (let idx = 0; idx < newActs.length; idx++) {
+        const actPayload = sanitizeActivityForDb(newActs[idx], activeTrip.id, dayId, idx);
+        await supabase.from('activities').upsert(actPayload);
+      }
+    }
   };
 
   const addExpense = async (expenseData: Omit<TripExpense, 'id' | 'created_at'>) => {
@@ -729,21 +739,24 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const toggleChecklistItem = (itemId: string) => {
     if (!activeTrip) return;
-    const current = LocalStore.getChecklist(activeTrip.id);
+    const current = checklists[activeTrip.id] || LocalStore.getChecklist(activeTrip.id);
     const updated = current.map((i) => (i.id === itemId ? { ...i, completed: !i.completed } : i));
+    setChecklists((prev) => ({ ...prev, [activeTrip.id]: updated }));
     LocalStore.saveChecklist(activeTrip.id, updated);
   };
 
   const addChecklistItem = (text: string, category: ChecklistItem['category']) => {
     if (!activeTrip) return;
-    const current = LocalStore.getChecklist(activeTrip.id);
+    const current = checklists[activeTrip.id] || LocalStore.getChecklist(activeTrip.id);
     const newItem: ChecklistItem = {
       id: `chk-${Date.now()}`,
       text,
       category,
       completed: false,
     };
-    LocalStore.saveChecklist(activeTrip.id, [...current, newItem]);
+    const updated = [...current, newItem];
+    setChecklists((prev) => ({ ...prev, [activeTrip.id]: updated }));
+    LocalStore.saveChecklist(activeTrip.id, updated);
   };
 
   return (

@@ -49,13 +49,16 @@ export const DashboardPage: React.FC = () => {
 
   const filteredTrips = trips.filter((t) => {
     const matchesFilter = filter === 'all' || t.status === filter;
+    const title = t.title || '';
+    const dest = t.destination || '';
     const matchesSearch =
-      t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.destination.toLowerCase().includes(searchTerm.toLowerCase());
+      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dest.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const upcomingCount = trips.filter((t) => new Date(t.start_date) >= new Date()).length;
+  const todayIso = new Date().toISOString().split('T')[0];
+  const upcomingCount = trips.filter((t) => (t.start_date || '') >= todayIso).length;
 
   const STATUS_BADGES: Record<TripStatus, { bg: string; text: string }> = {
     planning: { bg: 'bg-orange-50 text-orange-800 border-orange-200', text: 'In Planning' },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, Trip } from '../../types';
 import { MapPin, Navigation, Compass, ZoomIn, ZoomOut, ExternalLink, Globe } from 'lucide-react';
 import { formatCurrency } from '../../lib/currency';
@@ -17,6 +17,11 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
   const [activePin, setActivePin] = useState<Activity | null>(activities[0] || null);
   const [mapMode, setMapMode] = useState<'streets' | 'satellite' | 'terrain' | 'osm'>('streets');
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+
+  // Sync activePin whenever activities or selectedDayNumber changes
+  useEffect(() => {
+    setActivePin(activities[0] || null);
+  }, [activities, selectedDayNumber]);
 
   // If no activities with coordinates, fallback to destination coords
   const centerLat = trip.destination_lat || 35.6762;

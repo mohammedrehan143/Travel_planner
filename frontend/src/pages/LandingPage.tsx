@@ -220,6 +220,7 @@ export const LandingPage: React.FC = () => {
 
                 <Link
                   to="/wizard"
+                  state={{ destination: dest.city }}
                   role="button"
                   className="w-full py-2.5 rounded-xl bg-[#F3F4F6] hover:bg-[#F97316] text-[#171717] hover:text-white text-xs font-bold text-center border border-[#E5E7EB] hover:border-transparent transition-all"
                 >

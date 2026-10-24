@@ -67,10 +67,12 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
     e.preventDefault();
     if (!title.trim() || !locationName.trim()) return;
 
-    // Calculate duration in minutes
-    const [startH, startM] = startTime.split(':').map(Number);
-    const [endH, endM] = endTime.split(':').map(Number);
-    const durationMinutes = Math.max(15, (endH * 60 + endM) - (startH * 60 + startM));
+    // Calculate duration in minutes (handles crossing midnight)
+    const [startH, startM] = (startTime || '10:00').split(':').map(Number);
+    const [endH, endM] = (endTime || '12:00').split(':').map(Number);
+    let diff = (endH * 60 + (endM || 0)) - (startH * 60 + (startM || 0));
+    if (diff <= 0) diff += 24 * 60;
+    const durationMinutes = Math.max(15, diff);
 
     onSave({
       title,
@@ -83,7 +85,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
       duration_minutes: durationMinutes,
       location_name: locationName,
       location_address: locationAddress,
-      estimated_cost: Number(estimatedCost),
+      estimated_cost: Math.max(0, Number(estimatedCost) || 0),
       booking_required: bookingRequired,
       booking_status: bookingStatus,
       notes,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Compass,
   Sparkles,
@@ -24,6 +24,7 @@ import { PlaceAutocomplete } from '../components/common/PlaceAutocomplete';
 
 export const TripWizardPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { createTripWithWizard } = useTrips();
 
   const [step, setStep] = useState<number>(1);
@@ -50,9 +51,13 @@ export const TripWizardPage: React.FC = () => {
     };
   }, []);
 
-  // Wizard state
+  // Wizard state with route prefill support
+  const initialDest =
+    (location.state as any)?.destination ||
+    new URLSearchParams(location.search).get('destination') ||
+    '';
   const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
+  const [destination, setDestination] = useState(initialDest);
   const [startDate, setStartDate] = useState('2026-11-10');
   const [endDate, setEndDate] = useState('2026-11-10');
   const [travelerCount, setTravelerCount] = useState<number>(1);
@@ -72,13 +77,20 @@ export const TripWizardPage: React.FC = () => {
   const isOneDay = startDate === endDate;
 
   const setDurationDays = (days: number) => {
-    const start = new Date(startDate);
-    const end = new Date(start);
-    end.setDate(start.getDate() + (days - 1));
-    setEndDate(end.toISOString().split('T')[0]);
+    const [y, m, d] = startDate.split('-').map(Number);
+    const end = new Date(y, m - 1, d + (days - 1));
+    const formattedEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+    setEndDate(formattedEnd);
     if (days === 1) {
       if (currency === 'INR') setTotalBudget(500);
       setAccommodationPreference('None (Single Day Outing)');
+    }
+  };
+
+  const handleStartDateChange = (newStart: string) => {
+    setStartDate(newStart);
+    if (endDate < newStart) {
+      setEndDate(newStart);
     }
   };
 
@@ -377,7 +389,7 @@ export const TripWizardPage: React.FC = () => {
                         type="date"
                         required
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(e) => handleStartDateChange(e.target.value)}
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717]"
                       />
                     </div>
@@ -392,6 +404,7 @@ export const TripWizardPage: React.FC = () => {
                       <input
                         type="date"
                         required
+                        min={startDate}
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717]"
@@ -405,38 +418,34 @@ export const TripWizardPage: React.FC = () => {
                     Quick Duration Preset
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setDurationDays(1)}
-                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
-                        isOneDay
-                          ? 'bg-[#F97316] text-white border-[#F97316] shadow-sm'
-                          : 'bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6]'
-                      }`}
-                    >
-                      ⚡ 1-Day Outing
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDurationDays(2)}
-                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6] transition-all text-center"
-                    >
-                      Weekend (2D)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDurationDays(3)}
-                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6] transition-all text-center"
-                    >
-                      3 Days
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDurationDays(5)}
-                      className="p-2.5 rounded-xl border text-xs font-bold bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6] transition-all text-center"
-                    >
-                      5 Days
-                    </button>
+                    {[
+                      { days: 1, label: '⚡ 1-Day Outing' },
+                      { days: 2, label: 'Weekend (2D)' },
+                      { days: 3, label: '3 Days' },
+                      { days: 5, label: '5 Days' },
+                    ].map((preset) => {
+                      const computedDays = Math.max(
+                        1,
+                        Math.round(
+                          (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000
+                        ) + 1
+                      );
+                      const isPresetActive = preset.days === 1 ? isOneDay : computedDays === preset.days;
+                      return (
+                        <button
+                          key={preset.days}
+                          type="button"
+                          onClick={() => setDurationDays(preset.days)}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
+                            isPresetActive
+                              ? 'bg-[#F97316] text-white border-[#F97316] shadow-sm'
+                              : 'bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6]'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
                   </div>
                   {isOneDay && (
                     <div className="text-[11px] text-orange-900 bg-orange-50 border border-orange-200 rounded-xl p-2.5 flex items-center gap-2">
@@ -738,9 +747,33 @@ export const TripWizardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (step === 1 && !destination.trim()) {
-                      setErrorMsg('Please specify a destination to proceed.');
-                      return;
+                    if (step === 1) {
+                      if (!destination.trim()) {
+                        setErrorMsg('Please specify a destination to proceed.');
+                        return;
+                      }
+                      if (!startDate || !endDate) {
+                        setErrorMsg('Please select valid start and end dates.');
+                        return;
+                      }
+                      if (endDate < startDate) {
+                        setErrorMsg('End date must be on or after start date.');
+                        return;
+                      }
+                    } else if (step === 2) {
+                      if (!totalBudget || totalBudget < 500) {
+                        setErrorMsg('Please enter a total planned budget of at least 500.');
+                        return;
+                      }
+                      if (travelerCount < 1) {
+                        setErrorMsg('Please select at least 1 traveler.');
+                        return;
+                      }
+                    } else if (step === 3) {
+                      if (selectedInterests.length < 2) {
+                        setErrorMsg('Please select at least 2 interests to personalize your itinerary.');
+                        return;
+                      }
                     }
                     setErrorMsg(null);
                     setStep(step + 1);

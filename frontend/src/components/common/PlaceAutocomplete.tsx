@@ -130,7 +130,7 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
                       <div className="truncate">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-bold text-[#171717] truncate">{item.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-[#F3F4F6] text-[#525252] font-medium border border-[#E5E7EB]">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#F3F4F6] text-[#525252] font-medium border border-[#E5E7EB]">
                             {item.country}
                           </span>
                         </div>

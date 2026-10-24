@@ -25,6 +25,7 @@ import {
 import { Trip, TripExpense, ExpenseCategory } from '../../types';
 import { useTrips } from '../../context/TripContext';
 import { formatCurrency, getCurrencySymbol } from '../../lib/currency';
+import { getAccurateFlightEstimate } from '../../lib/flightPricing';
 
 interface BudgetTrackerProps {
   trip: Trip;
@@ -152,30 +153,40 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
       </div>
 
       {/* Flight Estimate Overview Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#171717] text-[#F97316] flex items-center justify-center shrink-0 shadow-sm">
-            <Plane className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-[#171717]">✈️ Flight / Transit Fare Estimate:</span>
-              <span className="font-black text-[#171717]">
-                {trip.flight_ticket_estimate?.cost === 0
-                  ? 'Zero (Intra-City Outing)'
-                  : formatCurrency(trip.flight_ticket_estimate?.cost || (trip.destination.toLowerCase().includes('saudi') ? 26000 : 5800), trip.currency, true)}
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 font-bold border border-orange-200">
-                AI Live Rate
-              </span>
+      {(() => {
+        const flightEstimate = getAccurateFlightEstimate(
+          trip.origin,
+          trip.destination,
+          trip.currency,
+          trip.flight_ticket_estimate
+        );
+        return (
+          <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#171717] text-[#F97316] flex items-center justify-center shrink-0 shadow-sm">
+                <Plane className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[#171717]">✈️ Flight / Transit Fare Estimate:</span>
+                  <span className="font-black text-[#171717]">
+                    {flightEstimate.cost === 0
+                      ? 'Zero (Intra-City Outing)'
+                      : formatCurrency(flightEstimate.cost, trip.currency, true)}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 font-bold border border-orange-200">
+                    AI Live Rate
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#525252] mt-0.5">
+                  {flightEstimate.description || `Estimated flight charges for ${trip.origin} ➔ ${trip.destination}`}
+                  {flightEstimate.airlines ? ` • Airlines: ${flightEstimate.airlines}` : ''}
+                </p>
+              </div>
             </div>
-            <p className="text-[11px] text-[#525252] mt-0.5">
-              {trip.flight_ticket_estimate?.description || `Estimated flight charges for ${trip.origin} ➔ ${trip.destination}`}
-              {trip.flight_ticket_estimate?.airlines ? ` • Airlines: ${trip.flight_ticket_estimate.airlines}` : ''}
-            </p>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* 3 Metric Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

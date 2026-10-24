@@ -112,7 +112,9 @@ export const ItineraryPage: React.FC = () => {
   // Initialize selected activity IDs when day changes or loads
   React.useEffect(() => {
     if (dayActivities.length > 0) {
-      setSelectedActivityIds(new Set(dayActivities.map((a) => a.id)));
+      setSelectedActivityIds(
+        new Set(dayActivities.filter((a) => a.selected !== false).map((a) => a.id))
+      );
     }
   }, [currentDay?.id, dayActivities.length]);
 
@@ -140,6 +142,14 @@ export const ItineraryPage: React.FC = () => {
     if (!trip) return;
     setIsStartingTrip(true);
     try {
+      if (currentDay && dayActivities.length > 0) {
+        for (const act of dayActivities) {
+          const isSel = selectedActivityIds.has(act.id);
+          if (act.selected !== isSel) {
+            await updateActivity(currentDay.id, act.id, { selected: isSel });
+          }
+        }
+      }
       await updateTrip(trip.id, { status: 'confirmed' });
       setTripStartedModalOpen(true);
     } finally {
@@ -187,7 +197,7 @@ export const ItineraryPage: React.FC = () => {
     if (!currentDay) return;
     setIsRegenerating(true);
     try {
-      await regenerateDay(currentDay.id);
+      await regenerateDay(currentDay.id, undefined, currentDay.day_number);
     } finally {
       setIsRegenerating(false);
     }
@@ -347,8 +357,12 @@ export const ItineraryPage: React.FC = () => {
             disabled={isValidating}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E5E7EB] bg-white hover:bg-[#F3F4F6] text-xs font-semibold text-[#171717] shadow-sm transition-colors"
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>Validation Score: {validationScore}%</span>
+            {isValidating ? (
+              <RefreshCw className="w-3.5 h-3.5 text-[#F97316] animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
+            )}
+            <span>{isValidating ? 'Validating...' : `Validation Score: ${validationScore}%`}</span>
           </button>
         </div>
       </div>
