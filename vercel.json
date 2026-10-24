@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR 2>/dev/null || true; cd frontend && npm install",
-  "buildCommand": "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR 2>/dev/null || true; cd frontend && npm run build",
+  "installCommand": "env -u npm_config_cache_dir -u npm_config_cache-dir -u NPM_CONFIG_CACHE_DIR -u NPM_CONFIG_CACHE-DIR sh -c 'if [ -d frontend ]; then cd frontend; fi && npm install'",
+  "buildCommand": "env -u npm_config_cache_dir -u npm_config_cache-dir -u NPM_CONFIG_CACHE_DIR -u NPM_CONFIG_CACHE-DIR sh -c 'if [ -d frontend ]; then cd frontend; fi && npm run build'",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
