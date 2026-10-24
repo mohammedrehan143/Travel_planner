@@ -521,10 +521,15 @@ export const TripWizardPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
-                      Number of Travelers
-                    </label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
+                        Number of Travelers
+                      </label>
+                      <span className="text-xs font-semibold text-[#F97316]">
+                        {travelerCount} {travelerCount === 1 ? 'Person' : 'People'} selected
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       {[1, 2, 3, 4, 5].map((num) => (
                         <button
                           key={num}
@@ -536,9 +541,36 @@ export const TripWizardPage: React.FC = () => {
                               : 'bg-white text-[#171717] border-[#E5E7EB] hover:bg-[#F3F4F6]'
                           }`}
                         >
-                          {num} {num === 1 ? 'Solo' : `${num} People`}
+                          {num === 1 ? '1 Person' : `${num} People`}
                         </button>
                       ))}
+                      <div className="flex items-center border border-[#E5E7EB] rounded-xl bg-white px-2 py-1.5 gap-1 shrink-0 shadow-sm" title="Custom quantity of travelers">
+                        <button
+                          type="button"
+                          onClick={() => setTravelerCount((prev) => Math.max(1, prev - 1))}
+                          className="w-7 h-7 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#171717] font-bold text-xs flex items-center justify-center transition-colors"
+                          title="Decrease travelers"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={travelerCount}
+                          onChange={(e) => setTravelerCount(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+                          className="w-10 text-center font-bold text-xs text-[#171717] focus:outline-none"
+                          title="Custom number of travelers"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setTravelerCount((prev) => Math.min(50, prev + 1))}
+                          className="w-7 h-7 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#171717] font-bold text-xs flex items-center justify-center transition-colors"
+                          title="Increase travelers"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -707,7 +739,7 @@ export const TripWizardPage: React.FC = () => {
                     <p><span className="font-semibold text-[#171717]">Origin:</span> {origin.trim() || 'Current Location'}</p>
                     <p><span className="font-semibold text-[#171717]">Destination:</span> {destination}</p>
                     <p><span className="font-semibold text-[#171717]">Dates:</span> {startDate} to {endDate} ({isOneDay ? '⚡ 1-Day Outing' : `${Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)} Days`})</p>
-                    <p><span className="font-semibold text-[#171717]">Party:</span> {travelerCount} Person(s) • <span className="capitalize">{travelCompanion}</span></p>
+                    <p><span className="font-semibold text-[#171717]">Party:</span> {travelerCount} {travelerCount === 1 ? 'Person' : 'People'} • <span className="capitalize">{travelCompanion}</span></p>
                     <p><span className="font-semibold text-[#171717]">Dietary:</span> <span className="capitalize font-semibold text-[#171717]">{dietaryPreference === 'veg' ? '🥬 Pure Vegetarian' : dietaryPreference === 'non_veg' ? '🍗 Non-Vegetarian' : '🥗 Veg & Non-Veg'}</span></p>
                     <p><span className="font-semibold text-[#171717]">Budget:</span> {formatCurrency(totalBudget, currency, true)}</p>
                     <p><span className="font-semibold text-[#171717]">Style:</span> {travelStyle}</p>

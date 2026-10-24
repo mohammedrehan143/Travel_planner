@@ -829,7 +829,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
                       <span className="font-bold text-[#171717] block">
                         Est. {formatCurrency(mealCost, currency, true)}
                       </span>
-                      <span className="text-[10px] text-[#525252]">for {travelerCount} person(s)</span>
+                      <span className="text-[10px] text-[#525252]">for {travelerCount} {travelerCount === 1 ? 'person' : 'people'}</span>
                     </div>
 
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">

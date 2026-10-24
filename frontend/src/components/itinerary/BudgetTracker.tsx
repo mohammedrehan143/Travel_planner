@@ -197,7 +197,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
             {formatCurrency(budget, trip.currency)}{' '}
             <span className="text-xs font-normal text-[#525252]">{trip.currency}</span>
           </p>
-          <p className="text-xs text-[#525252] mt-1">For {trip.traveler_count} travelers ({trip.duration_days} days)</p>
+          <p className="text-xs text-[#525252] mt-1">For {trip.traveler_count} {trip.traveler_count === 1 ? 'traveler' : 'travelers'} ({trip.duration_days} days)</p>
         </div>
 
         {/* Total Spent */}
