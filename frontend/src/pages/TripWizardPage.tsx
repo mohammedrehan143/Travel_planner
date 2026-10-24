@@ -697,9 +697,13 @@ export const TripWizardPage: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-[#F3F4F6] border border-[#E5E7EB] space-y-2 text-xs">
                   <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
                     <span className="font-bold text-[#171717]">Trip Blueprint Summary</span>
-                    <span className="font-bold text-[#F97316]">{destination}</span>
+                    <span className="font-bold text-[#F97316]">
+                      {origin.trim() ? `${origin.trim()} → ${destination}` : destination}
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[#525252] pt-1">
+                    <p><span className="font-semibold text-[#171717]">Origin:</span> {origin.trim() || 'Current Location'}</p>
+                    <p><span className="font-semibold text-[#171717]">Destination:</span> {destination}</p>
                     <p><span className="font-semibold text-[#171717]">Dates:</span> {startDate} to {endDate} ({isOneDay ? '⚡ 1-Day Outing' : `${Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)} Days`})</p>
                     <p><span className="font-semibold text-[#171717]">Party:</span> {travelerCount} Person(s) • <span className="capitalize">{travelCompanion}</span></p>
                     <p><span className="font-semibold text-[#171717]">Dietary:</span> <span className="capitalize font-semibold text-[#171717]">{dietaryPreference === 'veg' ? '🥬 Pure Vegetarian' : dietaryPreference === 'non_veg' ? '🍗 Non-Vegetarian' : '🥗 Veg & Non-Veg'}</span></p>

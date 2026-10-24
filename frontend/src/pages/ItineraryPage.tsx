@@ -543,57 +543,80 @@ export const ItineraryPage: React.FC = () => {
           </div>
 
           {/* User Confirmation & Start Trip Section (Selective Dark Section) */}
-          <div className="p-6 rounded-3xl bg-[#171717] text-white border border-neutral-800 shadow-xl space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-[#F97316] text-xs font-bold border border-orange-500/20 mb-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#F97316]" />
-                  <span>Trip Ready for Acceptance</span>
-                </div>
-                <h3 className="text-lg font-black text-white">Accept & Start Your Trip</h3>
-                <p className="text-xs text-neutral-300 max-w-lg mt-0.5">
-                  Select the places you love, check "Yes" to confirm this itinerary, and start your real-world journey!
-                </p>
-              </div>
-
-              {/* User Confirmation Toggle ("Say Yes") */}
-              <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 cursor-pointer select-none transition-all">
-                <input
-                  type="checkbox"
-                  checked={isUserConfirmed}
-                  onChange={(e) => setIsUserConfirmed(e.target.checked)}
-                  className="w-5 h-5 rounded text-[#F97316] accent-[#F97316] cursor-pointer"
-                />
+          {trip.status === 'confirmed' || trip.status === 'completed' ? (
+            <div className="p-6 rounded-3xl bg-[#171717] text-white border border-neutral-800 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <span className="text-xs font-black text-white block">
-                    Yes, I accept this plan!
-                  </span>
-                  <span className="text-[10px] text-neutral-300">
-                    Confirm {selectedActivityIds.size} selected spot(s)
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 mb-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Trip Active & Confirmed</span>
+                  </div>
+                  <h3 className="text-lg font-black text-white">Your Trip is Underway!</h3>
+                  <p className="text-xs text-neutral-300 max-w-lg mt-0.5">
+                    This itinerary has been accepted and locked with {selectedActivityIds.size} verified spot(s). Have an incredible journey!
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black inline-flex items-center gap-1.5">
+                    <Rocket className="w-4 h-4 text-emerald-400" />
+                    Active Journey
                   </span>
                 </div>
-              </label>
-            </div>
-
-            {/* When user checks "Yes": The Start Trip button pops up */}
-            {isUserConfirmed && (
-              <div className="animate-in fade-in duration-300 pt-4 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs text-neutral-200 font-semibold">
-                  <Sparkles className="w-4 h-4 text-[#F97316] animate-pulse" />
-                  <span>Plan accepted! All selected places are ready in your itinerary.</span>
-                </div>
-
-                <button
-                  onClick={handleStartTrip}
-                  disabled={isStartingTrip || selectedActivityIds.size === 0}
-                  className="px-6 py-3 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-black text-sm shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-102 active:scale-95 disabled:opacity-50"
-                >
-                  <Rocket className="w-4 h-4 text-white" />
-                  <span>Start Trip (Accept & Activate)</span>
-                </button>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="p-6 rounded-3xl bg-[#171717] text-white border border-neutral-800 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-[#F97316] text-xs font-bold border border-orange-500/20 mb-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#F97316]" />
+                    <span>Trip Ready for Acceptance</span>
+                  </div>
+                  <h3 className="text-lg font-black text-white">Accept & Start Your Trip</h3>
+                  <p className="text-xs text-neutral-300 max-w-lg mt-0.5">
+                    Select the places you love, check "Yes" to confirm this itinerary, and start your real-world journey!
+                  </p>
+                </div>
+
+                {/* User Confirmation Toggle ("Say Yes") */}
+                <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 cursor-pointer select-none transition-all">
+                  <input
+                    type="checkbox"
+                    checked={isUserConfirmed}
+                    onChange={(e) => setIsUserConfirmed(e.target.checked)}
+                    className="w-5 h-5 rounded text-[#F97316] accent-[#F97316] cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-black text-white block">
+                      Yes, I accept this plan!
+                    </span>
+                    <span className="text-[10px] text-neutral-300">
+                      Confirm {selectedActivityIds.size} selected spot(s)
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {/* When user checks "Yes": The Start Trip button pops up */}
+              {isUserConfirmed && (
+                <div className="animate-in fade-in duration-300 pt-4 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs text-neutral-200 font-semibold">
+                    <Sparkles className="w-4 h-4 text-[#F97316] animate-pulse" />
+                    <span>Plan accepted! All selected places are ready in your itinerary.</span>
+                  </div>
+
+                  <button
+                    onClick={handleStartTrip}
+                    disabled={isStartingTrip || selectedActivityIds.size === 0}
+                    className="px-6 py-3 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-black text-sm shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-102 active:scale-95 disabled:opacity-50"
+                  >
+                    <Rocket className="w-4 h-4 text-white" />
+                    <span>Start Trip (Accept & Activate)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -668,8 +691,14 @@ export const ItineraryPage: React.FC = () => {
 
       {/* Trip Started Celebration Modal */}
       {tripStartedModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171717]/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-5 shadow-2xl border border-[#E5E7EB]">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171717]/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setTripStartedModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-5 shadow-2xl border border-[#E5E7EB]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-16 h-16 rounded-2xl bg-orange-50 text-[#F97316] border border-orange-200 flex items-center justify-center mx-auto shadow-sm">
               <Rocket className="w-8 h-8 animate-bounce text-[#F97316]" />
             </div>

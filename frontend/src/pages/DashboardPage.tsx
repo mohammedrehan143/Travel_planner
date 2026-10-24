@@ -164,7 +164,7 @@ export const DashboardPage: React.FC = () => {
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto p-1 bg-[#F3F4F6] rounded-xl text-xs font-bold border border-[#E5E7EB]">
-          {['all', 'planning', 'confirmed', 'draft'].map((s) => (
+          {['all', 'planning', 'confirmed', 'completed', 'draft'].map((s) => (
             <button
               key={s}
               onClick={() => setFilter(s)}

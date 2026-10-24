@@ -341,8 +341,14 @@ export const AuthPage: React.FC = () => {
 
       {/* Terms & Conditions Modal */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#171717]/70 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-4 max-h-[85vh] flex flex-col text-[#171717]">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#171717]/70 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={() => setShowTermsModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-[#E5E7EB] shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-4 max-h-[85vh] flex flex-col text-[#171717]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2 font-black text-base">
                 <FileText className="w-5 h-5 text-[#F97316]" />

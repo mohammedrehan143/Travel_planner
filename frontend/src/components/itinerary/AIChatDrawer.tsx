@@ -205,8 +205,8 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                 <div
                   className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
                     isAi
-                      ? 'bg-[#F3F4F6] text-[#171717] rounded-tl-xs border border-[#E5E7EB]/50'
-                      : 'bg-[#F97316] text-white rounded-tr-xs shadow-sm'
+                      ? 'bg-[#F3F4F6] text-[#171717] rounded-tl-none border border-[#E5E7EB]/50'
+                      : 'bg-[#F97316] text-white rounded-tr-none shadow-sm'
                   }`}
                 >
                   <p className="whitespace-pre-line">{m.text}</p>
