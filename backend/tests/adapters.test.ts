@@ -62,5 +62,11 @@ describe('External Integration Adapters Suite', () => {
     expect(inrStays.length).toBeGreaterThanOrEqual(2);
     expect(inrStays[0].currency).toBe('INR');
     expect(inrStays[0].nightlyRate).toBeGreaterThan(5000);
+
+    // Test 10+ accommodations for Goa with Google Maps URLs
+    const goaStays = await AccommodationAdapter.searchLodging('Goa, India', 3, 'balanced', 'USD');
+    expect(goaStays.length).toBeGreaterThanOrEqual(10);
+    expect(goaStays[0].googleMapsUrl).toContain('google.com/maps');
+    expect(goaStays[0].totalPrice).toBe(goaStays[0].nightlyRate * 3);
   });
 });

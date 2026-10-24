@@ -163,6 +163,25 @@ export interface Activity {
   updated_at: string;
 }
 
+export interface SubDomainHotelOption {
+  id: string;
+  name: string;
+  type: 'hotel' | 'hostel' | 'resort' | 'apartment' | 'villa';
+  address: string;
+  nightlyRate: number;
+  totalPrice: number;
+  currency: string;
+  rating: number;
+  reviewCount?: number;
+  latitude: number;
+  longitude: number;
+  bookingStatus: 'not_booked';
+  bookingUrl?: string;
+  googleMapsUrl: string;
+  amenities: string[];
+  description: string;
+}
+
 export interface Accommodation {
   id: string;
   trip_id: string;

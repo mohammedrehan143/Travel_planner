@@ -1,4 +1,4 @@
-import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput, VenueTopic, PlacesSearchResponse, CuratedVenueItem } from '../types';
+import { Trip, TripDay, Activity, AgentRun, TripCreateWizardInput, VenueTopic, PlacesSearchResponse, CuratedVenueItem, SubDomainHotelOption } from '../types';
 import { supabase } from './supabase';
 import { getAccurateFlightEstimate } from './flightPricing';
 
@@ -125,6 +125,25 @@ export const TripPilotAPI = {
     if (!response.ok) throw new Error('Could not fetch curated venues by topic.');
     const data = await response.json();
     return Array.isArray(data.topics) ? data.topics : [];
+  },
+
+  async getAccommodations(options: {
+    destination: string;
+    nights?: number;
+    travelStyle?: string;
+    currency?: string;
+    budget?: number;
+  }): Promise<SubDomainHotelOption[]> {
+    const params = new URLSearchParams({ destination: options.destination });
+    if (options.nights) params.set('nights', String(options.nights));
+    if (options.travelStyle) params.set('travelStyle', options.travelStyle);
+    if (options.currency) params.set('currency', options.currency);
+    if (options.budget) params.set('budget', String(options.budget));
+
+    const response = await fetch(`${API_URL}/api/integrations/accommodations?${params}`);
+    if (!response.ok) throw new Error('Could not fetch accommodations right now.');
+    const data = await response.json();
+    return Array.isArray(data.accommodations) ? data.accommodations : [];
   },
 
   /**

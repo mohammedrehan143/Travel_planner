@@ -12,6 +12,9 @@ router.get('/places/search', IntegrationController.searchPlaces);
 // GET /api/integrations/places/by-topic
 router.get('/places/by-topic', IntegrationController.getVenuesByTopic);
 
+// GET /api/integrations/accommodations
+router.get('/accommodations', IntegrationController.getAccommodations);
+
 // GET /api/integrations/weather
 router.get('/weather', IntegrationController.getWeather);
 

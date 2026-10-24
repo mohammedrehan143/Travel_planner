@@ -181,6 +181,19 @@ describe('TripPilot Backend REST API Suite', () => {
     expect(res.body.totalPlaces).toBeGreaterThanOrEqual(30);
   });
 
+  it('GET /api/integrations/accommodations returns 10+ lodging options in destination', async () => {
+    const res = await request(app)
+      .get('/api/integrations/accommodations')
+      .query({ destination: 'Goa, India', nights: 3, currency: 'USD' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.totalAccommodations).toBeGreaterThanOrEqual(10);
+    expect(Array.isArray(res.body.accommodations)).toBe(true);
+    expect(res.body.accommodations[0]).toHaveProperty('nightlyRate');
+    expect(res.body.accommodations[0]).toHaveProperty('totalPrice');
+    expect(res.body.accommodations[0].googleMapsUrl).toContain('google.com/maps');
+  });
+
   it('GET /api/integrations/weather returns weather forecast', async () => {
     const res = await request(app)
       .get('/api/integrations/weather')

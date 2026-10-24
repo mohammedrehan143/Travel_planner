@@ -3,6 +3,7 @@ import { PlacesAdapter } from '../integrations/places.adapter.js';
 import { WeatherAdapter } from '../integrations/weather.adapter.js';
 import { RoutesAdapter } from '../integrations/routes.adapter.js';
 import { CurrencyAdapter } from '../integrations/currency.adapter.js';
+import { AccommodationAdapter } from '../integrations/accommodation.adapter.js';
 
 export class IntegrationController {
   /**
@@ -67,6 +68,42 @@ export class IntegrationController {
       res.status(200).json({ destination, topics });
     } catch (err: any) {
       res.status(500).json({ error: 'Failed to fetch curated venues by topic', message: err.message });
+    }
+  }
+
+  /**
+   * GET /api/integrations/accommodations
+   */
+  static async getAccommodations(req: Request, res: Response): Promise<void> {
+    try {
+      const destination = req.query.destination as string;
+      const nights = req.query.nights ? parseInt(req.query.nights as string, 10) : 3;
+      const travelStyle = (req.query.travelStyle as string) || 'balanced';
+      const currency = (req.query.currency as string) || 'USD';
+      const budget = req.query.budget ? parseFloat(req.query.budget as string) : undefined;
+
+      if (!destination) {
+        res.status(400).json({ error: 'Missing destination parameter' });
+        return;
+      }
+
+      const accommodations = await AccommodationAdapter.searchLodging(
+        destination,
+        nights,
+        travelStyle,
+        currency
+      );
+
+      res.status(200).json({
+        destination,
+        nights,
+        currency,
+        totalAccommodations: accommodations.length,
+        budgetLimit: budget,
+        accommodations
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to fetch accommodations', message: err.message });
     }
   }
 
