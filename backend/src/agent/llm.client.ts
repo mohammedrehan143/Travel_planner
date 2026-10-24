@@ -7,7 +7,18 @@ let openaiClient: OpenAI | null = null;
 let openaiClientConfig = '';
 let googleGenAIClient: GoogleGenAI | null = null;
 
-export type SupportedAIProvider = 'gemini' | 'openai' | 'none';
+export type SupportedAIProvider = 'groq' | 'gemini' | 'openai' | 'none';
+
+export const FALLBACK_GROQ_MODELS = [
+  'openai/gpt-oss-120b',
+  'qwen/qwen3.8-27b',
+  'openai/gpt-oss-20b',
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'llama3-70b-8192',
+  'llama3-8b-8192',
+  'mixtral-8x7b-32768'
+];
 
 export const FALLBACK_GEMINI_MODELS = [
   'gemini-3.5-flash-lite',
@@ -21,27 +32,51 @@ export const FALLBACK_GEMINI_MODELS = [
  * Determine active AI provider based on environment variables
  */
 export function getActiveProvider(): { provider: SupportedAIProvider; model: string } {
-  if (env.AI_PROVIDER === 'gemini' || (env.AI_PROVIDER === 'auto' && env.GEMINI_API_KEY)) {
-    if (env.GEMINI_API_KEY) {
+  const hasGroq = Boolean(env.GROQ_API_KEY && env.GROQ_API_KEY.trim().length > 0);
+  const hasGemini = Boolean(env.GEMINI_API_KEY && env.GEMINI_API_KEY.trim().length > 0);
+  const hasOpenAI = Boolean(env.OPENAI_API_KEY && env.OPENAI_API_KEY.trim().length > 0);
+
+  // 1. Explicit Groq selection (lightning fast LPU inference)
+  if (env.AI_PROVIDER === 'groq') {
+    if (hasGroq) return { provider: 'groq', model: env.GROQ_MODEL };
+    if (hasGemini) {
+      console.warn('[AIProvider] AI_PROVIDER="groq" configured, but GROQ_API_KEY is not set yet. Falling back to Gemini.');
       return { provider: 'gemini', model: env.GEMINI_MODEL };
     }
+    return { provider: 'none', model: 'deterministic-heuristic' };
   }
 
-  if (env.AI_PROVIDER === 'openai' || (env.AI_PROVIDER === 'auto' && env.OPENAI_API_KEY)) {
-    if (env.OPENAI_API_KEY) {
-      return { provider: 'openai', model: env.OPENAI_MODEL };
-    }
+  // 2. Explicit Gemini selection
+  if (env.AI_PROVIDER === 'gemini') {
+    if (hasGemini) return { provider: 'gemini', model: env.GEMINI_MODEL };
+    if (hasGroq) return { provider: 'groq', model: env.GROQ_MODEL };
+    return { provider: 'none', model: 'deterministic-heuristic' };
   }
 
-  if (env.GEMINI_API_KEY) {
+  // 3. Explicit OpenAI selection
+  if (env.AI_PROVIDER === 'openai') {
+    if (hasOpenAI) return { provider: 'openai', model: env.OPENAI_MODEL };
+    return { provider: 'none', model: 'deterministic-heuristic' };
+  }
+
+  // 4. Auto-detection: prioritize Groq for speed if key is configured
+  if (hasGroq) {
+    return { provider: 'groq', model: env.GROQ_MODEL };
+  }
+
+  if (hasGemini) {
     return { provider: 'gemini', model: env.GEMINI_MODEL };
+  }
+
+  if (hasOpenAI) {
+    return { provider: 'openai', model: env.OPENAI_MODEL };
   }
 
   return { provider: 'none', model: 'deterministic-heuristic' };
 }
 
 /**
- * Returns true if an AI provider key (Gemini or OpenAI) is available
+ * Returns true if an AI provider key (Groq, Gemini, or OpenAI) is available
  */
 export function isLLMConfigured(): boolean {
   const { provider } = getActiveProvider();
@@ -64,7 +99,8 @@ export function getGoogleGenAIClient(): GoogleGenAI | null {
 }
 
 /**
- * Get OpenAI-compatible client instance (works for both Gemini and OpenAI)
+ * Get OpenAI-compatible client instance (works for Groq, Gemini, and OpenAI)
+ * Groq uses: https://api.groq.com/openai/v1
  * Google Gemini exposes an official OpenAI-compatible endpoint at:
  * https://generativelanguage.googleapis.com/v1beta/openai/
  */
@@ -75,10 +111,20 @@ export function getLLMClient(): { client: OpenAI; model: string; provider: Suppo
     return null;
   }
 
-  const apiKey = provider === 'gemini' ? env.GEMINI_API_KEY : env.OPENAI_API_KEY;
-  const baseURL = provider === 'gemini'
-    ? 'https://generativelanguage.googleapis.com/v1beta/openai/'
-    : env.OPENAI_BASE_URL;
+  let apiKey: string | undefined;
+  let baseURL: string | undefined;
+
+  if (provider === 'groq') {
+    apiKey = env.GROQ_API_KEY;
+    baseURL = env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
+  } else if (provider === 'gemini') {
+    apiKey = env.GEMINI_API_KEY;
+    baseURL = 'https://generativelanguage.googleapis.com/v1beta/openai/';
+  } else {
+    apiKey = env.OPENAI_API_KEY;
+    baseURL = env.OPENAI_BASE_URL;
+  }
+
   const clientConfig = `${provider}:${apiKey}:${baseURL || ''}`;
 
   if (!openaiClient || openaiClientConfig !== clientConfig) {
@@ -178,7 +224,74 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
   }
 }`;
 
-  // 1. Google Gemini Native SDK
+  // 1. Groq Provider (Ultra-fast LPU inference)
+  if (provider === 'groq') {
+    const groqKey = env.GROQ_API_KEY;
+    if (groqKey) {
+      const groqClient = new OpenAI({
+        apiKey: groqKey,
+        baseURL: env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1'
+      });
+      const modelQueue = [
+        model || env.GROQ_MODEL,
+        ...FALLBACK_GROQ_MODELS.filter(m => m !== (model || env.GROQ_MODEL))
+      ];
+
+      for (const m of modelQueue) {
+        try {
+          const response = await groqClient.chat.completions.create({
+            model: m,
+            messages: [
+              {
+                role: 'system',
+                content: 'You are TripPilot AI, an elite travel architect and real-time personal concierge. Return strictly valid JSON matching the requested schema with NO markdown code fences.'
+              },
+              { role: 'user', content: systemInstructions }
+            ],
+            temperature: 0.3,
+            response_format: { type: 'json_object' }
+          });
+
+          const rawText = response.choices[0]?.message?.content?.trim() || '';
+          const clean = rawText
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/i, '')
+            .replace(/\s*```$/i, '')
+            .trim();
+
+          try {
+            const parsed = JSON.parse(clean);
+            if (parsed && typeof parsed === 'object') {
+              if (parsed.action === 'plan_new_trip' && parsed.tripParams?.destination) {
+                return {
+                  action: 'plan_new_trip',
+                  reply: parsed.reply || `I'm designing a new trip to ${parsed.tripParams.destination} for you!`,
+                  tripParams: parsed.tripParams
+                };
+              }
+              if (parsed.reply) {
+                return {
+                  action: 'chat',
+                  reply: parsed.reply
+                };
+              }
+            }
+          } catch {
+            // Not JSON
+          }
+
+          if (rawText) {
+            return { action: 'chat', reply: rawText };
+          }
+        } catch (err: any) {
+          console.warn(`[Groq processAgentChat] Model ${m} error:`, err?.status || err?.message || err);
+          continue;
+        }
+      }
+    }
+  }
+
+  // 2. Google Gemini Native SDK
   if (provider === 'gemini') {
     const ai = getGoogleGenAIClient();
     if (ai) {
@@ -469,7 +582,7 @@ export interface ChatMessage {
 export async function callLLMWithTools(messages: ChatMessage[]) {
   const config = getLLMClient();
   if (!config) {
-    throw new Error('No AI provider configured. Please set GEMINI_API_KEY (recommended) or OPENAI_API_KEY in your .env file.');
+    throw new Error('No AI provider configured. Please set GROQ_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY in your .env file.');
   }
 
   const { client, model } = config;
@@ -486,12 +599,48 @@ export async function callLLMWithTools(messages: ChatMessage[]) {
 }
 
 /**
- * Direct generation with Gemini using GoogleGenAI SDK with resilient multi-model fallback
+ * Direct generation using configured AI provider (Groq, Gemini, or OpenAI)
  */
 export async function generateWithGemini(prompt: string, modelName = env.GEMINI_MODEL): Promise<string> {
+  const { provider } = getActiveProvider();
+
+  // If Groq is active and configured, use Groq's high-speed completion
+  if (provider === 'groq') {
+    const config = getLLMClient();
+    if (config) {
+      try {
+        const response = await config.client.chat.completions.create({
+          model: config.model,
+          messages: [
+            { role: 'system', content: 'You are TripPilot AI, a master travel architect. Return valid JSON matching the requested structure.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.3,
+          response_format: { type: 'json_object' }
+        });
+        const text = response.choices[0]?.message?.content?.trim();
+        if (text) return text;
+      } catch (groqErr) {
+        console.warn('[Groq generateWithGemini] Error generating with Groq, trying fallback:', groqErr);
+      }
+    }
+  }
+
   const ai = getGoogleGenAIClient();
   if (!ai) {
-    throw new Error('GEMINI_API_KEY is not configured in environment variables.');
+    if (provider === 'openai') {
+      const config = getLLMClient();
+      if (config) {
+        const response = await config.client.chat.completions.create({
+          model: config.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3
+        });
+        const text = response.choices[0]?.message?.content?.trim();
+        if (text) return text;
+      }
+    }
+    throw new Error('No supported AI provider configured in environment variables.');
   }
 
   const modelQueue = [modelName, ...FALLBACK_GEMINI_MODELS.filter(m => m !== modelName)];

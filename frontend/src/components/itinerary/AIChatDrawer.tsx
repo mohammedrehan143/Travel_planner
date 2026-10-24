@@ -36,7 +36,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     {
       id: '1',
       sender: 'ai',
-      text: `Hi! I'm your AI Travel Architect powered by Google Gemini. Ask me about local specialities, vegetarian or non-vegetarian dining, scenic hangout spots, or tell me to plan a brand-new trip anywhere in the world!`,
+      text: `Hi! I'm your ultra-fast AI Travel Architect powered by Groq. Ask me about local specialities, vegetarian or non-vegetarian dining, scenic hangout spots, or tell me to plan a brand-new trip anywhere in the world!`,
       timestamp: 'Just now',
     },
   ]);
