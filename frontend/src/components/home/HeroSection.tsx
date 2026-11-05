@@ -466,14 +466,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
         </div>
 
-        {/* Right End: Small AI Chatbot Icon */}
-        <div className="relative flex flex-col items-end justify-center shrink-0 pr-2 lg:pr-6 xl:pr-10">
+        {/* Right End: Small AI Chatbot Icon (moved slightly lower) */}
+        <div className="relative flex flex-col items-end justify-center shrink-0 pr-2 lg:pr-6 xl:pr-10 pt-8 sm:pt-12 translate-y-3">
           <CuteRobotChatbot onOpenChat={onOpenChat} />
         </div>
       </div>
 
       {/* Mobile Floating Chatbot Option at the Right End */}
-      <div className="md:hidden fixed bottom-6 right-4 z-40">
+      <div className="md:hidden fixed bottom-4 right-4 z-40">
         <CuteRobotMobileButton onOpenChat={onOpenChat} />
       </div>
 
