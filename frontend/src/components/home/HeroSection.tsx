@@ -13,6 +13,7 @@ import {
   Star
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getLenis } from '../../hooks/useSmoothScroll';
 
 interface HeroSectionProps {
   onOpenAgents?: () => void;
@@ -43,9 +44,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    const lenis = getLenis();
+    if (lenis) {
+      lenis.scrollTo(`#${id}`, { offset: -30, duration: 1.4 });
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 

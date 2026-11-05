@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { TripWizardPage } from './pages/TripWizardPage';
 import { ItineraryPage } from './pages/ItineraryPage';
 import { DashboardSkeleton } from './components/common/LoadingSkeleton';
+import { useSmoothScroll } from './hooks/useSmoothScroll';
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,6 +28,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 export const AppContent: React.FC = () => {
+  useSmoothScroll();
+
   return (
     <Routes>
       {/* Public Landing Page matching image.png & Auth */}

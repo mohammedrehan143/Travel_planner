@@ -2,27 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Lenis smooth scrolling core */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 @layer base {
   :root {
     --bg-primary: #FFFFFF;
     --bg-secondary: #F3F4F6;
     --bg-card: #FFFFFF;
-    --bg-dark: #171717;
+    --bg-dark: #0B2545;
     --text-primary: #171717;
     --text-secondary: #525252;
     --border-color: #E5E7EB;
-    --primary-accent: #16A34A;
-    --hover-accent: #15803D;
+    --primary-accent: #1E60FF;
+    --hover-accent: #0052FF;
     --text-on-accent: #FFFFFF;
-    --success: #16A34A;
+    --success: #1E60FF;
     --error: #DC2626;
 
-    /* Tailwind HSL mappings if any legacy hsl() is referenced */
+    /* Tailwind HSL mappings */
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 9%;
-    --primary: 142.1 76.2% 36.3%;
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 0 0% 9%;
@@ -30,7 +51,7 @@
     --muted-foreground: 0 0% 45%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 142.1 76.2% 36.3%;
+    --ring: 221.2 83.2% 53.3%;
   }
 
   body {
@@ -44,15 +65,15 @@
   select:focus-visible,
   textarea:focus-visible {
     outline: none;
-    border-color: #16A34A;
-    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    border-color: #1E60FF;
+    box-shadow: 0 0 0 2px rgba(30, 96, 255, 0.2);
   }
 }
 
 @layer components {
-  /* Reusable Green & Mono Button Components */
+  /* Reusable Ocean Blue & Mono Button Components */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-secondary {
@@ -60,7 +81,7 @@
   }
 
   .btn-dark {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B3B2C] hover:bg-[#07271D] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B2545] hover:bg-[#07192F] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .card-mono {
@@ -68,7 +89,7 @@
   }
 
   .badge-orange {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200;
   }
 
   .badge-mono {
