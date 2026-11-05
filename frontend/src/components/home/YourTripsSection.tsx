@@ -96,7 +96,7 @@ export const YourTripsSection: React.FC<YourTripsSectionProps> = ({ trips, onOpe
                 </div>
                 {trip.total_budget > 0 && (
                   <span className="font-bold text-[11px] text-[#1E60FF] bg-[#EBF2FF] px-2 py-0.5 rounded-md">
-                    {formatCurrency(trip.total_budget, trip.currency || 'USD', false)}
+                    {formatCurrency(trip.total_budget, trip.currency || 'INR', false)}
                   </span>
                 )}
               </div>

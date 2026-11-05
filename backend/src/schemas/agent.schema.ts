@@ -43,7 +43,7 @@ export const estimateTripBudgetInputSchema = z.object({
   travelerCount: z.number().int().positive(),
   travelStyle: travelStyleEnum,
   totalBudget: z.number().nonnegative(),
-  currency: z.string().default('USD')
+  currency: z.string().default('INR')
 });
 
 export const activityPlanSchema = z.object({
@@ -58,7 +58,7 @@ export const activityPlanSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   estimatedCost: z.number(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('INR'),
   bookingRequired: z.boolean().default(false),
   bookingUrl: z.string().optional(),
   bookingStatus: bookingStatusEnum.default('not_booked'),
@@ -91,7 +91,7 @@ export const generateItineraryInputSchema = z.object({
 
 export const validateItineraryInputSchema = z.object({
   totalBudget: z.number(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('INR'),
   days: z.array(dayPlanSchema)
 });
 

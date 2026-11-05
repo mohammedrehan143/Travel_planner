@@ -87,7 +87,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
           travelStyle: trip?.travel_style || 'balanced',
           interests: trip?.interests || ['sightseeing'],
           budget: trip?.total_budget || 20000,
-          currency: trip?.currency || 'USD',
+          currency: trip?.currency || 'INR',
           selectedDay: currentDay ? {
             dayNumber: currentDay.day_number,
             date: currentDay.date,

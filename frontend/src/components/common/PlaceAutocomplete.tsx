@@ -9,20 +9,21 @@ export interface PlaceSuggestion {
 }
 
 export const POPULAR_DESTINATIONS: PlaceSuggestion[] = [
-  { name: 'Bangalore, Karnataka', country: 'India', category: 'city', subtitle: 'Silicon Valley of India • Parks & Cafes' },
-  { name: 'Saudi Arabia (Riyadh)', country: 'Saudi Arabia', category: 'country', subtitle: 'Kingdom Centre • Historic Diriyah' },
-  { name: 'Mumbai, Maharashtra', country: 'India', category: 'city', subtitle: 'Marine Drive • Gateway of India' },
-  { name: 'New Delhi, NCR', country: 'India', category: 'city', subtitle: 'Red Fort • India Gate • Street Food' },
-  { name: 'Goa (Panaji & Beaches)', country: 'India', category: 'region', subtitle: 'Sun, Sand, Seafood & Heritage Churches' },
+  { name: 'Bangalore, Karnataka, India', country: 'India', category: 'city', subtitle: 'Silicon Valley of India • Garden City • Cubbon Park • Cafes' },
+  { name: 'Goa, India', country: 'India', category: 'region', subtitle: 'Sun, Sand, Seafood & Heritage Beaches' },
+  { name: 'Mumbai, Maharashtra, India', country: 'India', category: 'city', subtitle: 'Marine Drive • Gateway of India • Bollywood' },
+  { name: 'New Delhi, NCR, India', country: 'India', category: 'city', subtitle: 'Red Fort • India Gate • Street Food' },
+  { name: 'Manali, Himachal Pradesh', country: 'India', category: 'city', subtitle: 'Snow Peaks • Solang Valley • Rohtang Pass' },
+  { name: 'Jaipur, Rajasthan', country: 'India', category: 'city', subtitle: 'Pink City • Amber Fort • Hawa Mahal' },
+  { name: 'Ooty, Tamil Nadu', country: 'India', category: 'city', subtitle: 'Nilgiri Mountain Railway • Tea Gardens' },
+  { name: 'Coorg, Karnataka', country: 'India', category: 'region', subtitle: 'Scotland of India • Coffee Plantations' },
   { name: 'Dubai', country: 'United Arab Emirates', category: 'city', subtitle: 'Burj Khalifa • Marina • Desert Safari' },
   { name: 'Tokyo', country: 'Japan', category: 'city', subtitle: 'Shibuya • Asakusa • Gastronomy' },
   { name: 'Paris', country: 'France', category: 'city', subtitle: 'Eiffel Tower • Louvre • Seine River' },
   { name: 'London', country: 'United Kingdom', category: 'city', subtitle: 'Big Ben • Tower Bridge • West End' },
-  { name: 'New York City, NY', country: 'United States', category: 'city', subtitle: 'Manhattan • Central Park • Broadway' },
   { name: 'Singapore', country: 'Singapore', category: 'city', subtitle: 'Marina Bay Sands • Gardens by the Bay' },
-  { name: 'Hyderabad, Telangana', country: 'India', category: 'city', subtitle: 'Charminar • Biryani • Golconda Fort' },
-  { name: 'Jeddah', country: 'Saudi Arabia', category: 'city', subtitle: 'Red Sea Corniche • Al-Balad Heritage' },
-  { name: 'Kyoto', country: 'Japan', category: 'city', subtitle: 'Arashiyama Bamboo Grove • Fushimi Inari' }
+  { name: 'Hyderabad, Telangana, India', country: 'India', category: 'city', subtitle: 'Charminar • Biryani • Golconda Fort' },
+  { name: 'New York City, NY', country: 'United States', category: 'city', subtitle: 'Manhattan • Central Park • Broadway' }
 ];
 
 interface PlaceAutocompleteProps {

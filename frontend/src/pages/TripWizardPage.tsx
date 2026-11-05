@@ -27,7 +27,8 @@ import {
   Trees,
   Palette,
   Wine,
-  X
+  X,
+  Navigation
 } from 'lucide-react';
 import { useTrips } from '../context/TripContext';
 import { TravelStyle, TripCreateWizardInput } from '../types';
@@ -41,6 +42,7 @@ import {
   getBudgetPresetsForCurrency,
   getMinBudgetForCurrency
 } from '../lib/currency';
+import { detectLocation, DEFAULT_LOCATION } from '../lib/location';
 import { PlaceAutocomplete } from '../components/common/PlaceAutocomplete';
 
 export const TripWizardPage: React.FC = () => {
@@ -77,8 +79,9 @@ export const TripWizardPage: React.FC = () => {
     (location.state as any)?.destination ||
     new URLSearchParams(location.search).get('destination') ||
     '';
-  const initialCurrency = detectCurrencyForDestination(initialDest);
-  const [origin, setOrigin] = useState('');
+  const initialCurrency = detectCurrencyForDestination(initialDest) || 'INR';
+  const [origin, setOrigin] = useState<string>('Bangalore, Karnataka, India');
+  const [isDetectingLocation, setIsDetectingLocation] = useState<boolean>(false);
   const [destination, setDestination] = useState(initialDest);
   const [startDate, setStartDate] = useState('2026-11-10');
   const [endDate, setEndDate] = useState('2026-11-10');
@@ -98,6 +101,51 @@ export const TripWizardPage: React.FC = () => {
 
   const isOneDay = startDate === endDate;
   const durationDays = Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1);
+
+  // Auto-detect user location on mount (defaulting to Bangalore, India)
+  useEffect(() => {
+    let isMounted = true;
+    const runAutoDetect = async () => {
+      try {
+        const detected = await detectLocation(false);
+        if (isMounted && detected) {
+          setOrigin(detected.formatted || 'Bangalore, Karnataka, India');
+          if (!initialDest) {
+            setCurrency(detected.currency || 'INR');
+            setTotalBudget(getDefaultBudgetForCurrency(detected.currency || 'INR', 1));
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setOrigin('Bangalore, Karnataka, India');
+        }
+      }
+    };
+    runAutoDetect();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialDest]);
+
+  // Manual one-click Auto-Detect location handler
+  const handleDetectLocation = async () => {
+    setIsDetectingLocation(true);
+    try {
+      const loc = await detectLocation(true);
+      if (loc) {
+        setOrigin(loc.formatted);
+        if (!destination || destination.toLowerCase().includes('india') || destination.toLowerCase().includes('bangalore')) {
+          setCurrency(loc.currency || 'INR');
+          setTotalBudget(getDefaultBudgetForCurrency(loc.currency || 'INR', isOneDay ? 1 : durationDays));
+        }
+      }
+    } catch (e) {
+      console.warn('Location detection failed:', e);
+      setOrigin('Bangalore, Karnataka, India');
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  };
 
   const handleDestinationChange = (newDest: string) => {
     setDestination(newDest);
@@ -418,13 +466,34 @@ export const TripWizardPage: React.FC = () => {
                 <h3 className="text-base font-bold text-[#171717]">Where and when are you traveling?</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <PlaceAutocomplete
-                    label="Starting City (Origin)"
-                    value={origin}
-                    onChange={setOrigin}
-                    placeholder="e.g. Current Location, Mumbai, London"
-                    icon={<MapPin className="w-4 h-4 text-neutral-400" />}
-                  />
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
+                        Starting City (Origin)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleDetectLocation}
+                        disabled={isDetectingLocation}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#1E60FF] border border-blue-200 text-[11px] font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
+                        title="Auto-detect current location using GPS/Network"
+                      >
+                        <Navigation className={`w-3 h-3 text-[#1E60FF] ${isDetectingLocation ? 'animate-spin' : ''}`} />
+                        <span>{isDetectingLocation ? 'Detecting...' : 'Auto-Detect Location'}</span>
+                      </button>
+                    </div>
+
+                    <PlaceAutocomplete
+                      value={origin}
+                      onChange={setOrigin}
+                      placeholder="e.g. Bangalore, Mumbai, London"
+                      icon={<MapPin className="w-4 h-4 text-[#1E60FF]" />}
+                    />
+                    <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-neutral-500 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Default Location: <strong className="text-neutral-900">{origin || 'Bangalore, Karnataka, India'}</strong></span>
+                    </div>
+                  </div>
 
                   <div>
                     <PlaceAutocomplete

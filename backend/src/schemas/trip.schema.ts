@@ -43,15 +43,15 @@ export const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 export const timeRegex = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
 export const planTripSchema = z.object({
-  origin: z.string().min(2, 'Origin city or address is required').optional().default('Current Location'),
+  origin: z.string().min(2, 'Origin city or address is required').optional().default('Bangalore, India'),
   destination: z.string().min(2, 'Destination city or region is required'),
   startDate: z.string().regex(dateRegex, 'startDate must be formatted as YYYY-MM-DD'),
   endDate: z.string().regex(dateRegex, 'endDate must be formatted as YYYY-MM-DD'),
   travelerCount: z.number().int().min(1).max(50).default(1),
   travelCompanion: z.string().optional(),
   dietaryPreference: z.string().optional(),
-  budget: z.number().nonnegative().optional().default(2000),
-  currency: z.string().length(3).default('USD'),
+  budget: z.number().nonnegative().optional().default(20000),
+  currency: z.string().length(3).default('INR'),
   travelStyle: travelStyleEnum.default('balanced'),
   interests: z.array(z.string()).default([]),
   transportPreference: z.string().optional().default('flexible'),
@@ -118,7 +118,7 @@ export const addActivitySchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   estimatedCost: z.number().nonnegative().default(0),
-  currency: z.string().length(3).default('USD'),
+  currency: z.string().length(3).default('INR'),
   bookingRequired: z.boolean().default(false),
   bookingUrl: z.string().url().optional(),
   bookingStatus: bookingStatusEnum.default('not_booked'),

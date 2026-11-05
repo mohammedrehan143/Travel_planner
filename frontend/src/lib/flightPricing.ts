@@ -111,9 +111,9 @@ export function isIntraCity(origin = '', destination = ''): boolean {
 /**
  * Check if origin is in India (or default context when origin is unspecified or currency is INR)
  */
-export function isOriginIndia(origin = '', currency = 'USD'): boolean {
+export function isOriginIndia(origin = '', currency = 'INR'): boolean {
   const orig = origin.toLowerCase().trim();
-  if (!orig) return currency.toUpperCase() === 'INR';
+  if (!orig) return true; // Default context is Bangalore, India
   return INDIAN_CITIES.some(city => orig.includes(city));
 }
 
@@ -129,7 +129,7 @@ export function isDestinationIndia(destination = ''): boolean {
 /**
  * Check if a trip is international
  */
-export function isInternational(origin = '', destination = '', currency = 'USD'): boolean {
+export function isInternational(origin = '', destination = '', currency = 'INR'): boolean {
   if (isIntraCity(origin, destination)) return false;
 
   const orig = origin.toLowerCase().trim();
@@ -380,9 +380,9 @@ const INTERNATIONAL_MARKET_ROUTES: MarketRouteBaseline[] = [
  * Accurately compute or validate realistic flight fare for any route and currency
  */
 export function getAccurateFlightEstimate(
-  origin = '',
+  origin = 'Bangalore, India',
   destination = '',
-  currency = 'USD',
+  currency = 'INR',
   existingEstimate?: {
     cost?: number;
     currency?: string;
@@ -390,9 +390,9 @@ export function getAccurateFlightEstimate(
     description?: string;
   }
 ): FlightEstimate {
-  const orig = (origin || '').trim();
+  const orig = (origin || 'Bangalore, India').trim();
   const dest = (destination || '').trim();
-  const curr = (currency || 'USD').toUpperCase().trim();
+  const curr = (currency || 'INR').toUpperCase().trim();
 
   // 1. Intra-City / Local Outing
   if (isIntraCity(orig, dest)) {

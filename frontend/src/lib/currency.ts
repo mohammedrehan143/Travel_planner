@@ -425,8 +425,8 @@ export function detectCurrencyForDestination(destination: string): string {
     }
   }
 
-  // Default fallback
-  return 'USD';
+  // Default fallback for destinations without specific currency rule
+  return 'INR';
 }
 
 /**
@@ -458,8 +458,8 @@ export function getCountryForDestination(destination: string): string {
 /**
  * Default planned budget for a given currency and duration in days.
  */
-export function getDefaultBudgetForCurrency(currency: string, durationDays = 3): number {
-  const curr = (currency || 'USD').toUpperCase().trim();
+export function getDefaultBudgetForCurrency(currency = 'INR', durationDays = 3): number {
+  const curr = (currency || 'INR').toUpperCase().trim();
   const days = Math.max(1, durationDays);
 
   switch (curr) {
@@ -500,15 +500,15 @@ export function getDefaultBudgetForCurrency(currency: string, durationDays = 3):
     case 'BRL':
       return Math.max(500, days * 1800);
     default:
-      return Math.max(150, days * 350);
+      return Math.max(500, days * 3500);
   }
 }
 
 /**
  * Quick-select preset budgets appropriate for the selected destination currency.
  */
-export function getBudgetPresetsForCurrency(currency: string): number[] {
-  const curr = (currency || 'USD').toUpperCase().trim();
+export function getBudgetPresetsForCurrency(currency = 'INR'): number[] {
+  const curr = (currency || 'INR').toUpperCase().trim();
 
   switch (curr) {
     case 'INR':
@@ -548,15 +548,15 @@ export function getBudgetPresetsForCurrency(currency: string): number[] {
     case 'BRL':
       return [1500, 3500, 6000, 12000, 25000];
     default:
-      return [300, 800, 1500, 3000, 6000];
+      return [1500, 5000, 15000, 35000, 75000];
   }
 }
 
 /**
  * Returns minimum budget requirement for a currency code.
  */
-export function getMinBudgetForCurrency(currency: string): number {
-  const curr = (currency || 'USD').toUpperCase().trim();
+export function getMinBudgetForCurrency(currency = 'INR'): number {
+  const curr = (currency || 'INR').toUpperCase().trim();
   switch (curr) {
     case 'INR': return 500;
     case 'JPY': return 5000;
@@ -571,15 +571,15 @@ export function getMinBudgetForCurrency(currency: string): number {
     case 'EGP': return 2000;
     case 'ZAR': return 800;
     case 'BRL': return 300;
-    default: return 50;
+    default: return 500;
   }
 }
 
 /**
  * Returns the symbol for a 3-letter currency code, e.g. '₹' for INR.
  */
-export function getCurrencySymbol(currencyCode?: string): string {
-  if (!currencyCode) return '$';
+export function getCurrencySymbol(currencyCode = 'INR'): string {
+  if (!currencyCode) return '₹';
   const upper = currencyCode.toUpperCase().trim();
   return SYMBOL_MAP[upper] || upper;
 }
@@ -588,7 +588,7 @@ export function getCurrencySymbol(currencyCode?: string): string {
  * Format a numeric amount with the proper currency symbol.
  * Example: formatCurrency(25000, 'INR') -> "₹25,000"
  */
-export function formatCurrency(amount: number, currencyCode = 'USD', showCode = false): string {
+export function formatCurrency(amount: number, currencyCode = 'INR', showCode = false): string {
   const symbol = getCurrencySymbol(currencyCode);
   const formatted = Number(amount || 0).toLocaleString();
   if (showCode) {

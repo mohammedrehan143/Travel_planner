@@ -63,7 +63,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
   const durationNights = Math.max(1, trip.duration_days || days.length || 1);
   const travelerCount = Math.max(1, trip.traveler_count || 1);
   const totalBudget = trip.total_budget || 2000;
-  const currency = trip.currency || 'USD';
+  const currency = trip.currency || 'INR';
 
   // Fetch data across the 3 sub-domains
   useEffect(() => {

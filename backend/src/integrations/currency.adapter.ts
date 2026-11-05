@@ -401,7 +401,8 @@ export function detectCurrencyForDestination(destination: string): string {
     }
   }
 
-  return 'USD';
+  // Default fallback for destinations without specific currency rule
+  return 'INR';
 }
 
 /**
@@ -433,8 +434,8 @@ export function getCountryForDestination(destination: string): string {
 /**
  * Returns a reasonable default planned budget for a destination currency and duration.
  */
-export function getDefaultBudgetForCurrency(currency: string, durationDays = 3): number {
-  const curr = (currency || 'USD').toUpperCase().trim();
+export function getDefaultBudgetForCurrency(currency = 'INR', durationDays = 3): number {
+  const curr = (currency || 'INR').toUpperCase().trim();
   const days = Math.max(1, durationDays);
 
   switch (curr) {

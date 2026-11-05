@@ -33,7 +33,7 @@ export class AgentController {
         const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
         const detectedDestCurrency = detectCurrencyForDestination(dest);
-        const currency = (context?.currency as string) || chatResult.tripParams.currency || detectedDestCurrency || 'USD';
+        const currency = (context?.currency as string) || chatResult.tripParams.currency || detectedDestCurrency || 'INR';
         const isBudget = chatResult.tripParams.travelStyle === 'budget' || /budget|cheap/i.test(message);
         const baseDefault = getDefaultBudgetForCurrency(currency, durationDays);
         const defaultBudget = chatResult.tripParams.budget || (isBudget ? Math.round(baseDefault * 0.65) : baseDefault);
