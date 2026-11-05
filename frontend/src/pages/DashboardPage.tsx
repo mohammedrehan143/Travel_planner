@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
 import { HeroBanner } from '../components/home/HeroBanner';
 import { FeatureCards } from '../components/home/FeatureCards';
@@ -10,9 +10,25 @@ import { AIChatDrawer } from '../components/itinerary/AIChatDrawer';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { trips, setActiveTripId } = useTrips();
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [chatPrompt, setChatPrompt] = useState<string | undefined>(undefined);
+
+  // Smoothly scroll to My Trips / Your Trips when navigated with hash
+  useEffect(() => {
+    if (location.hash === '#my-trips' || location.hash === '#your-trips') {
+      const scrollTarget = () => {
+        const el = document.getElementById('my-trips') || document.getElementById('your-trips');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      };
+      // Allow slight delay for page components to render
+      const timer = setTimeout(scrollTarget, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash]);
 
   const handleOpenTrip = (tripId: string) => {
     setActiveTripId(tripId);
@@ -38,8 +54,10 @@ export const DashboardPage: React.FC = () => {
           {/* 4 Feature Cards row */}
           <FeatureCards />
 
-          {/* "Your Trips" carousel/grid */}
-          <YourTripsSection trips={trips} onOpenTrip={handleOpenTrip} />
+          {/* "My Trips" / "Your Trips" section */}
+          <div id="my-trips" className="scroll-mt-24">
+            <YourTripsSection trips={trips} onOpenTrip={handleOpenTrip} />
+          </div>
         </div>
 
         {/* Right Column (4 cols): TripPilot AI Assistant Widget & Monthly Stats */}

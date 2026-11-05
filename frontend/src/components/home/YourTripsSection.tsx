@@ -27,12 +27,12 @@ export const YourTripsSection: React.FC<YourTripsSectionProps> = ({ trips, onOpe
   };
 
   return (
-    <div className="space-y-4">
+    <div id="your-trips" className="space-y-4 scroll-mt-24">
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-black text-neutral-900 tracking-tight">
-            Your Trips
+            My Trips
           </h2>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#EBF2FF] text-[#1E60FF] border border-[#D3E3FD]">
             {trips.length} {trips.length === 1 ? 'Trip' : 'Trips'}

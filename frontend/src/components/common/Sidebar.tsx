@@ -29,7 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isRouteActive = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/' || location.pathname === '/dashboard';
+      return (location.pathname === '/' || location.pathname === '/dashboard') && !location.hash;
     }
     return location.pathname === path;
   };
@@ -37,7 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { label: 'Home', icon: Home, path: '/dashboard', active: isRouteActive('/') },
     { label: 'Plan Trip', icon: Sparkles, path: '/wizard', active: isRouteActive('/wizard') },
-    { label: 'My Trips', icon: Luggage, path: '/dashboard', active: false },
+    { label: 'My Trips', icon: Luggage, path: '/dashboard#my-trips', active: location.pathname === '/dashboard' && location.hash === '#my-trips' },
     { label: 'Explore', icon: Compass, path: '/dashboard#explore', active: false },
     { label: 'AI Agents', icon: Bot, path: '#', active: false, onClick: onOpenAgents },
     { label: 'Saved', icon: Heart, path: '/dashboard#saved', active: false },
@@ -119,7 +119,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }
 
             return (
-              <Link key={item.label} to={item.path}>
+              <Link
+                key={item.label}
+                to={item.path}
+                onClick={() => {
+                  if (item.path.includes('#my-trips')) {
+                    const el = document.getElementById('my-trips');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                }}
+              >
                 {content}
               </Link>
             );

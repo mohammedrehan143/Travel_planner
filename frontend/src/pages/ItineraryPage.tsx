@@ -41,6 +41,7 @@ import { PackingChecklist } from '../components/itinerary/PackingChecklist';
 import { PDFExportView } from '../components/itinerary/PDFExportView';
 import { CuratedVenuesSection } from '../components/itinerary/CuratedVenuesSection';
 import { TripSubDomainsSection } from '../components/itinerary/TripSubDomainsSection';
+import { BestWishesModal } from '../components/itinerary/BestWishesModal';
 import { Activity, TripDay } from '../types';
 import { TripPilotAPI } from '../lib/api';
 import { formatCurrency, getCurrencySymbol } from '../lib/currency';
@@ -109,7 +110,7 @@ export const ItineraryPage: React.FC = () => {
   const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set());
   const [isUserConfirmed, setIsUserConfirmed] = useState(false);
   const [isStartingTrip, setIsStartingTrip] = useState(false);
-  const [tripStartedModalOpen, setTripStartedModalOpen] = useState(false);
+  const [bestWishesModalOpen, setBestWishesModalOpen] = useState(false);
 
   // Initialize selected activity IDs when day changes or loads
   React.useEffect(() => {
@@ -153,10 +154,15 @@ export const ItineraryPage: React.FC = () => {
         }
       }
       await updateTrip(trip.id, { status: 'confirmed' });
-      setTripStartedModalOpen(true);
+      setBestWishesModalOpen(true);
     } finally {
       setIsStartingTrip(false);
     }
+  };
+
+  const handleRedirectToMyTrips = () => {
+    setBestWishesModalOpen(false);
+    navigate('/dashboard#my-trips');
   };
 
   // Tab view: 'schedule' | 'subdomains' | 'venues' | 'map' | 'budget' | 'checklist'
@@ -583,6 +589,13 @@ export const ItineraryPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate('/dashboard#my-trips')}
+                    className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Luggage className="w-4 h-4 text-[#60A5FA]" />
+                    <span>View in My Trips</span>
+                  </button>
                   <span className="px-3.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black inline-flex items-center gap-1.5">
                     <Rocket className="w-4 h-4 text-emerald-400" />
                     Active Journey
@@ -733,49 +746,17 @@ export const ItineraryPage: React.FC = () => {
         />
       )}
 
-      {/* Trip Started Celebration Modal */}
-      {tripStartedModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171717]/70 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setTripStartedModalOpen(false)}
-        >
-          <div 
-            className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-5 shadow-2xl border border-[#E5E7EB]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#1E60FF] border border-blue-200 flex items-center justify-center mx-auto shadow-sm">
-              <Rocket className="w-8 h-8 animate-bounce text-[#1E60FF]" />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-2xl font-black text-[#171717]">
-                Trip Started & Accepted!
-              </h3>
-              <p className="text-xs text-[#525252] leading-relaxed">
-                Your journey to <span className="font-bold text-[#171717]">{trip.destination}</span> is now active with <span className="font-bold text-[#1E60FF]">{selectedActivityIds.size} places</span> confirmed.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB] text-xs text-[#171717] space-y-1.5 text-left font-medium">
-              <p className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
-                <span>Trip status updated to <strong>Active / Confirmed</strong></span>
-              </p>
-              <p className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
-                <span>Selected itinerary and daily schedule verified and locked</span>
-              </p>
-            </div>
-
-            <button
-              onClick={() => setTripStartedModalOpen(false)}
-              className="w-full py-3 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white font-bold text-xs shadow-sm transition-all"
-            >
-              Continue Exploring My Itinerary
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Best Wishes Animated Celebration Modal on Trip Confirmation */}
+      <BestWishesModal
+        isOpen={bestWishesModalOpen}
+        destination={trip.destination}
+        startDate={trip.start_date}
+        endDate={trip.end_date}
+        durationDays={trip.duration_days}
+        activityCount={selectedActivityIds.size}
+        onRedirect={handleRedirectToMyTrips}
+        onClose={() => setBestWishesModalOpen(false)}
+      />
     </div>
   );
 };
