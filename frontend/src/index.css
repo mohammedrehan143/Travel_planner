@@ -11,8 +11,8 @@
     --text-primary: #171717;
     --text-secondary: #525252;
     --border-color: #E5E7EB;
-    --primary-accent: #F97316;
-    --hover-accent: #EA580C;
+    --primary-accent: #16A34A;
+    --hover-accent: #15803D;
     --text-on-accent: #FFFFFF;
     --success: #16A34A;
     --error: #DC2626;
@@ -22,7 +22,7 @@
     --foreground: 0 0% 9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 9%;
-    --primary: 24.6 95% 53.1%;
+    --primary: 142.1 76.2% 36.3%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 0 0% 9%;
@@ -30,11 +30,11 @@
     --muted-foreground: 0 0% 45%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 24.6 95% 53.1%;
+    --ring: 142.1 76.2% 36.3%;
   }
 
   body {
-    background-color: var(--bg-primary);
+    background-color: #F8FAFC;
     color: var(--text-primary);
     font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
@@ -44,15 +44,15 @@
   select:focus-visible,
   textarea:focus-visible {
     outline: none;
-    border-color: #F97316;
-    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+    border-color: #16A34A;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
   }
 }
 
 @layer components {
-  /* Reusable Mono & Orange Button Components */
+  /* Reusable Green & Mono Button Components */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-secondary {
@@ -60,7 +60,7 @@
   }
 
   .btn-dark {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#171717] hover:bg-neutral-800 text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B3B2C] hover:bg-[#07271D] text-white font-semibold text-sm transition-all duration-200 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .card-mono {
@@ -68,7 +68,7 @@
   }
 
   .badge-orange {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200;
   }
 
   .badge-mono {

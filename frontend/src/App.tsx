@@ -2,8 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TripProvider } from './context/TripContext';
-import { Navbar } from './components/common/Navbar';
-import { Footer } from './components/common/Footer';
+import { AppLayout } from './components/layout/AppLayout';
 import { LandingPage } from './pages/LandingPage';
 import { AuthPage } from './pages/AuthPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -32,46 +31,42 @@ export const App: React.FC = () => {
     <AuthProvider>
       <TripProvider>
         <Router>
-          <div className="min-h-screen flex flex-col bg-white text-[#171717] font-sans selection:bg-orange-500 selection:text-white">
-            <Navbar />
-            <main className="flex-1">
-              <Routes>
-                {/* Public Landing & Auth */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/auth" element={<AuthPage />} />
+          <AppLayout>
+            <Routes>
+              {/* Public Landing & Auth */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth" element={<AuthPage />} />
 
-                {/* Protected Workspace Pages */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/wizard"
-                  element={
-                    <ProtectedRoute>
-                      <TripWizardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/trip/:id"
-                  element={
-                    <ProtectedRoute>
-                      <ItineraryPage />
-                    </ProtectedRoute>
-                  }
-                />
+              {/* Protected Workspace Pages */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/wizard"
+                element={
+                  <ProtectedRoute>
+                    <TripWizardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/trip/:id"
+                element={
+                  <ProtectedRoute>
+                    <ItineraryPage />
+                  </ProtectedRoute>
+                }
+              />
 
-                {/* Catch-all redirect */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AppLayout>
         </Router>
       </TripProvider>
     </AuthProvider>
