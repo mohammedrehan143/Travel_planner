@@ -36,7 +36,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     {
       id: '1',
       sender: 'ai',
-      text: `Hi! I'm your ultra-fast AI Travel Architect powered by Groq. Ask me about local specialities, vegetarian or non-vegetarian dining, scenic hangout spots, or tell me to plan a brand-new trip anywhere in the world!`,
+      text: `Hi! I am Tripolio, your AI travel agent. Ask me about local specialities, vegetarian or non-vegetarian dining, scenic hangout spots, or tell me to plan a brand-new trip anywhere in the world!`,
       timestamp: 'Just now',
     },
   ]);
@@ -143,15 +143,15 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       {/* Header (Selective Dark Section) */}
       <div className="px-5 py-4 border-b border-neutral-800 flex items-center justify-between bg-[#171717] text-white">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-neutral-800 flex items-center justify-center text-[#1E60FF] border border-neutral-700">
-            <Sparkles className="w-4 h-4 text-[#1E60FF]" />
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-blue-400/40 shadow-xs shrink-0 bg-white">
+            <img src="/chatbot-avatar.png" alt="Tripolio AI Agent" className="w-full h-full object-cover" />
           </div>
           <div>
             <h3 className="text-sm font-bold flex items-center gap-1.5 text-white">
-              <span>TripPilot AI Architect</span>
+              <span>Tripolio • AI Agent</span>
             </h3>
             <p className="text-[11px] text-neutral-400">
-              Active on {currentDay ? `Day ${currentDay.day_number}` : (trip ? trip.destination : 'Global Destinations')} • Gemini Driven
+              TripPilot Travel Concierge • Active
             </p>
           </div>
         </div>
@@ -194,11 +194,15 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
               className={`flex items-start gap-2.5 ${isAi ? '' : 'flex-row-reverse'}`}
             >
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                  isAi ? 'bg-[#171717] text-[#1E60FF] border border-neutral-800' : 'bg-[#F3F4F6] text-[#171717] border border-[#E5E7EB]'
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 overflow-hidden ${
+                  isAi ? 'border border-[#1E60FF]/30 shadow-xs bg-white' : 'bg-[#F3F4F6] text-[#171717] border border-[#E5E7EB]'
                 }`}
               >
-                {isAi ? <Bot className="w-4 h-4 text-[#1E60FF]" /> : <UserIcon className="w-4 h-4" />}
+                {isAi ? (
+                  <img src="/chatbot-avatar.png" alt="AI" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-4 h-4" />
+                )}
               </div>
 
               <div className={`max-w-[85%] space-y-1.5`}>

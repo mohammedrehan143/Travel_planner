@@ -818,7 +818,23 @@ async function simulateAgenticTripPlanning(
 }
 
 function simulateNaturalLanguageModification(req: ModifyItineraryRequest): ModifyItineraryResponse {
-  const p = req.user_prompt.toLowerCase();
+  const p = req.user_prompt.toLowerCase().trim();
+
+  // Agent name & identity query
+  if (
+    /\b(?:what(?:'s|\s+is)?\s+(?:the\s+)?(?:agent(?:'s)?|assistant(?:'s)?|bot(?:'s)?|ai(?:'s)?)\s+name)\b/i.test(p) ||
+    /\b(?:name\s+of\s+(?:the\s+)?(?:agent|assistant|bot|ai))\b/i.test(p) ||
+    /\b(?:what(?:'s|\s+is)?|tell\s+me)\s+(?:your|ur)\s+name\b/i.test(p) ||
+    /\b(?:who\s+are\s+(?:you|u)|who\s+r\s+u)\b/i.test(p) ||
+    /\b(?:what\s+are\s+you\s+called|what\s+should\s+i\s+call\s+you)\b/i.test(p) ||
+    /\b(?:do\s+you\s+have\s+a\s+name|what\s+do\s+they\s+call\s+you)\b/i.test(p) ||
+    /^(?:your\s+name\??|agent\s+name\??|agents?\s+name\??|name\??|who\s+are\s+you\??)$/i.test(p) ||
+    /\b(?:are\s+you\s+tripolio|who\s+is\s+tripolio)\b/i.test(p)
+  ) {
+    return {
+      message: "I am Tripolio, the AI agent! I'm here to help you plan trips, discover exciting destinations, craft day-by-day itineraries, and optimize travel budgets. Where would you like to travel next?",
+    };
+  }
   
   if (p.includes('sushi') || p.includes('dinner') || p.includes('food') || p.includes('restaurant') || p.includes('ramen')) {
     const newAct: Activity = {

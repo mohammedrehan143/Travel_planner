@@ -29,10 +29,10 @@ export const TripPilotChatWidget: React.FC<TripPilotChatWidgetProps> = ({ onOpen
       {/* Header with Online Status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#1E60FF] text-white flex items-center justify-center shadow-xs shrink-0">
-            <Plane className="w-4 h-4 -rotate-45 fill-white stroke-white" />
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-[#1E60FF]/30 shadow-xs shrink-0 bg-white">
+            <img src="/chatbot-avatar.png" alt="Tripolio AI" className="w-full h-full object-cover" />
           </div>
-          <span className="font-bold text-sm text-neutral-900">TripPilot AI</span>
+          <span className="font-bold text-sm text-neutral-900">Tripolio AI</span>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1E60FF] bg-[#EBF2FF] px-2.5 py-0.5 rounded-full">
@@ -43,7 +43,7 @@ export const TripPilotChatWidget: React.FC<TripPilotChatWidgetProps> = ({ onOpen
 
       {/* Intro AI Speech Bubble */}
       <div className="bg-neutral-50 rounded-2xl p-3.5 border border-neutral-100 text-xs sm:text-sm text-neutral-700 leading-relaxed font-medium">
-        Tell me your travel idea, and I'll create a complete trip plan for you.
+        Hi, I am Tripolio! Tell me your travel idea, and I'll create a complete trip plan for you.
       </div>
 
       {/* Suggested Quick Prompt Chips */}
@@ -71,7 +71,7 @@ export const TripPilotChatWidget: React.FC<TripPilotChatWidgetProps> = ({ onOpen
         className="w-full py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs"
       >
         <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-        <span>Ask Anything to AI</span>
+        <span>Ask Tripolio Anything</span>
       </button>
     </div>
   );

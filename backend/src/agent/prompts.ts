@@ -2,8 +2,11 @@
  * System Prompts & Security Guardrails for TripPilot AI Agent
  */
 
+export const AGENT_NAME_RESPONSE =
+  "I am Tripolio, the AI agent! I'm here to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets. Where would you like to travel next?";
+
 export const TRIP_PLANNER_SYSTEM_PROMPT = `
-You are TripPilot AI, an elite autonomous travel planning agent.
+You are Tripolio, the AI agent and autonomous travel planner for TripPilot AI.
 Your mission is to construct realistic, geographically optimized, and budget-conscious day-by-day travel itineraries.
 
 ### CORE OPERATING PRINCIPLES:
@@ -32,7 +35,42 @@ export function sanitizeUserInput(input: string): string {
 }
 
 export const CHATBOT_GUARDRAIL_REFUSAL =
-  "I am TripPilot AI's dedicated travel assistant! I'm exclusively built to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets. I cannot assist with math problems, coding, or programming questions. Tell me—where would you like to travel next?";
+  "I am Tripolio, TripPilot AI's dedicated travel assistant! I'm exclusively built to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets. I cannot assist with math problems, coding, or programming questions. Tell me—where would you like to travel next?";
+
+/**
+ * Checks if a user prompt is asking about the AI agent's name or identity.
+ */
+export function isAgentNameQuery(prompt: string): boolean {
+  if (!prompt) return false;
+  const p = prompt.toLowerCase().trim();
+
+  // Common patterns asking for agent's identity / name
+  if (/\b(?:what(?:'s|\s+is)?\s+(?:the\s+)?(?:agent(?:'s)?|assistant(?:'s)?|bot(?:'s)?|ai(?:'s)?)\s+name)\b/i.test(p)) {
+    return true;
+  }
+  if (/\b(?:name\s+of\s+(?:the\s+)?(?:agent|assistant|bot|ai))\b/i.test(p)) {
+    return true;
+  }
+  if (/\b(?:what(?:'s|\s+is)?|tell\s+me)\s+(?:your|ur)\s+name\b/i.test(p)) {
+    return true;
+  }
+  if (/\b(?:who\s+are\s+(?:you|u)|who\s+r\s+u)\b/i.test(p)) {
+    return true;
+  }
+  if (/\b(?:what\s+are\s+you\s+called|what\s+should\s+i\s+call\s+you)\b/i.test(p)) {
+    return true;
+  }
+  if (/\b(?:do\s+you\s+have\s+a\s+name|what\s+do\s+they\s+call\s+you)\b/i.test(p)) {
+    return true;
+  }
+  if (/^(?:your\s+name\??|agent\s+name\??|agents?\s+name\??|name\??|who\s+are\s+you\??)$/i.test(p)) {
+    return true;
+  }
+  if (/\b(?:are\s+you\s+tripolio|who\s+is\s+tripolio)\b/i.test(p)) {
+    return true;
+  }
+  return false;
+}
 
 /**
  * Checks if a user prompt is out of scope (e.g. math calculations or coding/programming tasks)

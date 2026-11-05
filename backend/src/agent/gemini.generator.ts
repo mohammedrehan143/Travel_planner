@@ -37,7 +37,7 @@ export async function generateItineraryWithGemini(
   const companion = params.travelCompanion || (params.travelerCount === 1 ? 'Solo' : 'Friends/Family');
   const dietary = params.dietaryPreference || 'any';
 
-  const prompt = `You are TripPilot AI, an elite local tour guide, flight fare analyst, and autonomous travel planner.
+  const prompt = `You are Tripolio, the AI agent and autonomous travel planner for TripPilot AI.
 Generate a rich, structured, authentic day-by-day travel itinerary strictly for:
 
 DESTINATION: ${params.destination}

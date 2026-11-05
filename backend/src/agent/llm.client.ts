@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { env } from '../config/env.js';
 import { AGENT_TOOLS } from './tools/definitions.js';
 import { detectCurrencyForDestination, getDefaultBudgetForCurrency } from '../integrations/currency.adapter.js';
-import { isOutOfScopeQuery, CHATBOT_GUARDRAIL_REFUSAL } from './prompts.js';
+import { isOutOfScopeQuery, CHATBOT_GUARDRAIL_REFUSAL, isAgentNameQuery, AGENT_NAME_RESPONSE } from './prompts.js';
 
 let openaiClient: OpenAI | null = null;
 let openaiClientConfig = '';
@@ -166,7 +166,15 @@ export async function processAgentChat(
   prompt: string,
   context: Record<string, unknown>
 ): Promise<AgentChatResult> {
-  // 1. Strict Domain Guardrails Pre-check (Reject out-of-scope math, coding, programming queries)
+  // 1. Agent Name & Identity Pre-check
+  if (isAgentNameQuery(prompt)) {
+    return {
+      action: 'chat',
+      reply: AGENT_NAME_RESPONSE
+    };
+  }
+
+  // 2. Strict Domain Guardrails Pre-check (Reject out-of-scope math, coding, programming queries)
   const guardrailCheck = isOutOfScopeQuery(prompt);
   if (guardrailCheck.isBlocked) {
     return {
@@ -182,12 +190,16 @@ export async function processAgentChat(
     return generateSemanticFallbackChat(prompt, context);
   }
 
-  const systemInstructions = `You are TripPilot AI, an elite autonomous travel architect and real-time personal concierge.
+  const systemInstructions = `You are Tripolio, the AI agent and autonomous travel architect for TripPilot AI.
 Context of traveler's current view (if any):
 ${JSON.stringify(context, null, 2)}
 
 Traveler's message:
 "${prompt}"
+
+### AGENT IDENTITY:
+- Your name is Tripolio. You are the AI agent for TripPilot AI.
+- When asked your name, who you are, or what you are called, you must say: "I am Tripolio, the AI agent!" (e.g. "I am Tripolio, the AI agent! I'm here to help you plan trips, discover exciting destinations, and optimize your travel budget. Where would you like to travel next?").
 
 ### STRICT PRODUCT DOMAIN GUARDRAILS (CRITICAL & NON-NEGOTIABLE):
 You are strictly a travel concierge and trip planning assistant for TripPilot AI.
@@ -264,7 +276,7 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
             messages: [
               {
                 role: 'system',
-                content: 'You are TripPilot AI, an elite travel architect and real-time personal concierge. Return strictly valid JSON matching the requested schema with NO markdown code fences.'
+                content: 'You are Tripolio, the AI agent for TripPilot. Return strictly valid JSON matching the requested schema with NO markdown code fences.'
               },
               { role: 'user', content: systemInstructions }
             ],
@@ -378,7 +390,7 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
         const response = await config.client.chat.completions.create({
           model: config.model,
           messages: [
-            { role: 'system', content: 'You are TripPilot AI, a travel architect and concierge. Return strictly valid JSON matching the requested schema.' },
+            { role: 'system', content: 'You are Tripolio, the AI agent for TripPilot. Return strictly valid JSON matching the requested schema.' },
             { role: 'user', content: systemInstructions }
           ],
           temperature: 0.4
@@ -423,7 +435,15 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
  * when external LLMs are rate-limited or unavailable. Never returns generic static text.
  */
 export function generateSemanticFallbackChat(prompt: string, context: Record<string, unknown>): AgentChatResult {
-  // Domain Guardrail Pre-check: Reject non-travel math or coding requests immediately
+  // 1. Agent Name & Identity Check
+  if (isAgentNameQuery(prompt)) {
+    return {
+      action: 'chat',
+      reply: AGENT_NAME_RESPONSE
+    };
+  }
+
+  // 2. Domain Guardrail Pre-check: Reject non-travel math or coding requests immediately
   const guardrailCheck = isOutOfScopeQuery(prompt);
   if (guardrailCheck.isBlocked) {
     return {
@@ -575,7 +595,7 @@ Would you like me to design a romantic itinerary for any of these destinations w
   if (prompt.trim().length < 15 || /^(hi|hello|hey|help|test)$/i.test(prompt.trim())) {
     return {
       action: 'chat',
-      reply: `Hi! I'm your TripPilot AI Travel Architect. Where are you dreaming of traveling?
+      reply: `Hi! I am Tripolio, your AI travel agent. Where are you dreaming of traveling?
 
 Tell me:
 - **Destination** (e.g. Goa, Paris, Tokyo, Manali, Rajasthan, Dubai)
@@ -642,7 +662,7 @@ export async function generateWithGemini(prompt: string, modelName = env.GEMINI_
         const response = await config.client.chat.completions.create({
           model: config.model,
           messages: [
-            { role: 'system', content: 'You are TripPilot AI, a master travel architect. Return valid JSON matching the requested structure.' },
+            { role: 'system', content: 'You are Tripolio, the AI agent for TripPilot. Return valid JSON matching the requested structure.' },
             { role: 'user', content: prompt }
           ],
           temperature: 0.3,

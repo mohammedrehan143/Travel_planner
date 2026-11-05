@@ -5,6 +5,7 @@ import { Footer } from '../components/common/Footer';
 import { AIAgentsModal } from '../components/home/AIAgentsModal';
 import { DemoModal } from '../components/home/DemoModal';
 import { AIChatDrawer } from '../components/itinerary/AIChatDrawer';
+import { LoadingCurtain } from '../components/common/LoadingCurtain';
 
 export const LandingPage: React.FC = () => {
   const [isAgentsModalOpen, setIsAgentsModalOpen] = useState(false);
@@ -12,7 +13,14 @@ export const LandingPage: React.FC = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans antialiased">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans antialiased relative">
+      {/* 
+        Intro Loading Screen:
+        Initial blank screen -> TripPilot name & logo appear -> Inspiring travel quote ->
+        Smooth swipe-up curtain lift exposing the main website & hero section!
+      */}
+      <LoadingCurtain />
+
       {/* 
         1. HERO SECTION:
         Pixel-perfect modern hero with alpine background (image copy.png),

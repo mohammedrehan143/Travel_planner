@@ -280,4 +280,26 @@ describe('TripPilot Backend REST API Suite', () => {
     expect(res.body.message).toContain("TripPilot AI's dedicated travel assistant");
     expect(res.body.message).toContain('cannot assist with math problems, coding, or programming questions');
   });
+
+  it('POST /api/agent/chat states "I am Tripolio, the AI agent" when asked its name or identity', async () => {
+    const testPrompts = [
+      'what is your name',
+      'What is the agent name?',
+      'who are you',
+      "what's your name",
+      'tell me your name',
+      'agent name'
+    ];
+
+    for (const prompt of testPrompts) {
+      const res = await request(app)
+        .post('/api/agent/chat')
+        .send({ message: prompt });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.action).toBe('chat');
+      expect(res.body.message).toMatch(/I am Tripolio,\s+the AI agent/i);
+    }
+  });
 });
