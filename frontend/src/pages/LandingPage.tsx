@@ -1,14 +1,41 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { HeroBanner } from '../components/home/HeroBanner';
+import React, { useState } from 'react';
+import { HeroSection } from '../components/home/HeroSection';
+import { Footer } from '../components/common/Footer';
+import { AIAgentsModal } from '../components/home/AIAgentsModal';
+import { DemoModal } from '../components/home/DemoModal';
 
 export const LandingPage: React.FC = () => {
-  const navigate = useNavigate();
+  const [isAgentsModalOpen, setIsAgentsModalOpen] = useState(false);
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Full End-to-End Hero Section matching demo image.png */}
-      <HeroBanner onSearchSubmit={(query) => navigate(`/wizard?q=${encodeURIComponent(query)}`)} />
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col justify-between font-sans antialiased">
+      {/* 
+        CLEAN HERO SECTION:
+        Pixel-perfect modern hero with the alpine background (image copy.png),
+        left typography, CTA buttons, social proof, and 4 bottom feature cards.
+      */}
+      <HeroSection
+        onOpenAgents={() => setIsAgentsModalOpen(true)}
+        onOpenDemo={() => setIsDemoOpen(true)}
+      />
+
+      {/* Clean Modern Footer */}
+      <Footer />
+
+      {/* Interactive AI Agents Modal */}
+      <AIAgentsModal
+        isOpen={isAgentsModalOpen}
+        onClose={() => setIsAgentsModalOpen(false)}
+      />
+
+      {/* Interactive Watch Demo Walkthrough Modal */}
+      <DemoModal
+        isOpen={isDemoOpen}
+        onClose={() => setIsDemoOpen(false)}
+      />
     </div>
   );
 };
+
+export default LandingPage;

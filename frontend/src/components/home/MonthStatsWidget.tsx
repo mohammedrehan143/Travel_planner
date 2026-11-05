@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plane, Moon, IndianRupee } from 'lucide-react';
+import { Plane, Bed, IndianRupee } from 'lucide-react';
 import { formatCurrency } from '../../lib/currency';
 
 interface MonthStatsWidgetProps {
@@ -46,7 +46,7 @@ export const MonthStatsWidget: React.FC<MonthStatsWidgetProps> = ({
         {/* Nights */}
         <div className="text-center py-1 border-x border-neutral-100">
           <div className="flex justify-center mb-1">
-            <Moon className="w-4 h-4 text-emerald-600" />
+            <Bed className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-lg font-black text-neutral-900 leading-tight">
             {nightsCount}
