@@ -31,6 +31,54 @@ export function sanitizeUserInput(input: string): string {
     .slice(0, 1500);
 }
 
+export const CHATBOT_GUARDRAIL_REFUSAL =
+  "I am TripPilot AI's dedicated travel assistant! I'm exclusively built to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets. I cannot assist with math problems, coding, or programming questions. Tell me—where would you like to travel next?";
+
+/**
+ * Checks if a user prompt is out of scope (e.g. math calculations or coding/programming tasks)
+ * that violate TripPilot AI's specialized travel domain boundaries.
+ */
+export function isOutOfScopeQuery(prompt: string): { isBlocked: boolean; reason?: 'math' | 'coding' | 'general' } {
+  if (!prompt) return { isBlocked: false };
+  const p = prompt.toLowerCase().trim();
+
+  // 1. Math queries (arithmetic equations, calculus, algebra, geometry)
+  const mathPatterns = [
+    /\b(?:math|maths|mathematics|algebra|calculus|geometry|trigonometry|arithmetic)\b/i,
+    /\b(?:solve|calculate|compute)\b.*?\b(?:equation|integral|derivative|matrix|formula|root|polynomial|hypotenuse|fraction|logarithm)\b/i,
+    /\b(?:square root|quadratic|pythagorean|fibonacci|factorial)\b/i,
+    /\bwhat is\s+\d+\s*[\+\-\*\/x\^%]\s*\d+/i,
+    /^\s*\d+\s*[\+\-\*\/x\^%]\s*\d+\s*(?:=\s*\?)?$/i,
+    /\b(?:solve for x|find x|evaluate)\s*[:=]?\s*[0-9a-z\s\+\-\*\/\^]+/i,
+    /\bsin\s*\(\s*\d+\s*\)|\bcos\s*\(\s*\d+\s*\)|\btan\s*\(\s*\d+\s*\)/i
+  ];
+
+  for (const pattern of mathPatterns) {
+    if (pattern.test(p)) {
+      return { isBlocked: true, reason: 'math' };
+    }
+  }
+
+  // 2. Coding, programming, and software engineering queries
+  const codingPatterns = [
+    /\b(?:code|coding|program|programming|developer|software engineer)\b.*?\b(?:in|using|for|with)?\s*(?:python|javascript|typescript|java|c\+\+|c#|golang|rust|ruby|php|swift|kotlin|html|css|sql|bash|shell)\b/i,
+    /\b(?:write|create|debug|fix|explain)\b.*?\b(?:code|script|function|class|algorithm|regex|sql query|component|api endpoint|unit test|loop)\b/i,
+    /\b(?:python|javascript|typescript|react|vue|angular|node\.?js|django|flask|springboot|docker|kubernetes|git commit|git push|regex)\b.*?\b(?:code|syntax|error|bug|function|script|example)\b/i,
+    /\b(?:how to|can you)\s+(?:code|program|implement|write a program|reverse a string|reverse a linked list|sort an array|build a web scraper)\b/i,
+    /\b(?:binary search|linked list|bubble sort|quicksort|depth first search|breadth first search|dynamic programming|leetcode|hackerrank)\b/i,
+    /\b(?:console\.log|def |function\(|const |let |var |public static void|System\.out\.println|import React|SELECT \* FROM)\b/i
+  ];
+
+  for (const pattern of codingPatterns) {
+    if (pattern.test(p)) {
+      return { isBlocked: true, reason: 'coding' };
+    }
+  }
+
+  return { isBlocked: false };
+}
+
+
 export function buildPlanningGoalPrompt(params: {
   origin: string;
   destination: string;

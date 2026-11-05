@@ -252,4 +252,32 @@ describe('TripPilot Backend REST API Suite', () => {
     expect(res.body.createdTrip.destination).toBe('Goa');
     expect(res.body.createdTrip.days.length).toBeGreaterThan(0);
   });
+
+  it('POST /api/agent/chat declines out-of-scope math queries with a polite guardrail pivot', async () => {
+    const res = await request(app)
+      .post('/api/agent/chat')
+      .send({
+        message: 'Can you solve this math problem: what is 45 * 82 and calculate the square root of 144?',
+        context: {}
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+    expect(res.body.message).toContain("TripPilot AI's dedicated travel assistant");
+    expect(res.body.message).toContain('cannot assist with math problems, coding, or programming questions');
+  });
+
+  it('POST /api/agent/chat declines out-of-scope coding queries with a polite guardrail pivot', async () => {
+    const res = await request(app)
+      .post('/api/agent/chat')
+      .send({
+        message: 'Write a python script to reverse a linked list using recursion',
+        context: {}
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
+    expect(res.body.message).toContain("TripPilot AI's dedicated travel assistant");
+    expect(res.body.message).toContain('cannot assist with math problems, coding, or programming questions');
+  });
 });

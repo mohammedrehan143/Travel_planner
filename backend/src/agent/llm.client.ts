@@ -3,6 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { env } from '../config/env.js';
 import { AGENT_TOOLS } from './tools/definitions.js';
 import { detectCurrencyForDestination, getDefaultBudgetForCurrency } from '../integrations/currency.adapter.js';
+import { isOutOfScopeQuery, CHATBOT_GUARDRAIL_REFUSAL } from './prompts.js';
 
 let openaiClient: OpenAI | null = null;
 let openaiClientConfig = '';
@@ -165,6 +166,15 @@ export async function processAgentChat(
   prompt: string,
   context: Record<string, unknown>
 ): Promise<AgentChatResult> {
+  // 1. Strict Domain Guardrails Pre-check (Reject out-of-scope math, coding, programming queries)
+  const guardrailCheck = isOutOfScopeQuery(prompt);
+  if (guardrailCheck.isBlocked) {
+    return {
+      action: 'chat',
+      reply: CHATBOT_GUARDRAIL_REFUSAL
+    };
+  }
+
   const { provider, model } = getActiveProvider();
 
   // When no external key is configured, provide dynamic semantic responses
@@ -178,6 +188,15 @@ ${JSON.stringify(context, null, 2)}
 
 Traveler's message:
 "${prompt}"
+
+### STRICT PRODUCT DOMAIN GUARDRAILS (CRITICAL & NON-NEGOTIABLE):
+You are strictly a travel concierge and trip planning assistant for TripPilot AI.
+- You must ONLY answer questions directly related to TripPilot AI, travel planning, destination discovery, itineraries, sightseeing, travel budgets, accommodations, flight guidance, local cuisine, and transit.
+- NEVER solve math problems, arithmetic calculations, equations, algebra, calculus, or geometry (other than trip budget arithmetic).
+- NEVER write, explain, review, or debug code, programming languages, algorithms, software engineering tasks, or technical scripts.
+- NEVER engage in non-travel subjects (e.g. homework, politics, medical advice, generic programming).
+- If the traveler asks about math, coding, programming, or any non-travel topic, politely decline with this exact refusal:
+  "${CHATBOT_GUARDRAIL_REFUSAL}"
 
 YOUR OBJECTIVE:
 Determine whether the traveler is asking to PLAN / CREATE / SCHEDULE A NEW TRIP or OUTING, or simply asking a CONVERSATIONAL TRAVEL QUESTION.
@@ -404,6 +423,15 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
  * when external LLMs are rate-limited or unavailable. Never returns generic static text.
  */
 export function generateSemanticFallbackChat(prompt: string, context: Record<string, unknown>): AgentChatResult {
+  // Domain Guardrail Pre-check: Reject non-travel math or coding requests immediately
+  const guardrailCheck = isOutOfScopeQuery(prompt);
+  if (guardrailCheck.isBlocked) {
+    return {
+      action: 'chat',
+      reply: CHATBOT_GUARDRAIL_REFUSAL
+    };
+  }
+
   const p = prompt.toLowerCase();
 
   // 1. Check for specific planning intent
