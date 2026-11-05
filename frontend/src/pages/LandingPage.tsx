@@ -34,16 +34,13 @@ export const LandingPage: React.FC = () => {
 
       {/* 
         2. WHY CHOOSE TRIPPILOT AI? SECTION & 3. CLEAN MODERN FOOTER:
-        Preserved for desktop, hidden on mobile per explicit user requirement:
-        "for mobile view i need it like this the herosection only rest all must be clear"
+        Visible across all viewports (mobile and desktop)
       */}
-      <div className="hidden md:block">
-        <WhyChooseSection
-          onOpenAgents={() => setIsAgentsModalOpen(true)}
-          onOpenDemo={() => setIsDemoOpen(true)}
-        />
-        <Footer />
-      </div>
+      <WhyChooseSection
+        onOpenAgents={() => setIsAgentsModalOpen(true)}
+        onOpenDemo={() => setIsDemoOpen(true)}
+      />
+      <Footer />
 
       {/* Interactive AI Agents Modal */}
       <AIAgentsModal
