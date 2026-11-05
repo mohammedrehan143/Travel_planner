@@ -41,7 +41,10 @@ function setStored<T>(key: string, value: T): void {
 }
 
 export const LocalStore = {
-  getTrips: (): Trip[] => getStored<Trip[]>(STORAGE_KEYS.TRIPS, INITIAL_TRIPS),
+  getTrips: (): Trip[] => {
+    const trips = getStored<Trip[]>(STORAGE_KEYS.TRIPS, INITIAL_TRIPS);
+    return Array.isArray(trips) ? trips.filter((t) => !t.id?.includes('trip-000')) : [];
+  },
   saveTrips: (trips: Trip[]) => setStored(STORAGE_KEYS.TRIPS, trips),
 
   getTripDays: (): Record<string, TripDay[]> =>

@@ -8,7 +8,7 @@ import { useTrips } from '../../context/TripContext';
 interface AIChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  trip: Trip;
+  trip?: Trip | null;
   currentDay?: TripDay;
 }
 
@@ -76,22 +76,22 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
 
     try {
       const response = await TripPilotAPI.modifyItinerary({
-        trip_id: trip.id,
+        trip_id: trip?.id || 'new-trip',
         day_id: currentDay?.id,
         day_number: currentDay?.day_number,
         user_prompt: prompt,
         context: {
-          destination: trip.destination,
-          origin: trip.origin,
-          dates: `${trip.start_date} to ${trip.end_date}`,
-          travelStyle: trip.travel_style,
-          interests: trip.interests,
-          budget: trip.total_budget,
-          currency: trip.currency,
+          destination: trip?.destination || 'Global Destinations',
+          origin: trip?.origin || 'User Location',
+          dates: trip ? `${trip.start_date} to ${trip.end_date}` : 'Upcoming',
+          travelStyle: trip?.travel_style || 'balanced',
+          interests: trip?.interests || ['sightseeing'],
+          budget: trip?.total_budget || 20000,
+          currency: trip?.currency || 'USD',
           selectedDay: currentDay ? {
             dayNumber: currentDay.day_number,
             date: currentDay.date,
-            activities: activeTripActivities[currentDay.id] || [],
+            activities: (currentDay.id && activeTripActivities[currentDay.id]) || [],
           } : undefined,
         },
       });
@@ -143,15 +143,15 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       {/* Header (Selective Dark Section) */}
       <div className="px-5 py-4 border-b border-neutral-800 flex items-center justify-between bg-[#171717] text-white">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-neutral-800 flex items-center justify-center text-[#F97316] border border-neutral-700">
-            <Sparkles className="w-4 h-4 text-[#F97316]" />
+          <div className="w-8 h-8 rounded-xl bg-neutral-800 flex items-center justify-center text-[#1E60FF] border border-neutral-700">
+            <Sparkles className="w-4 h-4 text-[#1E60FF]" />
           </div>
           <div>
             <h3 className="text-sm font-bold flex items-center gap-1.5 text-white">
               <span>TripPilot AI Architect</span>
             </h3>
             <p className="text-[11px] text-neutral-400">
-              Active on {currentDay ? `Day ${currentDay.day_number}` : trip.destination} • Gemini Driven
+              Active on {currentDay ? `Day ${currentDay.day_number}` : (trip ? trip.destination : 'Global Destinations')} • Gemini Driven
             </p>
           </div>
         </div>
@@ -169,14 +169,14 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       <div className="px-4 py-2 bg-[#F3F4F6] border-b border-[#E5E7EB] overflow-x-auto">
         <div className="flex items-center gap-1.5 text-[11px] min-w-max">
           <span className="font-semibold text-[#525252] mr-1 flex items-center gap-1">
-            <Compass className="w-3 h-3 text-[#F97316]" />
+            <Compass className="w-3 h-3 text-[#1E60FF]" />
             Try:
           </span>
           {samplePrompts.map((sp, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(sp)}
-              className="px-2.5 py-1 rounded-full bg-white border border-[#E5E7EB] text-[#171717] hover:border-[#F97316] hover:text-[#F97316] transition-colors shadow-sm"
+              className="px-2.5 py-1 rounded-full bg-white border border-[#E5E7EB] text-[#171717] hover:border-[#1E60FF] hover:text-[#1E60FF] transition-colors shadow-sm"
             >
               {sp}
             </button>
@@ -195,10 +195,10 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
             >
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                  isAi ? 'bg-[#171717] text-[#F97316] border border-neutral-800' : 'bg-[#F3F4F6] text-[#171717] border border-[#E5E7EB]'
+                  isAi ? 'bg-[#171717] text-[#1E60FF] border border-neutral-800' : 'bg-[#F3F4F6] text-[#171717] border border-[#E5E7EB]'
                 }`}
               >
-                {isAi ? <Bot className="w-4 h-4 text-[#F97316]" /> : <UserIcon className="w-4 h-4" />}
+                {isAi ? <Bot className="w-4 h-4 text-[#1E60FF]" /> : <UserIcon className="w-4 h-4" />}
               </div>
 
               <div className={`max-w-[85%] space-y-1.5`}>
@@ -206,7 +206,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                   className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
                     isAi
                       ? 'bg-[#F3F4F6] text-[#171717] rounded-tl-none border border-[#E5E7EB]/50'
-                      : 'bg-[#F97316] text-white rounded-tr-none shadow-sm'
+                      : 'bg-[#1E60FF] text-white rounded-tr-none shadow-sm'
                   }`}
                 >
                   <p className="whitespace-pre-line">{m.text}</p>
@@ -216,8 +216,8 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                     <div className="mt-3 p-3.5 rounded-xl bg-white border border-[#E5E7EB] shadow-card space-y-2.5 text-left text-[#171717]">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-[#171717] text-[#F97316] flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 text-[#F97316]" />
+                          <div className="w-7 h-7 rounded-lg bg-[#171717] text-[#1E60FF] flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-[#1E60FF]" />
                           </div>
                           <div>
                             <p className="font-bold text-xs text-[#171717] line-clamp-1">{m.createdTrip.title}</p>
@@ -226,7 +226,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                             </p>
                           </div>
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <span className="text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                           Ready
                         </span>
                       </div>
@@ -242,7 +242,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                           onClose();
                           navigate(`/trip/${m.createdTrip!.id}`);
                         }}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold text-xs shadow-sm transition-all group"
+                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#1E60FF] hover:bg-[#0052FF] text-white font-semibold text-xs shadow-sm transition-all group"
                       >
                         <MapPin className="w-3.5 h-3.5 text-white group-hover:scale-110 transition-transform" />
                         <span>Open & Start Trip</span>
@@ -263,7 +263,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                         </p>
                       </div>
                       <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        <Check className="w-3 h-3 text-[#16A34A]" />
+                        <Check className="w-3 h-3 text-[#1E60FF]" />
                         Added
                       </span>
                     </div>
@@ -279,7 +279,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
 
         {isThinking && (
           <div className="flex items-center gap-2 text-xs text-[#525252] pl-2">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F97316]" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E60FF]" />
             <span>AI Orchestrator reasoning with Gemini...</span>
           </div>
         )}
@@ -301,12 +301,12 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask AI or say 'Plan a 3-day trip to Goa'..."
-            className="flex-1 px-4 py-2.5 rounded-xl border border-[#E5E7EB] text-xs text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-[#E5E7EB] text-xs text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#1E60FF]"
           />
           <button
             type="submit"
             disabled={!input.trim() || isThinking}
-            className="p-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white disabled:opacity-40 transition-colors shadow-sm active:scale-95"
+            className="p-2.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white disabled:opacity-40 transition-colors shadow-sm active:scale-95"
             title="Send Message"
           >
             <Send className="w-4 h-4" />

@@ -9,11 +9,9 @@ import {
   Heart,
   BarChart3,
   Settings,
-  Crown,
   ArrowRight,
   ChevronsLeft,
-  ChevronsRight,
-  Plane
+  ChevronsRight
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -98,14 +96,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div
                 className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer ${
                   item.active
-                    ? 'bg-[#EAF5EE] text-[#15803D] font-bold shadow-xs'
+                    ? 'bg-[#EBF2FF] text-[#1E60FF] font-bold shadow-xs'
                     : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
                 } ${isCollapsed ? 'justify-center px-2' : ''}`}
                 title={item.label}
               >
                 <Icon
                   className={`w-5 h-5 shrink-0 ${
-                    item.active ? 'text-[#16A34A]' : 'text-neutral-500'
+                    item.active ? 'text-[#1E60FF]' : 'text-neutral-500'
                   }`}
                 />
                 {!isCollapsed && <span>{item.label}</span>}
@@ -128,37 +126,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
       </div>
-
-      {/* Bottom Pro Plan Card */}
-      {!isCollapsed ? (
-        <div className="relative rounded-2xl bg-[#0B3B2C] text-white p-4 shadow-md overflow-hidden mt-6">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-              <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
-              <span>Pro Plan</span>
-            </div>
-            <Link
-              to="/wizard"
-              className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all active:scale-95"
-              title="Upgrade to Pro"
-            >
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <p className="text-[11px] text-emerald-100/75 leading-tight">
-            Unlock multi-destination planning, team trips & more.
-          </p>
-        </div>
-      ) : (
-        <div className="flex justify-center mt-4">
-          <div
-            className="w-10 h-10 rounded-xl bg-[#0B3B2C] text-amber-400 flex items-center justify-center shadow cursor-pointer"
-            title="Pro Plan: Multi-destination planning & team trips"
-          >
-            <Crown className="w-5 h-5 fill-amber-400" />
-          </div>
-        </div>
-      )}
     </aside>
   );
 };

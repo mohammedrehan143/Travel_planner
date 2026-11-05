@@ -42,7 +42,7 @@ export const FeatureCards: React.FC = () => {
           <Link
             key={f.title}
             to={f.link}
-            className="bg-white rounded-2xl p-4 border border-[#E5E7EB] hover:border-[#16A34A]/40 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5 group"
+            className="bg-white rounded-2xl p-4 border border-[#E5E7EB] hover:border-[#1E60FF]/40 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5 group"
           >
             <div
               className={`w-11 h-11 rounded-2xl ${f.iconBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}
@@ -50,7 +50,7 @@ export const FeatureCards: React.FC = () => {
               <Icon className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-neutral-900 group-hover:text-[#16A34A] transition-colors truncate">
+              <h3 className="text-sm font-bold text-neutral-900 group-hover:text-[#1E60FF] transition-colors truncate">
                 {f.title}
               </h3>
               <p className="text-xs text-neutral-500 leading-snug line-clamp-2">

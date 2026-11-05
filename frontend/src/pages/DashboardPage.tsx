@@ -24,25 +24,11 @@ export const DashboardPage: React.FC = () => {
     setIsAIChatOpen(true);
   };
 
-  const activeTripForChat = trips[0] || {
-    id: 'coorg-trip-0001',
-    user_id: 'demo-user',
-    title: 'Coorg Getaway',
-    destination: 'Coorg, Karnataka',
-    duration_days: 5,
-    traveler_count: 2,
-    travel_style: 'adventure',
-    interests: ['coffee plantations', 'trekking'],
-    total_budget: 15000,
-    currency: 'INR',
-    status: 'planning',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
+  const activeTripForChat = trips[0] || null;
 
   return (
     <div className="space-y-6 select-none">
-      {/* 2-Column Desktop Grid exactly matching image.png */}
+      {/* 2-Column Desktop Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left & Center Column (8 cols): Hero Banner, 4 Feature Cards, Your Trips */}
         <div className="lg:col-span-8 space-y-5">
@@ -60,9 +46,9 @@ export const DashboardPage: React.FC = () => {
         <div className="lg:col-span-4 space-y-5">
           <TripPilotChatWidget onOpenAssistant={handleOpenAssistant} />
           <MonthStatsWidget
-            tripsCount={trips.length > 0 ? trips.length : 2}
-            nightsCount={trips.reduce((acc, t) => acc + (t.duration_days || 0), 0) || 6}
-            totalSpend={trips.reduce((acc, t) => acc + (t.total_budget || 0), 0) || 24500}
+            tripsCount={trips.length}
+            nightsCount={trips.reduce((acc, t) => acc + (t.duration_days || 0), 0)}
+            totalSpend={trips.reduce((acc, t) => acc + (t.total_budget || 0), 0)}
           />
         </div>
       </div>

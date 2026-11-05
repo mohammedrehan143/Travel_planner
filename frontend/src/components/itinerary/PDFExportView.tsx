@@ -29,14 +29,14 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
       {/* Top action bar - Hidden during print */}
       <div className="sticky top-0 z-50 no-print bg-[#171717] text-white px-6 py-4 flex items-center justify-between shadow-md border-b border-neutral-800">
         <div className="flex items-center gap-2">
-          <Compass className="w-5 h-5 text-[#F97316]" />
+          <Compass className="w-5 h-5 text-[#1E60FF]" />
           <span className="font-bold text-sm text-white">TripPilot AI Document Export Preview</span>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer active:scale-95"
           >
             <Printer className="w-4 h-4" />
             <span>Print or Save as PDF</span>
@@ -56,7 +56,7 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
         {/* Header */}
         <div className="border-b-2 border-[#171717] pb-6 flex flex-wrap justify-between items-start gap-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#F97316]">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#1E60FF]">
               TripPilot AI Official Travel Itinerary
             </span>
             <h1 className="text-3xl font-black text-[#171717] mt-1">{trip.title}</h1>
@@ -101,7 +101,7 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
                     >
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-[#F97316]">#{idx + 1}</span>
+                          <span className="font-bold text-[#1E60FF]">#{idx + 1}</span>
                           <span className="font-bold text-[#171717] text-sm">{act.title}</span>
                           <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-white border border-[#E5E7EB] text-[#171717]">
                             {act.category}
@@ -118,7 +118,7 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
 
                       <div className="flex items-center justify-between text-[11px] text-[#525252] pt-1">
                         <span className="flex items-center gap-1 font-medium">
-                          <MapPin className="w-3.5 h-3.5 text-[#F97316]" />
+                          <MapPin className="w-3.5 h-3.5 text-[#1E60FF]" />
                           {act.location_name} {act.location_address ? `• ${act.location_address}` : ''}
                         </span>
                         <span className="font-semibold text-[#171717]">
@@ -160,7 +160,7 @@ export const PDFExportView: React.FC<PDFExportViewProps> = ({
               ))}
               <tr className="border-t-2 border-[#171717] font-bold">
                 <td className="py-2" colSpan={2}>Total Estimated Expenditure</td>
-                <td className="py-2 text-right text-[#F97316]">
+                <td className="py-2 text-right text-[#1E60FF]">
                   {formatCurrency(totalSpent, trip.currency, true)}
                 </td>
               </tr>

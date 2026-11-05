@@ -64,8 +64,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onSearchSubmit }) => {
         </h2>
 
         {/* Floating AI Prompt Bar */}
-        <div className="bg-white/95 backdrop-blur-md rounded-full shadow-xl border border-white/60 p-1.5 pl-4 sm:pl-5 flex items-center gap-3 w-full transition-all focus-within:ring-2 focus-within:ring-[#16A34A]">
-          <Sparkles className="w-4 h-4 text-[#16A34A] shrink-0" />
+        <div className="bg-white/95 backdrop-blur-md rounded-full shadow-xl border border-white/60 p-1.5 pl-4 sm:pl-5 flex items-center gap-3 w-full transition-all focus-within:ring-2 focus-within:ring-[#1E60FF]">
+          <Sparkles className="w-4 h-4 text-[#1E60FF] shrink-0" />
           <input
             type="text"
             value={prompt}
@@ -78,7 +78,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onSearchSubmit }) => {
             type="button"
             onClick={() => handleExecute()}
             aria-label="Generate AI Trip Plan"
-            className="w-9 h-9 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white flex items-center justify-center shadow-md transition-all active:scale-95 shrink-0"
+            className="w-9 h-9 rounded-full bg-[#1E60FF] hover:bg-[#0052FF] text-white flex items-center justify-center shadow-md transition-all active:scale-95 shrink-0"
           >
             <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </button>

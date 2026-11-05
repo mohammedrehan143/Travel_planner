@@ -17,25 +17,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const { trips, activeTrip } = useTrips();
 
-  const sampleTrip = activeTrip || trips[0] || {
-    id: 'coorg-trip-0001',
-    user_id: 'demo-user',
-    title: 'Coorg Getaway',
-    description: 'Misty hills and coffee estates',
-    destination: 'Coorg, Karnataka',
-    duration_days: 5,
-    traveler_count: 2,
-    travel_style: 'adventure',
-    interests: ['coffee plantations', 'trekking'],
-    total_budget: 15000,
-    currency: 'INR',
-    status: 'planning',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
+  const sampleTrip = activeTrip || trips[0] || null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-neutral-900 flex font-sans antialiased selection:bg-[#16A34A] selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] text-neutral-900 flex font-sans antialiased selection:bg-[#1E60FF] selection:text-white">
       {/* Desktop Persistent Left Sidebar */}
       <div className="hidden md:flex">
         <Sidebar

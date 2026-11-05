@@ -38,35 +38,35 @@ const CATEGORY_CONFIG: Record<
 > = {
   cultural: {
     label: 'Cultural',
-    icon: <Landmark className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <Landmark className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
   dining: {
     label: 'Dining',
-    icon: <Utensils className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <Utensils className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
   sightseeing: {
     label: 'Sightseeing',
-    icon: <Compass className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <Compass className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
   outdoor: {
     label: 'Outdoor',
-    icon: <Trees className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <Trees className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
   shopping: {
     label: 'Shopping',
-    icon: <ShoppingBag className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <ShoppingBag className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
   entertainment: {
     label: 'Entertainment',
-    icon: <Sparkles className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <Sparkles className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
   relaxation: {
     label: 'Hangout & Relax',
-    icon: <Coffee className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <Coffee className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
   transit: {
     label: 'Traveling',
-    icon: <Clock className="w-3.5 h-3.5 text-[#F97316]" />,
+    icon: <Clock className="w-3.5 h-3.5 text-[#1E60FF]" />,
   },
 };
 
@@ -111,7 +111,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   return (
     <div className={`group relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
       isSelected
-        ? 'border-[#E5E7EB] shadow-card hover:border-[#F97316]/50 hover:shadow-md'
+        ? 'border-[#E5E7EB] shadow-card hover:border-[#1E60FF]/50 hover:shadow-md'
         : 'border-[#E5E7EB] opacity-60 bg-[#F3F4F6]/50'
     }`}>
       {/* Top status bar accent */}
@@ -124,7 +124,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                 type="checkbox"
                 checked={isSelected}
                 onChange={onToggleSelect}
-                className="w-4 h-4 rounded text-[#F97316] focus:ring-[#F97316] border-[#E5E7EB] cursor-pointer accent-[#F97316]"
+                className="w-4 h-4 rounded text-[#1E60FF] focus:ring-[#1E60FF] border-[#E5E7EB] cursor-pointer accent-[#1E60FF]"
               />
             </label>
           )}
@@ -136,7 +136,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
           {/* Time */}
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#171717] bg-white px-2.5 py-1 rounded-md border border-[#E5E7EB]">
-            <Clock className="w-3.5 h-3.5 text-[#F97316]" />
+            <Clock className="w-3.5 h-3.5 text-[#1E60FF]" />
             <span>
               {activity.start_time} - {activity.end_time}
             </span>
@@ -154,13 +154,13 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             <span
               className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                 displayDietary === 'veg'
-                  ? 'bg-orange-50 text-orange-800 border-orange-200'
+                  ? 'bg-blue-50 text-blue-800 border-blue-200'
                   : displayDietary === 'non_veg'
                   ? 'bg-[#171717] text-white border-neutral-800'
                   : 'bg-[#F3F4F6] text-[#171717] border-[#E5E7EB]'
               }`}
             >
-              {displayDietary === 'veg' ? '🥬 Pure Veg' : displayDietary === 'non_veg' ? '🍗 Non-Veg' : '🥗 Veg & Non-Veg'}
+              {displayDietary === 'veg' ? 'Pure Veg' : displayDietary === 'non_veg' ? 'Non-Veg' : 'Veg & Non-Veg Friendly'}
             </span>
           )}
         </div>
@@ -192,7 +192,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           {/* Edit */}
           <button
             onClick={() => onEdit(activity)}
-            className="p-1.5 rounded-lg text-[#525252] hover:text-[#F97316] hover:bg-orange-50 transition-colors"
+            className="p-1.5 rounded-lg text-[#525252] hover:text-[#1E60FF] hover:bg-blue-50 transition-colors"
             title="Edit activity"
           >
             <Edit2 className="w-3.5 h-3.5" />
@@ -217,16 +217,16 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             title="View place on Google Maps"
-            className="text-base font-bold text-[#171717] hover:text-[#F97316] transition-colors inline-flex items-center gap-1.5 group/link"
+            className="text-base font-bold text-[#171717] hover:text-[#1E60FF] transition-colors inline-flex items-center gap-1.5 group/link"
             onClick={(e) => e.stopPropagation()}
           >
             <span className="hover:underline">{activity.title}</span>
-            <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover/link:text-[#F97316] shrink-0" />
+            <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover/link:text-[#1E60FF] shrink-0" />
           </a>
 
           {displaySpeciality && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-50 border border-orange-200 text-xs font-bold text-orange-900 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-900 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-[#1E60FF] shrink-0" />
               <span>Speciality: {displaySpeciality}</span>
             </div>
           )}
@@ -238,14 +238,14 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
         {/* Location & Address */}
         <div className="flex items-start gap-2 text-xs text-[#525252]">
-          <MapPin className="w-4 h-4 text-[#F97316] shrink-0 mt-0.5" />
+          <MapPin className="w-4 h-4 text-[#1E60FF] shrink-0 mt-0.5" />
           <div>
             <a
               href={googleMapsSearchUrl}
               target="_blank"
               rel="noopener noreferrer"
               title="Open location on Google Maps"
-              className="font-semibold text-[#171717] hover:text-[#F97316] hover:underline inline-flex items-center gap-1"
+              className="font-semibold text-[#171717] hover:text-[#1E60FF] hover:underline inline-flex items-center gap-1"
               onClick={(e) => e.stopPropagation()}
             >
               <span>{activity.location_name}</span>
@@ -260,7 +260,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         {/* Notes */}
         {activity.notes && (
           <div className="p-2.5 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB] text-xs text-[#171717] leading-normal">
-            <span className="font-bold text-[#F97316]">Local tip: </span>
+            <span className="font-bold text-[#1E60FF]">Local tip: </span>
             {activity.notes}
           </div>
         )}
@@ -282,8 +282,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                 Booked
               </span>
             ) : activity.booking_required ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-800 border border-orange-200">
-                <Ticket className="w-3 h-3 text-[#F97316]" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">
+                <Ticket className="w-3 h-3 text-[#1E60FF]" />
                 Booking Required
               </span>
             ) : (
@@ -295,7 +295,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                 href={activity.booking_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[#F97316] hover:text-[#EA580C] font-semibold hover:underline ml-1"
+                className="inline-flex items-center gap-1 text-[#1E60FF] hover:text-[#0052FF] font-semibold hover:underline ml-1"
               >
                 <span>Tickets</span>
                 <ExternalLink className="w-3 h-3" />

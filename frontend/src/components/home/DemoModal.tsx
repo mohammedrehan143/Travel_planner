@@ -121,7 +121,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                🌲 Coorg Nature
+                Coorg Nature
               </button>
               <button
                 type="button"
@@ -132,7 +132,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                🏖️ Goa Coast
+                Goa Coast
               </button>
             </div>
           </div>

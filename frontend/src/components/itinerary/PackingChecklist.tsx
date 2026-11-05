@@ -36,7 +36,7 @@ export const PackingChecklist: React.FC<PackingChecklistProps> = ({ items }) => 
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5E7EB] pb-5">
         <div>
           <h3 className="text-lg font-bold text-[#171717] flex items-center gap-2">
-            <Luggage className="w-5 h-5 text-[#F97316]" />
+            <Luggage className="w-5 h-5 text-[#1E60FF]" />
             Packing & Travel Readiness Checklist
           </h3>
           <p className="text-xs text-[#525252]">
@@ -51,7 +51,7 @@ export const PackingChecklist: React.FC<PackingChecklistProps> = ({ items }) => 
             </span>
             <div className="w-32 bg-[#F3F4F6] border border-[#E5E7EB] rounded-full h-2 mt-1 overflow-hidden">
               <div
-                className="bg-[#F97316] h-full rounded-full transition-all duration-300"
+                className="bg-[#1E60FF] h-full rounded-full transition-all duration-300"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -69,13 +69,13 @@ export const PackingChecklist: React.FC<PackingChecklistProps> = ({ items }) => 
           placeholder="Add custom packing item (e.g. Travel adapter, Sunscreen)..."
           value={newItemText}
           onChange={(e) => setNewItemText(e.target.value)}
-          className="flex-1 px-4 py-2.5 rounded-xl border border-[#E5E7EB] text-xs text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+          className="flex-1 px-4 py-2.5 rounded-xl border border-[#E5E7EB] text-xs text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
         />
 
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as ChecklistItem['category'])}
-          className="px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-xs text-[#171717] bg-white focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+          className="px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-xs text-[#171717] bg-white focus:outline-none focus:ring-2 focus:ring-[#1E60FF]"
         >
           {categories.map((c) => (
             <option key={c} value={c}>{c}</option>
@@ -84,7 +84,7 @@ export const PackingChecklist: React.FC<PackingChecklistProps> = ({ items }) => 
 
         <button
           type="submit"
-          className="px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors shrink-0 active:scale-95"
+          className="px-4 py-2.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors shrink-0 active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>Add</span>
@@ -111,9 +111,9 @@ export const PackingChecklist: React.FC<PackingChecklistProps> = ({ items }) => 
                     className="w-full text-left flex items-start gap-2.5 p-2 rounded-xl hover:bg-white transition-colors group cursor-pointer"
                   >
                     {item.completed ? (
-                      <CheckSquare className="w-4 h-4 text-[#F97316] shrink-0 mt-0.5" />
+                      <CheckSquare className="w-4 h-4 text-[#1E60FF] shrink-0 mt-0.5" />
                     ) : (
-                      <Square className="w-4 h-4 text-neutral-400 group-hover:text-[#F97316] shrink-0 mt-0.5" />
+                      <Square className="w-4 h-4 text-neutral-400 group-hover:text-[#1E60FF] shrink-0 mt-0.5" />
                     )}
                     <span
                       className={`text-xs ${

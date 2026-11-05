@@ -68,7 +68,7 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
               onClick={handleCopyLink}
               className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#E5E7EB] rounded-xl text-xs font-semibold text-[#171717] hover:bg-[#F3F4F6] transition-colors shadow-sm"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-[#16A34A]" /> : <Copy className="w-3.5 h-3.5 text-[#F97316]" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#16A34A]" /> : <Copy className="w-3.5 h-3.5 text-[#1E60FF]" />}
               <span>{copied ? 'Copied!' : 'Copy'}</span>
             </button>
           </div>
@@ -88,14 +88,14 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
                 placeholder="colleague@domain.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717]"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white text-[#171717]"
               />
             </div>
 
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as 'editor' | 'viewer')}
-              className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+              className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF]"
             >
               <option value="editor">Can Edit & Add Activities</option>
               <option value="viewer">Viewer Only</option>
@@ -103,7 +103,7 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 transition-colors shrink-0 active:scale-95"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 transition-colors shrink-0 active:scale-95"
             >
               <UserPlus className="w-4 h-4" />
               <span>Send Invite</span>
@@ -131,7 +131,7 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-[#171717] text-white flex items-center justify-center font-bold text-xs">
-                      <Users className="w-4 h-4 text-[#F97316]" />
+                      <Users className="w-4 h-4 text-[#1E60FF]" />
                     </div>
                   )}
                   <div>
@@ -159,7 +159,7 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
         </div>
 
         <div className="pt-2 text-[11px] text-[#525252] flex items-center gap-1.5">
-          <Shield className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+          <Shield className="w-3.5 h-3.5 text-[#1E60FF] shrink-0" />
           <span>Supabase Row-Level-Security (RLS) guarantees editor permissions are validated.</span>
         </div>
       </div>

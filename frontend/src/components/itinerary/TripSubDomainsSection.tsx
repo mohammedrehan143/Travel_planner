@@ -309,7 +309,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
   if (loading) {
     return (
       <div className="p-12 text-center bg-white rounded-2xl border border-[#E5E7EB] shadow-card space-y-4">
-        <Compass className="w-8 h-8 text-[#F97316] animate-spin mx-auto" />
+        <Compass className="w-8 h-8 text-[#1E60FF] animate-spin mx-auto" />
         <h3 className="text-base font-bold text-[#171717]">Loading Trip Sub-Domains</h3>
         <p className="text-xs text-[#525252] max-w-md mx-auto">
           Gathering hotels, restaurants, and sightseeing places within your budget for {trip.destination}...
@@ -329,11 +329,11 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
       )}
 
       {/* Hero Header & Live Budget Health Dock */}
-      <div className="rounded-3xl bg-gradient-to-r from-orange-50 via-white to-amber-50 border border-orange-200 p-6 shadow-sm space-y-6">
+      <div className="rounded-3xl bg-gradient-to-r from-blue-50 via-white to-indigo-50 border border-blue-200 p-6 shadow-sm space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F97316]/10 text-[#F97316] text-xs font-bold">
-              <Layers className="w-3.5 h-3.5 text-[#F97316]" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E60FF]/10 text-[#1E60FF] text-xs font-bold">
+              <Layers className="w-3.5 h-3.5 text-[#1E60FF]" />
               <span>Trip Sub-Domains & Budget Selection</span>
             </div>
             <h2 className="text-2xl font-black text-[#171717]">
@@ -351,7 +351,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
               className="px-4 py-2.5 rounded-xl bg-[#171717] hover:bg-neutral-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
               title="Auto-select options that maximize value while fitting in your budget"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#F97316]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#1E60FF]" />
               <span>Auto-Select in Budget</span>
             </button>
 
@@ -368,7 +368,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
         <div className="p-5 rounded-2xl bg-white border border-[#E5E7EB] shadow-card space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5E7EB] pb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 text-[#F97316] flex items-center justify-center font-black">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-[#1E60FF] flex items-center justify-center font-black">
                 <DollarSign className="w-5 h-5" />
               </div>
               <div>
@@ -450,7 +450,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
                 type="checkbox"
                 checked={onlyInBudget}
                 onChange={(e) => setOnlyInBudget(e.target.checked)}
-                className="w-4 h-4 rounded text-[#F97316] accent-[#F97316] cursor-pointer"
+                className="w-4 h-4 rounded text-[#1E60FF] accent-[#1E60FF] cursor-pointer"
               />
               <span>Filter: Only show places fitting comfortably in budget</span>
             </label>
@@ -461,7 +461,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
               <select
                 value={targetDayNumber}
                 onChange={(e) => setTargetDayNumber(Number(e.target.value))}
-                className="px-2.5 py-1 rounded-xl border border-[#E5E7EB] bg-white text-xs font-bold text-[#171717] focus:outline-none focus:ring-1 focus:ring-[#F97316]"
+                className="px-2.5 py-1 rounded-xl border border-[#E5E7EB] bg-white text-xs font-bold text-[#171717] focus:outline-none focus:ring-1 focus:ring-[#1E60FF]"
               >
                 {days.map((d) => (
                   <option key={d.id} value={d.day_number}>
@@ -472,7 +472,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
 
               <button
                 onClick={handleInjectToSchedule}
-                className="px-3.5 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                className="px-3.5 py-1.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Selected to Day {targetDayNumber}</span>
@@ -676,7 +676,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
                           : 'bg-amber-50 text-amber-800 border border-amber-200'
                       }`}
                     >
-                      {fitsInRemaining ? '✓ Fits in Budget' : 'Exceeds Budget'}
+                      {fitsInRemaining ? 'Fits in Budget' : 'Exceeds Budget'}
                     </span>
                   </div>
                 </div>
@@ -725,17 +725,17 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
                     : 'bg-white text-[#525252] border border-[#E5E7EB]'
                 }`}
               >
-                🥬 Pure Veg
+                Pure Veg
               </button>
               <button
                 onClick={() => setDietaryFilter('non_veg')}
                 className={`px-2.5 py-1 rounded-xl font-bold transition-all ${
                   dietaryFilter === 'non_veg'
-                    ? 'bg-orange-600 text-white'
+                    ? 'bg-[#1E60FF] text-white'
                     : 'bg-white text-[#525252] border border-[#E5E7EB]'
                 }`}
               >
-                🍗 Non-Veg
+                Non-Veg
               </button>
             </div>
           </div>
@@ -776,7 +776,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
                       <div className="flex items-center gap-1.5">
                         {venue.dietaryTag && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F3F4F6] text-[#171717]">
-                            {venue.dietaryTag === 'veg' ? '🥬 Veg' : venue.dietaryTag === 'non_veg' ? '🍗 Non-Veg' : '🥗 Both'}
+                            {venue.dietaryTag === 'veg' ? 'Veg' : venue.dietaryTag === 'non_veg' ? 'Non-Veg' : 'Both Friendly'}
                           </span>
                         )}
                         {venue.rating && (
@@ -808,8 +808,8 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
 
                     {/* Speciality Badge */}
                     {venue.speciality && (
-                      <div className="p-2 rounded-xl bg-orange-50 border border-orange-200/80 text-[11px] font-medium text-orange-950 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+                      <div className="p-2 rounded-xl bg-blue-50 border border-blue-200/80 text-[11px] font-medium text-blue-950 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#1E60FF] shrink-0" />
                         <span className="truncate"><strong>Speciality:</strong> {venue.speciality}</span>
                       </div>
                     )}
@@ -833,7 +833,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
                     </div>
 
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      ✓ Fits in Budget
+                      Fits in Budget
                     </span>
                   </div>
                 </div>
@@ -958,7 +958,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
                     </span>
 
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      ✓ In Budget
+                      In Budget
                     </span>
                   </div>
                 </div>
@@ -971,7 +971,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
       {/* Sticky Bottom Summary Bar */}
       <div className="sticky bottom-4 z-40 p-4 rounded-2xl bg-[#171717] text-white shadow-2xl border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-bottom-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#F97316] text-white flex items-center justify-center font-black text-sm">
+          <div className="w-9 h-9 rounded-xl bg-[#1E60FF] text-white flex items-center justify-center font-black text-sm">
             {(selectedHotel ? 1 : 0) + selectedRestaurantIds.size + selectedSightseeingIds.size}
           </div>
           <div className="text-xs">
@@ -987,7 +987,7 @@ export const TripSubDomainsSection: React.FC<TripSubDomainsSectionProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleInjectToSchedule}
-            className="px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all hover:scale-102 active:scale-95"
+            className="px-5 py-2.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all hover:scale-102 active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add to Day {targetDayNumber} Schedule</span>

@@ -114,7 +114,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Asakusa Senso-ji Temple & Street Food"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
           />
         </div>
 
@@ -127,7 +127,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as ActivityCategory)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
             >
               <option value="sightseeing">Sightseeing</option>
               <option value="cultural">Cultural</option>
@@ -149,7 +149,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               min="0"
               value={estimatedCost}
               onChange={(e) => setEstimatedCost(Number(e.target.value))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
             />
           </div>
         </div>
@@ -158,14 +158,14 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider mb-1">
-              ✨ Speciality of the Place
+              Speciality of the Place
             </label>
             <input
               type="text"
               value={speciality}
               onChange={(e) => setSpeciality(e.target.value)}
               placeholder="e.g. Crispy Ghee Masala Dosa, 300m Skybridge"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
             />
           </div>
 
@@ -176,12 +176,12 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             <select
               value={dietaryTag}
               onChange={(e) => setDietaryTag(e.target.value as any)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
             >
               <option value="none">Not Applicable / None</option>
-              <option value="veg">🥬 Pure Vegetarian (Veg)</option>
-              <option value="non_veg">🍗 Non-Vegetarian</option>
-              <option value="both">🥗 Veg & Non-Veg Friendly</option>
+              <option value="veg">Pure Vegetarian (Veg)</option>
+              <option value="non_veg">Non-Vegetarian</option>
+              <option value="both">Veg & Non-Veg Friendly</option>
             </select>
           </div>
         </div>
@@ -197,7 +197,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               required
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+              className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
             />
           </div>
 
@@ -210,7 +210,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               required
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+              className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
             />
           </div>
         </div>
@@ -226,7 +226,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={locationName}
             onChange={(e) => setLocationName(e.target.value)}
             placeholder="e.g. Senso-ji Temple"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
           />
         </div>
 
@@ -239,7 +239,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={locationAddress}
             onChange={(e) => setLocationAddress(e.target.value)}
             placeholder="e.g. Asakusa, Taito City, Tokyo"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
           />
         </div>
 
@@ -253,7 +253,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief overview of the activity..."
-            className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+            className="w-full px-3.5 py-2 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
           />
         </div>
 
@@ -265,7 +265,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
               type="checkbox"
               checked={bookingRequired}
               onChange={(e) => setBookingRequired(e.target.checked)}
-              className="w-4 h-4 rounded text-[#F97316] focus:ring-[#F97316] accent-[#F97316]"
+              className="w-4 h-4 rounded text-[#1E60FF] focus:ring-[#1E60FF] accent-[#1E60FF]"
             />
           </div>
 
@@ -295,7 +295,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Best photography spot is near five-story pagoda at 9 AM"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white"
           />
         </div>
 
@@ -310,7 +310,7 @@ export const ActivityEditModal: React.FC<ActivityEditModalProps> = ({
           </button>
           <button
             type="submit"
-            className="px-5 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-semibold shadow-sm transition-colors active:scale-95"
+            className="px-5 py-2 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white text-sm font-semibold shadow-sm transition-colors active:scale-95"
           >
             {initialActivity ? 'Save Changes' : 'Add Activity'}
           </button>

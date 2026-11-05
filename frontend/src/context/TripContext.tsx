@@ -193,7 +193,7 @@ function sanitizeActivityForDb(act: Activity, tripId: string, dayId: string, ord
 export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, profile } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
-  const [activeTripId, setActiveTripIdState] = useState<string>('11111111-1111-1111-1111-111111111111');
+  const [activeTripId, setActiveTripIdState] = useState<string>('');
   const [tripDays, setTripDays] = useState<Record<string, TripDay[]>>({});
   const [activities, setActivities] = useState<Record<string, Activity[]>>({});
   const [accommodations, setAccommodations] = useState<Record<string, Accommodation[]>>({});
@@ -308,6 +308,11 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadLocalData = () => {
     const storedTrips = LocalStore.getTrips();
     setTrips(storedTrips);
+    if (storedTrips.length > 0) {
+      setActiveTripIdState(storedTrips[0].id);
+    } else {
+      setActiveTripIdState('');
+    }
     setTripDays(LocalStore.getTripDays());
     setActivities(LocalStore.getActivities());
     setAccommodations(LocalStore.getAccommodations());

@@ -66,13 +66,13 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
       {/* Map Header */}
       <div className="px-6 py-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3 bg-[#F3F4F6]/50">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#171717] text-[#F97316] flex items-center justify-center">
-            <Navigation className="w-4 h-4 text-[#F97316]" />
+          <div className="w-8 h-8 rounded-xl bg-[#171717] text-[#1E60FF] flex items-center justify-center">
+            <Navigation className="w-4 h-4 text-[#1E60FF]" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-[#171717] flex items-center gap-2">
               <span>Interactive Route Map & Locations</span>
-              <span className="px-2 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-[#F97316] text-[10px] font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-[#1E60FF] text-[10px] font-bold">
                 Live Geocluster
               </span>
             </h3>
@@ -88,13 +88,13 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
           <div className="flex items-center bg-white border border-[#E5E7EB] rounded-xl p-0.5 text-xs font-medium shadow-sm">
             <button
               onClick={() => setMapMode('streets')}
-              className={`px-2.5 py-1 rounded-lg transition-colors ${mapMode === 'streets' ? 'bg-[#F97316] text-white font-bold' : 'text-[#525252] hover:text-[#171717]'}`}
+              className={`px-2.5 py-1 rounded-lg transition-colors ${mapMode === 'streets' ? 'bg-[#1E60FF] text-white font-bold' : 'text-[#525252] hover:text-[#171717]'}`}
             >
               Streets
             </button>
             <button
               onClick={() => setMapMode('terrain')}
-              className={`px-2.5 py-1 rounded-lg transition-colors ${mapMode === 'terrain' ? 'bg-[#F97316] text-white font-bold' : 'text-[#525252] hover:text-[#171717]'}`}
+              className={`px-2.5 py-1 rounded-lg transition-colors ${mapMode === 'terrain' ? 'bg-[#1E60FF] text-white font-bold' : 'text-[#525252] hover:text-[#171717]'}`}
             >
               Light
             </button>
@@ -106,7 +106,7 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
             </button>
             <button
               onClick={() => setMapMode('osm')}
-              className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${mapMode === 'osm' ? 'bg-[#171717] text-[#F97316] font-bold' : 'text-[#525252] hover:text-[#171717]'}`}
+              className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${mapMode === 'osm' ? 'bg-[#171717] text-[#1E60FF] font-bold' : 'text-[#525252] hover:text-[#171717]'}`}
               title="View live free OpenStreetMap satellite/street tile layer"
             >
               <Globe className="w-3 h-3" />
@@ -197,7 +197,7 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
                   <path
                     d={pathD}
                     fill="none"
-                    stroke="#F97316"
+                    stroke="#1E60FF"
                     strokeWidth="1.8"
                     strokeDasharray="3,2"
                     strokeLinecap="round"
@@ -220,8 +220,8 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
                   <div
                     className={`relative flex items-center justify-center rounded-full transition-all duration-200 ${
                       isSelected
-                        ? 'w-9 h-9 bg-[#F97316] text-white shadow-lg ring-4 ring-orange-200 scale-110 z-30'
-                        : 'w-7 h-7 bg-white text-[#171717] shadow-md border-2 border-[#171717] hover:border-[#F97316] hover:scale-110'
+                        ? 'w-9 h-9 bg-[#1E60FF] text-white shadow-lg ring-4 ring-orange-200 scale-110 z-30'
+                        : 'w-7 h-7 bg-white text-[#171717] shadow-md border-2 border-[#171717] hover:border-[#1E60FF] hover:scale-110'
                     }`}
                   >
                     <span className="text-xs font-extrabold">{i + 1}</span>
@@ -241,7 +241,7 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
 
         {/* Destination Center Badge */}
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#E5E7EB] shadow-sm flex items-center gap-2 text-xs z-30">
-          <Compass className="w-4 h-4 text-[#F97316]" />
+          <Compass className="w-4 h-4 text-[#1E60FF]" />
           <span className="font-bold text-[#171717]">{trip.destination}</span>
           <span className="text-[#525252]">• {centerLat.toFixed(2)}, {centerLng.toFixed(2)}</span>
         </div>
@@ -250,7 +250,7 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
         {activePin && (
           <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-white/95 backdrop-blur-md rounded-2xl border border-[#E5E7EB] shadow-xl p-4 z-30 animate-in fade-in duration-150 text-[#171717]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-orange-50 text-[#F97316] border border-orange-200">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-orange-50 text-[#1E60FF] border border-orange-200">
                 {activePin.category}
               </span>
               <span className="text-xs font-semibold text-[#525252]">
@@ -260,7 +260,7 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
 
             <h5 className="font-bold text-sm text-[#171717] mt-1.5 line-clamp-1">{activePin.title}</h5>
             <p className="text-xs text-[#525252] flex items-center gap-1 mt-1 line-clamp-1">
-              <MapPin className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+              <MapPin className="w-3.5 h-3.5 text-[#1E60FF] shrink-0" />
               {activePin.location_name}
             </p>
 
@@ -288,7 +288,7 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[#F97316] hover:text-[#EA580C] font-semibold hover:underline"
+                  className="inline-flex items-center gap-1 text-[#1E60FF] hover:text-[#0052FF] font-semibold hover:underline"
                 >
                   <span>Google Maps</span>
                   <ExternalLink className="w-3 h-3" />
@@ -309,7 +309,7 @@ export const ItineraryMap: React.FC<ItineraryMapProps> = ({
               onClick={() => setActivePin(act)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activePin?.id === act.id
-                  ? 'bg-[#F97316] text-white shadow-sm'
+                  ? 'bg-[#1E60FF] text-white shadow-sm'
                   : 'bg-white border border-[#E5E7EB] text-[#171717] hover:bg-neutral-50'
               }`}
             >

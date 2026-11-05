@@ -184,9 +184,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAgents, onOpenSearch }) =>
                     <p className="text-xs text-neutral-500 truncate">
                       {user?.email || profile?.phone || 'trip.pilot@demo.ai'}
                     </p>
-                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-                      <span>{isDemoMode ? 'Pro Demo Workspace' : 'Supabase Connected'}</span>
+                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[#1E60FF] font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#1E60FF]" />
+                      <span>{isDemoMode ? 'Active Workspace' : 'Supabase Connected'}</span>
                     </div>
                   </div>
 
@@ -196,7 +196,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAgents, onOpenSearch }) =>
                       onClick={() => setProfileDropdownOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
                     >
-                      <Sparkles className="w-4 h-4 text-[#16A34A]" />
+                      <Sparkles className="w-4 h-4 text-[#1E60FF]" />
                       <span>Trip Planning Wizard</span>
                     </Link>
                     <Link

@@ -34,9 +34,9 @@ interface BudgetTrackerProps {
 
 // Mono & Orange brand palette for chart categories
 const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  flights: '#F97316',        // Primary Orange
+  flights: '#1E60FF',        // Primary Orange
   accommodation: '#171717',  // Pitch Black / Dark Neutral
-  food: '#EA580C',           // Darker Orange
+  food: '#0052FF',           // Darker Orange
   activities: '#525252',     // Neutral Gray 600
   transport: '#FB923C',      // Light Orange
   shopping: '#737373',       // Medium Gray 500
@@ -111,7 +111,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5E7EB] pb-5">
         <div>
           <h3 className="text-lg font-bold text-[#171717] flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-[#F97316]" />
+            <Receipt className="w-5 h-5 text-[#1E60FF]" />
             Trip Budget & Expense Tracker
           </h3>
           <p className="text-xs text-[#525252]">
@@ -144,7 +144,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
 
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm transition-colors active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white text-xs font-semibold shadow-sm transition-colors active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Add Expense</span>
@@ -163,23 +163,23 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
         return (
           <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#171717] text-[#F97316] flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-[#171717] text-[#1E60FF] flex items-center justify-center shrink-0 shadow-sm">
                 <Plane className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-[#171717]">✈️ Flight / Transit Fare Estimate:</span>
+                  <span className="font-bold text-[#171717]">Flight / Transit Fare Estimate:</span>
                   <span className="font-black text-[#171717]">
                     {flightEstimate.cost === 0
                       ? 'Zero (Intra-City Outing)'
                       : formatCurrency(flightEstimate.cost, trip.currency, true)}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 font-bold border border-orange-200">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 font-bold border border-blue-200">
                     AI Live Rate
                   </span>
                 </div>
                 <p className="text-[11px] text-[#525252] mt-0.5">
-                  {flightEstimate.description || `Estimated flight charges for ${trip.origin} ➔ ${trip.destination}`}
+                  {flightEstimate.description || `Estimated flight charges for ${trip.origin} to ${trip.destination}`}
                   {flightEstimate.airlines ? ` • Airlines: ${flightEstimate.airlines}` : ''}
                 </p>
               </div>
@@ -203,14 +203,14 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
         {/* Total Spent */}
         <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-card">
           <p className="text-xs font-semibold text-[#171717] uppercase tracking-wider">Total Allocated</p>
-          <p className="text-2xl font-black text-[#F97316] mt-1">
+          <p className="text-2xl font-black text-[#1E60FF] mt-1">
             {formatCurrency(totalSpent, trip.currency)}{' '}
             <span className="text-xs font-normal text-[#525252]">{trip.currency}</span>
           </p>
           <div className="w-full bg-[#F3F4F6] rounded-full h-2 mt-2 overflow-hidden border border-[#E5E7EB]">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                percentSpent > 90 ? 'bg-[#DC2626]' : 'bg-[#F97316]'
+                percentSpent > 90 ? 'bg-[#DC2626]' : 'bg-[#1E60FF]'
               }`}
               style={{ width: `${Math.min(100, percentSpent)}%` }}
             />
@@ -254,7 +254,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
                 placeholder="Description (e.g. Flight tickets, Hotel booking)"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#1E60FF]"
               />
             </div>
 
@@ -267,7 +267,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
                 placeholder={`Amount (${getCurrencySymbol(trip.currency)})`}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#1E60FF]"
               />
             </div>
 
@@ -275,7 +275,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E7EB] text-xs bg-white text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#1E60FF]"
               >
                 <option value="flights">Flights</option>
                 <option value="accommodation">Accommodation</option>
@@ -292,7 +292,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
           <div className="flex justify-end">
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-sm transition-colors"
+              className="px-4 py-1.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white text-xs font-semibold shadow-sm transition-colors"
             >
               Save Expense
             </button>
@@ -359,7 +359,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({ trip, expenses }) 
             expenses.map((exp) => (
               <div
                 key={exp.id}
-                className="group flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] hover:border-[#F97316]/50 bg-white shadow-card transition-colors"
+                className="group flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] hover:border-[#1E60FF]/50 bg-white shadow-card transition-colors"
               >
                 <div className="flex items-center gap-2.5">
                   <div

@@ -96,7 +96,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <button
             type="button"
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#16A34A]/20 hover:border-[#16A34A] transition-all flex items-center justify-center bg-emerald-50 text-emerald-800"
+            className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#1E60FF]/20 hover:border-[#1E60FF] transition-all flex items-center justify-center bg-blue-50 text-blue-800"
             aria-label="User Profile Menu"
           >
             {profile?.avatar_url ? (
@@ -124,9 +124,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <p className="text-xs text-neutral-500 truncate">
                   {user?.email || profile?.phone || 'trip.pilot@demo.ai'}
                 </p>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-                  <span>{isDemoMode ? 'Pro Demo Workspace' : 'Supabase Connected'}</span>
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[#1E60FF] font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#1E60FF]" />
+                  <span>{isDemoMode ? 'Active Workspace' : 'Supabase Connected'}</span>
                 </div>
               </div>
 

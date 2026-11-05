@@ -113,7 +113,7 @@ export const AuthPage: React.FC = () => {
       <div className="w-full max-w-lg space-y-6">
         {/* Brand header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#171717] text-[#F97316] shadow-sm">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#171717] text-[#1E60FF] shadow-sm">
             <Compass className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-[#171717] tracking-tight">
@@ -130,7 +130,7 @@ export const AuthPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-sm space-y-2.5">
           <div className="flex items-center justify-between text-xs font-bold text-[#171717]">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#F97316]" />
+              <Sparkles className="w-4 h-4 text-[#1E60FF]" />
               <span>Development Demo Mode</span>
             </div>
             <span className="text-[10px] bg-[#F3F4F6] text-[#525252] font-semibold px-2 py-0.5 rounded-full border border-[#E5E7EB]">
@@ -203,7 +203,7 @@ export const AuthPage: React.FC = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Your full name"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717] placeholder:text-neutral-400"
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white text-[#171717] placeholder:text-neutral-400"
                   />
                 </div>
               </div>
@@ -216,7 +216,7 @@ export const AuthPage: React.FC = () => {
                   <label className="block text-xs font-bold text-[#171717] uppercase tracking-wider">
                     Phone Number <span className="text-[#DC2626]">*</span>
                   </label>
-                  <span className="text-[10px] text-[#F97316] font-semibold bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded">Primary ID</span>
+                  <span className="text-[10px] text-[#1E60FF] font-semibold bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">Primary ID</span>
                 </div>
                 <div className="relative flex">
                   <div className="relative flex-1">
@@ -228,7 +228,7 @@ export const AuthPage: React.FC = () => {
                       onChange={(e) => setPhone(e.target.value)}
                       autoComplete="tel"
                       placeholder="e.g. 9876543210 or +919876543210"
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717] placeholder:text-neutral-400 font-mono"
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white text-[#171717] placeholder:text-neutral-400 font-mono"
                     />
                   </div>
                 </div>
@@ -249,7 +249,7 @@ export const AuthPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={mode === 'signin' ? 'name@example.com or mobile number' : 'name@example.com'}
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717] placeholder:text-neutral-400"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white text-[#171717] placeholder:text-neutral-400"
                 />
               </div>
             </div>
@@ -268,7 +268,7 @@ export const AuthPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 6 characters"
                   minLength={6}
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#F97316] bg-white text-[#171717] placeholder:text-neutral-400"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E7EB] text-xs focus:outline-none focus:ring-2 focus:ring-[#1E60FF] bg-white text-[#171717] placeholder:text-neutral-400"
                 />
               </div>
             </div>
@@ -280,11 +280,11 @@ export const AuthPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setTermsAccepted(!termsAccepted)}
-                    className="mt-0.5 text-[#F97316] shrink-0 focus:outline-none"
+                    className="mt-0.5 text-[#1E60FF] shrink-0 focus:outline-none"
                     aria-label="Toggle Terms Acceptance"
                   >
                     {termsAccepted ? (
-                      <CheckSquare className="w-4 h-4 text-[#F97316] fill-orange-50" />
+                      <CheckSquare className="w-4 h-4 text-[#1E60FF] fill-blue-50" />
                     ) : (
                       <Square className="w-4 h-4 text-neutral-400" />
                     )}
@@ -294,7 +294,7 @@ export const AuthPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowTermsModal(true)}
-                      className="text-[#F97316] hover:text-[#EA580C] font-bold underline underline-offset-2"
+                      className="text-[#1E60FF] hover:text-[#0052FF] font-bold underline underline-offset-2"
                     >
                       Terms & Conditions
                     </button>{' '}
@@ -302,7 +302,7 @@ export const AuthPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowTermsModal(true)}
-                      className="text-[#F97316] hover:text-[#EA580C] font-bold underline underline-offset-2"
+                      className="text-[#1E60FF] hover:text-[#0052FF] font-bold underline underline-offset-2"
                     >
                       Privacy Policy
                     </button>
@@ -315,7 +315,7 @@ export const AuthPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading || (mode === 'signup' && !termsAccepted)}
-              className="w-full py-3.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              className="w-full py-3.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white font-bold text-xs shadow-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             >
               {isLoading ? (
                 <span>Authenticating with database...</span>
@@ -351,7 +351,7 @@ export const AuthPage: React.FC = () => {
           >
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2 font-black text-base">
-                <FileText className="w-5 h-5 text-[#F97316]" />
+                <FileText className="w-5 h-5 text-[#1E60FF]" />
                 <span>TripPilot AI Terms & Conditions</span>
               </div>
               <button
@@ -398,7 +398,7 @@ export const AuthPage: React.FC = () => {
                   setTermsAccepted(true);
                   setShowTermsModal(false);
                 }}
-                className="px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-sm"
+                className="px-5 py-2.5 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white font-bold text-xs shadow-sm"
               >
                 I Understand & Agree
               </button>

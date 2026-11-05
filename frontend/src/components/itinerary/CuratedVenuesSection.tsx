@@ -248,7 +248,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
     switch (topicId) {
       case 'tourist_attractions':
       case 'sightseeing':
-        return <Landmark className="w-4 h-4 text-[#F97316]" />;
+        return <Landmark className="w-4 h-4 text-[#1E60FF]" />;
       case 'restaurants':
       case 'dining':
         return <Utensils className="w-4 h-4 text-emerald-600" />;
@@ -274,14 +274,14 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
       case 'entertainment':
         return <PartyPopper className="w-4 h-4 text-pink-600" />;
       default:
-        return <Landmark className="w-4 h-4 text-[#F97316]" />;
+        return <Landmark className="w-4 h-4 text-[#1E60FF]" />;
     }
   };
 
   if (loading) {
     return (
       <div className="p-12 text-center bg-white rounded-2xl border border-[#E5E7EB] shadow-card space-y-4">
-        <Compass className="w-8 h-8 text-[#F97316] animate-spin mx-auto" />
+        <Compass className="w-8 h-8 text-[#1E60FF] animate-spin mx-auto" />
         <h3 className="text-base font-bold text-[#171717]">Loading Curated Venue Catalog</h3>
         <p className="text-xs text-[#525252] max-w-md mx-auto">
           TripPilot AI is curating more than 10 verified venues across each sub-topic for {trip.destination}...
@@ -303,8 +303,8 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
       {/* Hero Header Box */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-orange-50 via-white to-amber-50 border border-orange-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F97316]/10 text-[#F97316] text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-[#F97316]" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E60FF]/10 text-[#1E60FF] text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5 text-[#1E60FF]" />
             <span>Select & Customize Output Plan</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-[#171717]">
@@ -317,7 +317,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
 
         {/* Global Selection Summary Counter */}
         <div className="flex items-center gap-3 shrink-0 p-3.5 rounded-2xl bg-white border border-[#E5E7EB] shadow-sm">
-          <div className="w-10 h-10 rounded-xl bg-[#171717] text-[#F97316] flex items-center justify-center font-black text-sm">
+          <div className="w-10 h-10 rounded-xl bg-[#171717] text-[#1E60FF] flex items-center justify-center font-black text-sm">
             {selectedVenueIds.size}
           </div>
           <div className="text-xs">
@@ -349,7 +349,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
               <span>{topic.title.split('&')[0].trim()}</span>
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                  isSelected ? 'bg-[#F97316] text-white' : 'bg-[#F3F4F6] text-[#525252]'
+                  isSelected ? 'bg-[#1E60FF] text-white' : 'bg-[#F3F4F6] text-[#525252]'
                 }`}
               >
                 {topic.venues.length}
@@ -370,7 +370,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-xl">{activeTopic.icon}</span>
                 <h3 className="text-lg font-black text-[#171717]">{activeTopic.title}</h3>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-[#F97316]">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-[#1E60FF]">
                   {activeTopic.venues.length} Venues (10+ Guaranteed)
                 </span>
               </div>
@@ -442,7 +442,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
               key={venue.id}
               className={`rounded-2xl border p-4 flex flex-col justify-between gap-3.5 transition-all shadow-card ${
                 isSelected
-                  ? 'bg-orange-50/50 border-[#F97316] ring-2 ring-orange-200'
+                  ? 'bg-orange-50/50 border-[#1E60FF] ring-2 ring-orange-200'
                   : 'bg-white border-[#E5E7EB] hover:border-neutral-300'
               }`}
             >
@@ -457,7 +457,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
                     <div
                       className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${
                         isSelected
-                          ? 'bg-[#F97316] border-[#F97316] text-white'
+                          ? 'bg-[#1E60FF] border-[#1E60FF] text-white'
                           : 'border-[#E5E7EB] bg-white group-hover:border-neutral-400'
                       }`}
                     >
@@ -497,11 +497,11 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     title="View place on Google Maps"
-                    className="text-sm font-black text-[#171717] hover:text-[#F97316] line-clamp-1 leading-snug inline-flex items-center gap-1.5 group/link transition-colors"
+                    className="text-sm font-black text-[#171717] hover:text-[#1E60FF] line-clamp-1 leading-snug inline-flex items-center gap-1.5 group/link transition-colors"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <span className="hover:underline">{venue.name}</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover/link:text-[#F97316] shrink-0" />
+                    <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover/link:text-[#1E60FF] shrink-0" />
                   </a>
                   <p className="text-xs text-[#525252] line-clamp-2 mt-1 leading-relaxed">
                     {venue.description}
@@ -511,7 +511,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
                 {/* Speciality Highlight Pill */}
                 {venue.speciality && (
                   <div className="p-2 rounded-xl bg-[#F3F4F6] text-[11px] text-[#171717] font-medium flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+                    <Sparkles className="w-3.5 h-3.5 text-[#1E60FF] shrink-0" />
                     <span className="line-clamp-1">
                       <strong>Speciality:</strong> {venue.speciality}
                     </span>
@@ -533,7 +533,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
                         target="_blank"
                         rel="noopener noreferrer"
                         title="View address on Google Maps"
-                        className="truncate hover:text-[#F97316] hover:underline"
+                        className="truncate hover:text-[#1E60FF] hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {venue.address}
@@ -568,7 +568,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
                       type="button"
                       onClick={() => handleAddVenueToDay(venue, d.day_number)}
                       title={`Add ${venue.name} to Day ${d.day_number}`}
-                      className="px-2 py-1 rounded-lg bg-white hover:bg-[#F97316] hover:text-white border border-[#E5E7EB] text-[#171717] font-bold text-[10px] transition-colors"
+                      className="px-2 py-1 rounded-lg bg-white hover:bg-[#1E60FF] hover:text-white border border-[#E5E7EB] text-[#171717] font-bold text-[10px] transition-colors"
                     >
                       D{d.day_number}
                     </button>
@@ -592,7 +592,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
       {selectedVenueIds.size > 0 && (
         <div className="sticky bottom-6 z-40 p-4 rounded-3xl bg-[#171717] text-white border border-neutral-800 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-[#1E60FF] text-white flex items-center justify-center font-bold text-xs">
               {selectedVenueIds.size}
             </div>
             <div>
@@ -624,7 +624,7 @@ export const CuratedVenuesSection: React.FC<CuratedVenuesSectionProps> = ({
             <button
               type="button"
               onClick={handleAddAllSelectedToDay}
-              className="px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[#1E60FF] hover:bg-[#0052FF] text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               <span>Add Selected to Day {targetDayNumber}</span>

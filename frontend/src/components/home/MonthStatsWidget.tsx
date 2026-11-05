@@ -9,18 +9,18 @@ interface MonthStatsWidgetProps {
 }
 
 export const MonthStatsWidget: React.FC<MonthStatsWidgetProps> = ({
-  tripsCount = 2,
-  nightsCount = 6,
-  totalSpend = 24500,
+  tripsCount = 0,
+  nightsCount = 0,
+  totalSpend = 0,
 }) => {
   return (
     <div className="bg-white rounded-3xl p-5 border border-[#E5E7EB] shadow-xs space-y-4">
       {/* Title & Sparkline SVG */}
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-sm text-neutral-900">This Month</h3>
-        {/* Subtle green sparkline curve */}
+        {/* Subtle Ocean Blue sparkline curve */}
         <div className="w-20 h-6">
-          <svg viewBox="0 0 80 24" className="w-full h-full stroke-[#16A34A] fill-none stroke-2">
+          <svg viewBox="0 0 80 24" className="w-full h-full stroke-[#1E60FF] fill-none stroke-2">
             <path
               d="M 2 18 Q 20 6, 35 14 T 60 4 T 78 8"
               strokeLinecap="round"
@@ -35,7 +35,7 @@ export const MonthStatsWidget: React.FC<MonthStatsWidgetProps> = ({
         {/* Trips */}
         <div className="text-center py-1">
           <div className="flex justify-center mb-1">
-            <Plane className="w-4 h-4 text-emerald-600 -rotate-45" />
+            <Plane className="w-4 h-4 text-[#1E60FF] -rotate-45" />
           </div>
           <div className="text-lg font-black text-neutral-900 leading-tight">
             {tripsCount}
@@ -46,7 +46,7 @@ export const MonthStatsWidget: React.FC<MonthStatsWidgetProps> = ({
         {/* Nights */}
         <div className="text-center py-1 border-x border-neutral-100">
           <div className="flex justify-center mb-1">
-            <Bed className="w-4 h-4 text-emerald-600" />
+            <Bed className="w-4 h-4 text-[#1E60FF]" />
           </div>
           <div className="text-lg font-black text-neutral-900 leading-tight">
             {nightsCount}
@@ -57,7 +57,7 @@ export const MonthStatsWidget: React.FC<MonthStatsWidgetProps> = ({
         {/* Total Spend */}
         <div className="text-center py-1">
           <div className="flex justify-center mb-1">
-            <IndianRupee className="w-4 h-4 text-emerald-600" />
+            <IndianRupee className="w-4 h-4 text-[#1E60FF]" />
           </div>
           <div className="text-base sm:text-lg font-black text-neutral-900 leading-tight truncate">
             {formatCurrency(totalSpend, 'INR')}
