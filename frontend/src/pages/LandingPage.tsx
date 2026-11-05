@@ -22,17 +22,17 @@ export const LandingPage: React.FC = () => {
       />
 
       {/* 
-        2. WHY CHOOSE TRIPPILOT AI? SECTION:
-        Pixel-perfect implementation of image copy 2.png with image copy 3.png background,
-        including pill badge, headline with curved underline, and 6 glassmorphic feature cards.
+        2. WHY CHOOSE TRIPPILOT AI? SECTION & 3. CLEAN MODERN FOOTER:
+        Preserved for desktop, hidden on mobile per explicit user requirement:
+        "for mobile view i need it like this the herosection only rest all must be clear"
       */}
-      <WhyChooseSection
-        onOpenAgents={() => setIsAgentsModalOpen(true)}
-        onOpenDemo={() => setIsDemoOpen(true)}
-      />
-
-      {/* 3. CLEAN MODERN FOOTER */}
-      <Footer />
+      <div className="hidden md:block">
+        <WhyChooseSection
+          onOpenAgents={() => setIsAgentsModalOpen(true)}
+          onOpenDemo={() => setIsDemoOpen(true)}
+        />
+        <Footer />
+      </div>
 
       {/* Interactive AI Agents Modal */}
       <AIAgentsModal

@@ -10,8 +10,14 @@ export const Footer: React.FC = () => {
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#1E60FF] flex items-center justify-center text-white shadow-md shadow-blue-500/25">
-                <Plane className="w-5 h-5 -rotate-45 fill-white stroke-white" />
+              <div className="w-10 h-10 aspect-square rounded-2xl overflow-hidden shadow-md shadow-blue-500/25 shrink-0">
+                <img
+                  src="/app-logo.png"
+                  alt="TripPilot AI Logo"
+                  width="40"
+                  height="40"
+                  className="w-full h-full object-cover shrink-0"
+                />
               </div>
               <span className="text-2xl font-black text-white tracking-tight">
                 TripPilot <span className="text-[#1E60FF]">AI</span>

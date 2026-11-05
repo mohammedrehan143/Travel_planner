@@ -57,13 +57,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand & Collapse Header */}
         <div className="flex items-center justify-between gap-2 px-2">
           <Link to="/" className="flex items-center gap-2.5 overflow-hidden group">
-            {/* Emerald circular logo with tilted airplane */}
-            <div className="w-9 h-9 rounded-full bg-[#16A34A] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0">
-              <Plane className="w-5 h-5 -rotate-45 fill-white stroke-white" />
+            {/* Reactive Logo Button matching image copy 5.png */}
+            <div className="w-9 h-9 aspect-square rounded-xl overflow-hidden shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-200 shrink-0">
+              <img
+                src="/app-logo.png"
+                alt="TripPilot AI Logo"
+                width="36"
+                height="36"
+                className="w-full h-full object-cover shrink-0"
+              />
             </div>
             {!isCollapsed && (
               <span className="font-extrabold text-lg text-neutral-900 tracking-tight whitespace-nowrap">
-                TripPilot <span className="text-[#16A34A]">AI</span>
+                TripPilot <span className="text-[#1E60FF]">AI</span>
               </span>
             )}
           </Link>

@@ -64,14 +64,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAgents, onOpenSearch }) =>
     <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E5E7EB] transition-colors select-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-18 items-center py-3">
-          {/* Left: Brand Logo matching image.png */}
+          {/* Left: Brand Logo matching image copy 5.png */}
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-full bg-[#16A34A] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0">
-                <Plane className="w-5 h-5 -rotate-45 fill-white stroke-white" />
+              <div className="w-9 h-9 aspect-square rounded-xl overflow-hidden shadow-xs group-hover:scale-105 group-hover:shadow-md transition-all duration-200 shrink-0">
+                <img
+                  src="/app-logo.png"
+                  alt="TripPilot AI Logo"
+                  width="36"
+                  height="36"
+                  className="w-full h-full object-cover shrink-0"
+                />
               </div>
-              <span className="text-xl font-extrabold text-neutral-900 tracking-tight">
-                TripPilot <span className="text-[#16A34A]">AI</span>
+              <span className="text-xl font-black text-neutral-900 tracking-tight">
+                TripPilot <span className="text-[#1E60FF]">AI</span>
               </span>
             </Link>
 

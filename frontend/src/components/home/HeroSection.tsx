@@ -93,37 +93,52 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   ];
 
   return (
-    <section className="relative w-full min-h-[720px] lg:min-h-[840px] select-none flex flex-col justify-between">
+    <section className="relative w-full h-[100dvh] min-h-[620px] md:h-auto md:min-h-[720px] lg:min-h-[840px] select-none flex flex-col justify-between overflow-hidden md:overflow-visible">
       {/* 
-        High-Resolution Background Image (image copy.png)
+        1. Mobile View Background: Pristine clean alpine & sky panorama (hero-mobile-bg.png)
+        Matches image copy 4.png with airplane, sunrise, tree foliage, and backpacker
+      */}
+      <img
+        src="/hero-mobile-bg.png"
+        alt="TripPilot AI mountain scenery with aircraft and hiker"
+        className="md:hidden absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0"
+      />
+
+      {/* 
+        2. Desktop View Background: High-Resolution Panoramic Background (hero-bg.png)
         Clean, majestic alpine landscape with backpacker and soaring aircraft
       */}
       <img
         src="/hero-bg.png"
         alt="Mountain adventure panorama with backpacker and soaring aircraft"
-        className="absolute inset-0 w-full h-full object-cover object-[70%_center] xl:object-center pointer-events-none select-none z-0"
+        className="hidden md:block absolute inset-0 w-full h-full object-cover object-[70%_center] xl:object-center pointer-events-none select-none z-0"
       />
 
-      {/* Soft gradient overlay on smaller screens so text remains legible */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent lg:hidden pointer-events-none z-0" />
-
-      {/* Subtle bottom fade to guarantee the bottom cards sit cleanly above the footer */}
-      <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none z-10" />
+      {/* Desktop subtle bottom fade to guarantee bottom cards sit cleanly above subsequent content */}
+      <div className="hidden md:block absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none z-10" />
 
       {/* =========================================================================
           TOP NAVIGATION BAR
           ========================================================================= */}
       <header className="relative z-30 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-5 sm:pt-6">
         <div className="flex items-center justify-between">
-          {/* Brand Logo: Vibrant royal blue rounded square + bold brand text */}
+          {/* Brand Logo: Reactive logo button (image copy 5.png) + bold brand text */}
           <div
             onClick={() => navigate('/')}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-[#1E60FF] flex items-center justify-center text-white shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform shrink-0">
-              <Plane className="w-5 h-5 -rotate-45 fill-white stroke-white" />
+            {/* Reactive Logo Button matching image copy 5.png */}
+            <div className="w-9 h-9 sm:w-10 sm:h-10 aspect-square rounded-2xl overflow-hidden shadow-md shadow-blue-500/25 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-blue-500/35 transition-all duration-200 shrink-0">
+              <img
+                src="/app-logo.png"
+                alt="TripPilot AI Logo"
+                width="40"
+                height="40"
+                className="w-full h-full object-cover shrink-0"
+              />
             </div>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">
+
+            <span className="text-xl sm:text-2xl font-black text-white md:text-slate-900 tracking-tight drop-shadow-xs md:drop-shadow-none">
               TripPilot AI
             </span>
           </div>
@@ -185,14 +200,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button: Rounded square outline with white hamburger bars (image copy 4.png) */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-white/70 transition-colors"
+            className="md:hidden w-10 h-10 rounded-xl border border-white/50 bg-white/10 hover:bg-white/20 backdrop-blur-xs flex items-center justify-center text-white transition-all shadow-sm"
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 stroke-[2.5]" /> : <Menu className="w-5 h-5 stroke-[2.5]" />}
           </button>
         </div>
 
@@ -200,7 +215,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {mobileMenuOpen && (
           <div className="md:hidden mt-3 p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
             <button
-              onClick={() => scrollToSection('why-choose-us')}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenAgents) onOpenAgents();
+                else handlePlanTrip();
+              }}
               className="block w-full text-left py-2 px-3 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50"
             >
               Features
@@ -252,9 +271,101 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       </header>
 
       {/* =========================================================================
-          HERO MAIN CONTENT: Clean Left Typography + Clean Panoramic Background
+          MOBILE HERO CONTENT: Exactly matching image copy 4.png
+          Centered typography, sparkle doodles, curved underline, and 2 CTA buttons
           ========================================================================= */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16 flex-1 flex flex-col justify-center">
+      <div className="md:hidden relative z-10 w-full px-5 pt-8 sm:pt-12 pb-2 flex-1 flex flex-col items-center justify-start text-center">
+        {/* Sparkle Doodles & Main Headline */}
+        <div className="relative inline-block mt-4 sm:mt-8">
+          {/* Left Sparkles: 3 radiating blue strokes (image copy 4.png) */}
+          <div className="absolute -top-3.5 -left-7 sm:-left-9 text-[#1E60FF] pointer-events-none">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M7 17L2 19" stroke="#1E60FF" strokeWidth="3" strokeLinecap="round" />
+              <path d="M6 10L1 9" stroke="#1E60FF" strokeWidth="3" strokeLinecap="round" />
+              <path d="M10 5L7 1" stroke="#1E60FF" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Right Sparkles: 3 radiating blue strokes (image copy 4.png) */}
+          <div className="absolute -bottom-1 -right-7 sm:-right-9 text-[#1E60FF] pointer-events-none">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M14 5L19 3" stroke="#1E60FF" strokeWidth="3" strokeLinecap="round" />
+              <path d="M15 12L21 13" stroke="#1E60FF" strokeWidth="3" strokeLinecap="round" />
+              <path d="M12 18L15 22" stroke="#1E60FF" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          <h1 className="text-[36px] sm:text-[42px] font-black text-[#0B1536] tracking-tight leading-[1.12]">
+            <div>Your AI Travel</div>
+            <div className="relative inline-block text-[#1E60FF] mt-1">
+              <span>Co-Pilot</span>
+              {/* Hand-Drawn Curved Underline underneath Co-Pilot */}
+              <svg
+                className="absolute -bottom-2.5 left-0 w-full h-3.5 text-[#1E60FF] pointer-events-none"
+                viewBox="0 0 160 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 8C45 2 115 2 156 8"
+                  stroke="currentColor"
+                  strokeWidth="4.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+          </h1>
+        </div>
+
+        {/* Subtitle */}
+        <p className="mt-4 sm:mt-5 text-[#243552] font-semibold text-[14.5px] sm:text-base leading-relaxed max-w-[320px] sm:max-w-sm mx-auto">
+          Plan, research, optimize and validate your trips with a team of intelligent AI agents.
+        </p>
+
+        {/* 2 CTA Buttons in a single row */}
+        <div className="flex items-center justify-center gap-3 mt-6 sm:mt-7 w-full max-w-xs">
+          <button
+            type="button"
+            onClick={handlePlanTrip}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#0066FF] to-[#0052FF] text-white font-bold text-sm py-3 px-4 rounded-full shadow-lg shadow-blue-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <span>Plan Your Trip</span>
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenDemo) onOpenDemo();
+              else handlePlanTrip();
+            }}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white/80 hover:bg-white text-slate-900 font-bold text-sm py-3 px-4 rounded-full border border-white/90 shadow-xs backdrop-blur-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Play className="w-3.5 h-3.5 fill-slate-900 text-slate-900" />
+            <span>Watch Demo</span>
+          </button>
+        </div>
+
+        {/* Bottom space intentionally left clear so mountains, valley mist & backpacker shine unobstructed */}
+        <div className="flex-1 min-h-[160px]" />
+      </div>
+
+      {/* =========================================================================
+          DESKTOP HERO MAIN CONTENT: Clean Left Typography + Clean Panoramic Background
+          ========================================================================= */}
+      <div className="hidden md:flex relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16 flex-1 flex-col justify-center">
         <div className="max-w-2xl space-y-5 sm:space-y-6">
           {/* Pill Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF2FF] border border-[#D3E3FD] text-[#1E60FF] text-xs sm:text-sm font-semibold shadow-2xs">
@@ -348,10 +459,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       </div>
 
       {/* =========================================================================
-          BOTTOM 4 FEATURE CARDS
-          Spacious padding below to ensure cards never touch or enter the footer
+          BOTTOM 4 FEATURE CARDS (Desktop only, mobile bottom is clear)
           ========================================================================= */}
-      <div id="hero-features" className="relative z-20 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-4 pb-16 sm:pb-20 lg:pb-24">
+      <div id="hero-features" className="hidden md:block relative z-20 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-4 pb-16 sm:pb-20 lg:pb-24">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {featureCards.map((card) => {
             const Icon = card.icon;
