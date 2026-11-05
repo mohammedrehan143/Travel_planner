@@ -9,16 +9,19 @@ export const LandingPage: React.FC = () => {
   const [isDemoOpen, setIsDemoOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col justify-between font-sans antialiased">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans antialiased">
       {/* 
         CLEAN HERO SECTION:
-        Pixel-perfect modern hero with the alpine background (image copy.png),
-        left typography, CTA buttons, social proof, and 4 bottom feature cards.
+        Pixel-perfect modern hero with alpine background (image copy.png),
+        left typography, CTA buttons, social proof, and 4 bottom feature cards
+        with generous bottom padding so cards never collide with the footer.
       */}
-      <HeroSection
-        onOpenAgents={() => setIsAgentsModalOpen(true)}
-        onOpenDemo={() => setIsDemoOpen(true)}
-      />
+      <div className="flex-1 flex flex-col">
+        <HeroSection
+          onOpenAgents={() => setIsAgentsModalOpen(true)}
+          onOpenDemo={() => setIsDemoOpen(true)}
+        />
+      </div>
 
       {/* Clean Modern Footer */}
       <Footer />

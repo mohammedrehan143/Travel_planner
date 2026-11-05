@@ -93,7 +93,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   ];
 
   return (
-    <section className="relative w-full min-h-[800px] lg:h-[calc(100vh-80px)] lg:min-h-[760px] lg:max-h-[920px] overflow-hidden select-none flex flex-col justify-between">
+    <section className="relative w-full min-h-[720px] lg:min-h-[840px] select-none flex flex-col justify-between">
       {/* 
         High-Resolution Background Image (image copy.png)
         Clean, majestic alpine landscape with backpacker and soaring aircraft
@@ -106,6 +106,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
       {/* Soft gradient overlay on smaller screens so text remains legible */}
       <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent lg:hidden pointer-events-none z-0" />
+
+      {/* Subtle bottom fade to guarantee the bottom cards sit cleanly above the footer */}
+      <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none z-10" />
 
       {/* =========================================================================
           TOP NAVIGATION BAR
@@ -345,17 +348,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       </div>
 
       {/* =========================================================================
-          BOTTOM 4 FEATURE CARDS (Positioned cleanly along the bottom wave)
+          BOTTOM 4 FEATURE CARDS
+          Spacious padding below to ensure cards never touch or enter the footer
           ========================================================================= */}
-      <div id="hero-features" className="relative z-20 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pb-6 sm:pb-8 pt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      <div id="hero-features" className="relative z-20 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-4 pb-16 sm:pb-20 lg:pb-24">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {featureCards.map((card) => {
             const Icon = card.icon;
             return (
               <div
                 key={card.id}
                 onClick={card.action}
-                className="bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-4.5 border border-white/80 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex items-center gap-3.5 group cursor-pointer"
+                className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/70 shadow-lg shadow-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex items-center gap-3.5 group cursor-pointer"
               >
                 {/* Icon Badge */}
                 <div className="w-12 h-12 rounded-2xl bg-[#EAF2FF] text-[#1E60FF] flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-[#1E60FF] group-hover:text-white transition-all shadow-2xs">
