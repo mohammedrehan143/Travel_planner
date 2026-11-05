@@ -10,7 +10,8 @@
     "esbuild": true
   },
   "scripts": {
-    "build": "npm --prefix backend run build",
+    "build": "npm --prefix frontend run build",
+    "vercel-build": "npm --prefix frontend install && npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build",
     "build:all": "npm --prefix backend run build && npm --prefix frontend run build",
