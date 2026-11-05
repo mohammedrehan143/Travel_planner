@@ -14,17 +14,20 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getLenis } from '../../hooks/useSmoothScroll';
+import { CuteRobotChatbot, CuteRobotMobileButton } from './CuteRobotChatbot';
 
 interface HeroSectionProps {
   onOpenAgents?: () => void;
   onOpenDemo?: () => void;
   onSelectFeature?: (feature: string) => void;
+  onOpenChat?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenAgents,
   onOpenDemo,
-  onSelectFeature
+  onSelectFeature,
+  onOpenChat
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -369,10 +372,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       </div>
 
       {/* =========================================================================
-          DESKTOP HERO MAIN CONTENT: Clean Left Typography + Clean Panoramic Background
+          DESKTOP HERO MAIN CONTENT: Clean Left Typography + Right Jumping Cute Robot
           ========================================================================= */}
-      <div className="hidden md:flex relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16 flex-1 flex-col justify-center">
-        <div className="max-w-2xl space-y-5 sm:space-y-6">
+      <div className="hidden md:flex relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16 flex-1 items-center justify-between gap-8">
+        <div className="max-w-xl lg:max-w-2xl space-y-5 sm:space-y-6 shrink-0">
           {/* Pill Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF2FF] border border-[#D3E3FD] text-[#1E60FF] text-xs sm:text-sm font-semibold shadow-2xs">
             <Sparkles className="w-4 h-4 fill-[#1E60FF]" />
@@ -462,6 +465,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Right Side: Jumping Robotic Cute Character AI Chatbot */}
+        <div className="relative flex flex-col items-center justify-center shrink-0 pr-2 lg:pr-8 xl:pr-12">
+          <CuteRobotChatbot onOpenChat={onOpenChat} />
+        </div>
+      </div>
+
+      {/* Mobile Floating Jumping Robot Chatbot Option */}
+      <div className="md:hidden fixed bottom-6 right-4 z-40">
+        <CuteRobotMobileButton onOpenChat={onOpenChat} />
       </div>
 
       {/* =========================================================================

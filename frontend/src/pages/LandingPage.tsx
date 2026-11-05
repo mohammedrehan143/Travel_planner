@@ -4,21 +4,24 @@ import { WhyChooseSection } from '../components/home/WhyChooseSection';
 import { Footer } from '../components/common/Footer';
 import { AIAgentsModal } from '../components/home/AIAgentsModal';
 import { DemoModal } from '../components/home/DemoModal';
+import { AIChatDrawer } from '../components/itinerary/AIChatDrawer';
 
 export const LandingPage: React.FC = () => {
   const [isAgentsModalOpen, setIsAgentsModalOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans antialiased">
       {/* 
         1. HERO SECTION:
         Pixel-perfect modern hero with alpine background (image copy.png),
-        left typography, CTA buttons, social proof, and 4 bottom feature cards.
+        left typography, CTA buttons, social proof, right jumping cute robot AI chatbot, and 4 bottom feature cards.
       */}
       <HeroSection
         onOpenAgents={() => setIsAgentsModalOpen(true)}
         onOpenDemo={() => setIsDemoOpen(true)}
+        onOpenChat={() => setIsAIChatOpen(true)}
       />
 
       {/* 
@@ -44,6 +47,12 @@ export const LandingPage: React.FC = () => {
       <DemoModal
         isOpen={isDemoOpen}
         onClose={() => setIsDemoOpen(false)}
+      />
+
+      {/* Interactive AI Travel Architect Chat Drawer */}
+      <AIChatDrawer
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
       />
     </div>
   );

@@ -126,3 +126,90 @@ html.lenis, html.lenis body {
     display: block !important;
   }
 }
+
+/* Cute Jumping Robot Chatbot Animations */
+@keyframes robot-jump {
+  0%, 100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  28% {
+    transform: translateY(-26px) scale(0.96, 1.04) rotate(-2deg);
+  }
+  48% {
+    transform: translateY(-30px) scale(0.98, 1.02) rotate(1.5deg);
+  }
+  72% {
+    transform: translateY(-6px) scale(1.02, 0.98);
+  }
+  86% {
+    transform: translateY(2px) scale(1.04, 0.96);
+  }
+}
+
+@keyframes robot-shadow {
+  0%, 100% {
+    transform: scaleX(1);
+    opacity: 0.35;
+  }
+  40% {
+    transform: scaleX(0.48);
+    opacity: 0.12;
+  }
+  86% {
+    transform: scaleX(1.15);
+    opacity: 0.45;
+  }
+}
+
+@keyframes robot-wave {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-18deg);
+  }
+  75% {
+    transform: rotate(14deg);
+  }
+}
+
+@keyframes antenna-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
+.animate-robot-jump {
+  animation: robot-jump 2.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  transform-origin: bottom center;
+}
+
+.animate-robot-shadow {
+  animation: robot-shadow 2.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  transform-origin: center center;
+}
+
+.animate-robot-wave {
+  animation: robot-wave 1.6s ease-in-out infinite;
+  transform-origin: 85% 20%;
+}
+
+.animate-antenna-pulse {
+  animation: antenna-pulse 1.4s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-robot-jump,
+  .animate-robot-shadow,
+  .animate-robot-wave,
+  .animate-antenna-pulse {
+    animation: none !important;
+  }
+}
+
