@@ -132,7 +132,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <nav className="hidden md:flex items-center gap-7 lg:gap-9">
             <button
               type="button"
-              onClick={() => scrollToSection('hero-features')}
+              onClick={() => scrollToSection('why-choose-us')}
               className="text-[15px] font-semibold text-slate-800 hover:text-[#1E60FF] transition-colors"
             >
               Features
@@ -200,7 +200,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {mobileMenuOpen && (
           <div className="md:hidden mt-3 p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
             <button
-              onClick={() => scrollToSection('hero-features')}
+              onClick={() => scrollToSection('why-choose-us')}
               className="block w-full text-left py-2 px-3 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50"
             >
               Features
