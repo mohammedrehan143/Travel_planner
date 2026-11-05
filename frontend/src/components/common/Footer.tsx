@@ -97,9 +97,15 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
           <p>© 2026 TripPilot AI. Built for smarter, stress-free travel journeys.</p>
-          <p className="flex items-center gap-1">
-            Made with <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> for travellers worldwide
-          </p>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5">
+            <span className="text-slate-300 font-medium">
+              Built by <span className="text-white font-bold tracking-wide">Mohammed Rehan</span>
+            </span>
+            <span className="text-slate-700 hidden sm:inline">•</span>
+            <p className="flex items-center gap-1 text-slate-500">
+              Made with <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> for travellers worldwide
+            </p>
+          </div>
         </div>
       </div>
     </footer>
