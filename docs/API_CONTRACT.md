@@ -295,6 +295,84 @@ Validates the current trip against opening hours, time overlaps, pacing, travel 
 
 ---
 
+### 2.8 Voice Assistant Integration (STT & TTS)
+
+#### `GET /api/voice/config`
+Retrieves supported languages, available TTS voices, and server STT/TTS provider statuses.
+
+**Response (200 OK)**:
+```json
+{
+  "status": "success",
+  "supportedLanguages": [
+    { "code": "en", "name": "English", "locale": "en-US" },
+    { "code": "hi", "name": "हिन्दी (Hindi)", "locale": "hi-IN" },
+    { "code": "kn", "name": "ಕನ್ನಡ (Kannada)", "locale": "kn-IN" }
+  ],
+  "availableVoices": [
+    { "id": "alloy", "name": "Alloy (Balanced)", "gender": "neutral" },
+    { "id": "echo", "name": "Echo (Warm)", "gender": "male" },
+    { "id": "fable", "name": "Fable (British/Expressive)", "gender": "neutral" },
+    { "id": "onyx", "name": "Onyx (Deep/Authoritative)", "gender": "male" },
+    { "id": "nova", "name": "Nova (Energetic/Friendly)", "gender": "female" },
+    { "id": "shimmer", "name": "Shimmer (Clear/Bright)", "gender": "female" }
+  ],
+  "defaultVoice": "alloy",
+  "sttProvider": "openai",
+  "ttsProvider": "openai",
+  "serverSTTAvailable": true,
+  "serverTTSAvailable": true
+}
+```
+
+#### `POST /api/voice/stt`
+Converts user speech audio (Base64 or Data URI) into text using the configured STT provider (OpenAI Whisper or Deepgram) with graceful client-side fallbacks.
+
+**Request Body**:
+```json
+{
+  "audio": "data:audio/webm;base64,...",
+  "format": "webm",
+  "language": "en"
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "status": "success",
+  "text": "Plan a 3-day trip to Coorg under ₹10,000",
+  "language": "en",
+  "provider": "openai"
+}
+```
+
+#### `POST /api/voice/tts`
+Synthesizes assistant response text into natural-sounding speech audio with automatic Markdown, JSON, and coordinate cleanup.
+
+**Request Body**:
+```json
+{
+  "text": "I have planned an authentic 3-day trip to Coorg featuring Abbey Falls and coffee estate tours.",
+  "voice": "alloy",
+  "language": "en",
+  "speed": 1.0
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "status": "success",
+  "audioData": "data:audio/mpeg;base64,...",
+  "cleanText": "I have planned an authentic 3-day trip to Coorg featuring Abbey Falls and coffee estate tours.",
+  "mimeType": "audio/mpeg",
+  "provider": "openai"
+}
+```
+
+---
+
 ## 3. Database Schema & Supabase Client Types
 
 The generated TypeScript database definitions are available in:

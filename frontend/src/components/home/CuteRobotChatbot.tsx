@@ -63,14 +63,14 @@ export const CuteRobotChatbot: React.FC<ChatbotTriggerProps> = ({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
           <span className="text-[11px] font-black uppercase tracking-wider text-[#1E60FF]">
-            Tripolio Online
+            Pilot Online
           </span>
         </div>
         <p className="text-[12px] font-bold text-slate-800 leading-tight">
-          I'm Tripolio, let's plan ✨
+          I'm Pilot, let's plan ✨
         </p>
         <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
-          Click to chat
+          Voice & Chat
         </span>
 
         {/* Pointer tail pointing down towards the avatar */}
@@ -118,10 +118,10 @@ export const CuteRobotMobileButton: React.FC<ChatbotTriggerProps> = ({
 
       <div className="flex flex-col text-left">
         <span className="text-[12px] font-bold text-slate-900 leading-none">
-          Tripolio AI
+          Pilot AI
         </span>
         <span className="text-[10px] text-[#1E60FF] font-semibold mt-0.5 leading-none">
-          Ask anything
+          Voice & Chat
         </span>
       </div>
 

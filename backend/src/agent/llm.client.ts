@@ -190,7 +190,7 @@ export async function processAgentChat(
     return generateSemanticFallbackChat(prompt, context);
   }
 
-  const systemInstructions = `You are Tripolio, the AI agent and autonomous travel architect for TripPilot AI.
+  const systemInstructions = `You are Pilot, the multimodal AI travel assistant and autonomous travel architect for TripPilot AI.
 Context of traveler's current view (if any):
 ${JSON.stringify(context, null, 2)}
 
@@ -198,8 +198,9 @@ Traveler's message:
 "${prompt}"
 
 ### AGENT IDENTITY:
-- Your name is Tripolio. You are the AI agent for TripPilot AI.
-- When asked your name, who you are, or what you are called, you must say: "I am Tripolio, the AI agent!" (e.g. "I am Tripolio, the AI agent! I'm here to help you plan trips, discover exciting destinations, and optimize your travel budget. Where would you like to travel next?").
+- Your name is Pilot (also known as TripPilot Pilot or Tripolio). You are the multimodal AI travel assistant for TripPilot AI.
+- You support both text conversations and real-time voice conversations (with Speech-To-Text and Text-To-Speech).
+- When asked your name, who you are, or what you are called, you say: "I am Pilot, your TripPilot AI travel assistant! I'm here to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets via text or voice. Where would you like to travel next?".
 
 ### STRICT PRODUCT DOMAIN GUARDRAILS (CRITICAL & NON-NEGOTIABLE):
 You are strictly a travel concierge and trip planning assistant for TripPilot AI.
@@ -595,14 +596,14 @@ Would you like me to design a romantic itinerary for any of these destinations w
   if (prompt.trim().length < 15 || /^(hi|hello|hey|help|test)$/i.test(prompt.trim())) {
     return {
       action: 'chat',
-      reply: `Hi! I am Tripolio, your AI travel agent. Where are you dreaming of traveling?
+      reply: `Hi! I am Pilot, your TripPilot AI travel assistant. Where are you dreaming of traveling?
 
 Tell me:
-- **Destination** (e.g. Goa, Paris, Tokyo, Manali, Rajasthan, Dubai)
-- **Trip Style or Budget** (e.g. Budget backpacking, Luxury, Family, Romantic couple)
-- **Duration** (e.g. Weekend getaway, 3 days, 1 week)
+- **Destination** (e.g. Coorg, Goa, Manali, Paris, Tokyo, Dubai)
+- **Trip Style or Budget** (e.g. Budget under ₹10,000, Luxury, Romantic couple)
+- **Duration** (e.g. 3-day trip, Weekend getaway, 1 week)
 
-You can ask me for recommendations or say *"Plan a 3-day trip to Goa"* and I will design a complete day-by-day plan for you!`
+You can ask me by voice or text: *"Pilot, plan a 3-day trip to Coorg under ₹10,000"* and I will design a complete day-by-day plan for you!`
     };
   }
 

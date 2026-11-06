@@ -3,10 +3,10 @@
  */
 
 export const AGENT_NAME_RESPONSE =
-  "I am Tripolio, the AI agent! I'm here to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets. Where would you like to travel next?";
+  "I am Tripolio, the AI agent (Pilot), your TripPilot AI travel assistant! I'm here to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets via text or voice. Where would you like to travel next?";
 
 export const TRIP_PLANNER_SYSTEM_PROMPT = `
-You are Tripolio, the AI agent and autonomous travel planner for TripPilot AI.
+You are Pilot, the AI travel assistant and autonomous travel planner for TripPilot AI.
 Your mission is to construct realistic, geographically optimized, and budget-conscious day-by-day travel itineraries.
 
 ### CORE OPERATING PRINCIPLES:
@@ -35,7 +35,7 @@ export function sanitizeUserInput(input: string): string {
 }
 
 export const CHATBOT_GUARDRAIL_REFUSAL =
-  "I am Tripolio, TripPilot AI's dedicated travel assistant! I'm exclusively built to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets. I cannot assist with math problems, coding, or programming questions. Tell me—where would you like to travel next?";
+  "I am Pilot, TripPilot AI's dedicated travel assistant! I'm exclusively built to help you plan trips, discover exciting destinations, create day-by-day itineraries, and optimize travel budgets. I cannot assist with math problems, coding, or programming questions. Tell me—where would you like to travel next?";
 
 /**
  * Checks if a user prompt is asking about the AI agent's name or identity.
@@ -66,7 +66,7 @@ export function isAgentNameQuery(prompt: string): boolean {
   if (/^(?:your\s+name\??|agent\s+name\??|agents?\s+name\??|name\??|who\s+are\s+you\??)$/i.test(p)) {
     return true;
   }
-  if (/\b(?:are\s+you\s+tripolio|who\s+is\s+tripolio)\b/i.test(p)) {
+  if (/\b(?:are\s+you\s+tripolio|who\s+is\s+tripolio|are\s+you\s+pilot|who\s+is\s+pilot|pilot|tripolio)\b/i.test(p)) {
     return true;
   }
   return false;

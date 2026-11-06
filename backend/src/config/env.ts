@@ -24,7 +24,13 @@ const envSchema = z.object({
   AI_PROVIDER: z.enum(['groq', 'gemini', 'openai', 'auto']).default('auto'),
   MAPS_API_KEY: z.string().optional(),
   WEATHER_API_KEY: z.string().optional(),
-  CORS_ORIGIN: z.string().default('*')
+  CORS_ORIGIN: z.string().default('*'),
+  STT_PROVIDER: z.enum(['openai', 'deepgram', 'auto']).default('auto'),
+  TTS_PROVIDER: z.enum(['openai', 'elevenlabs', 'auto']).default('auto'),
+  DEEPGRAM_API_KEY: z.string().optional(),
+  ELEVENLABS_API_KEY: z.string().optional(),
+  TTS_VOICE: z.string().default('alloy'),
+  ELEVENLABS_VOICE_ID: z.string().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

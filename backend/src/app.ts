@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import agentRoutes from './routes/agent.routes.js';
+import voiceRoutes from './routes/voice.routes.js';
 import tripRoutes from './routes/trip.routes.js';
 import integrationRoutes from './routes/integration.routes.js';
 import authRoutes from './routes/auth.routes.js';
@@ -20,7 +21,7 @@ export function createApp(): Express {
       credentials: true
     })
   );
-  app.use(express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '25mb' }));
 
   // Health Check Endpoints
   const healthHandler = (req: Request, res: Response) => {
@@ -52,6 +53,7 @@ export function createApp(): Express {
 
   // Mount API Endpoints
   app.use('/api', agentRoutes);
+  app.use('/api/voice', voiceRoutes);
   app.use('/api/trips', tripRoutes);
   app.use('/api/integrations', integrationRoutes);
   app.use('/api/auth', authRoutes);

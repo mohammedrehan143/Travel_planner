@@ -54,3 +54,9 @@ TripPilot AI's backend is structured around a real, tool-calling Agentic AI Orch
 2. **Row Level Security (RLS)**: Enforced in PostgreSQL via security definer membership functions (`is_trip_member`, `is_trip_editor`).
 3. **Prompt Injection Guardrails**: User-submitted destination notes and modification requests are sanitized to strip script delimiters and tagged within strict `<USER_INPUT>` boundaries.
 4. **Validation Pipeline**: No plan is returned or persisted without passing automated operational checks (opening hours, time overlaps, realistic transit buffers).
+
+## Multimodal Voice Engine (One AI Brain, Dual Interaction Modes)
+TripPilot AI supports seamless switching between Chat Mode and Voice Mode:
+- **Speech-to-Text (STT)**: User audio is captured via `MediaRecorder` or browser Web Speech API, transcribed via server-side OpenAI Whisper (`whisper-1`) or Deepgram (`nova-2`), and fed directly into the existing `POST /api/agent/chat` orchestrator.
+- **Text-to-Speech (TTS)**: Orchestrator results and recommendations are cleaned by the speech preprocessor (stripping markdown, code, raw coordinates, and JSON) and synthesized via OpenAI TTS (`tts-1`) or ElevenLabs into natural voice audio with browser speech synthesis fallback.
+- **Full Parity & Context**: Voice conversations access the exact same agents, tools, active trip ID, and day context without duplication. Spoken messages are preserved in the text thread.

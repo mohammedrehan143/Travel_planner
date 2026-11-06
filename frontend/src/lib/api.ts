@@ -62,6 +62,33 @@ export interface ValidationResult {
   }>;
 }
 
+export interface VoiceConfigResponse {
+  status: string;
+  supportedLanguages: Array<{ code: string; name: string; locale: string }>;
+  availableVoices: Array<{ id: string; name: string; gender: string }>;
+  defaultVoice: string;
+  sttProvider: string;
+  ttsProvider: string;
+  serverSTTAvailable: boolean;
+  serverTTSAvailable: boolean;
+}
+
+export interface STTResponse {
+  status: string;
+  text: string;
+  language: string;
+  provider: string;
+  durationSeconds?: number;
+}
+
+export interface TTSResponse {
+  status: string;
+  audioData?: string | null;
+  cleanText: string;
+  mimeType: string;
+  provider: string;
+}
+
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -261,6 +288,76 @@ export const TripPilotAPI = {
         message: `I couldn't connect to the TripPilot backend at ${API_URL}. Check that the backend is running and Vercel's API URL is correct.`,
       };
     }
+  },
+
+  /**
+   * Fetch active voice assistant configuration (languages, voices, providers)
+   */
+  async getVoiceConfig(): Promise<VoiceConfigResponse> {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${API_URL}/api/voice/config`, { headers });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Failed to fetch voice config from backend:', e);
+    }
+    return {
+      status: 'fallback',
+      supportedLanguages: [
+        { code: 'en', name: 'English', locale: 'en-US' },
+        { code: 'hi', name: 'हिन्दी (Hindi)', locale: 'hi-IN' },
+        { code: 'kn', name: 'ಕನ್ನಡ (Kannada)', locale: 'kn-IN' }
+      ],
+      availableVoices: [
+        { id: 'alloy', name: 'Alloy', gender: 'neutral' },
+        { id: 'echo', name: 'Echo', gender: 'male' },
+        { id: 'fable', name: 'Fable', gender: 'neutral' },
+        { id: 'onyx', name: 'Onyx', gender: 'male' },
+        { id: 'nova', name: 'Nova', gender: 'female' },
+        { id: 'shimmer', name: 'Shimmer', gender: 'female' }
+      ],
+      defaultVoice: 'alloy',
+      sttProvider: 'browser-speech-recognition',
+      ttsProvider: 'browser-speech-synthesis',
+      serverSTTAvailable: false,
+      serverTTSAvailable: false
+    };
+  },
+
+  /**
+   * Convert speech audio to text via backend STT service
+   */
+  async speechToText(options: { audioBase64: string; format?: string; language?: string }): Promise<STTResponse> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/api/voice/stt`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(options),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Speech-to-text transcription failed.');
+    }
+    return res.json();
+  },
+
+  /**
+   * Convert AI response text into natural speech audio
+   */
+  async textToSpeech(options: { text: string; voice?: string; language?: string; speed?: number }): Promise<TTSResponse> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/api/voice/tts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(options),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Text-to-speech synthesis failed.');
+    }
+    return res.json();
   },
 
   /**
