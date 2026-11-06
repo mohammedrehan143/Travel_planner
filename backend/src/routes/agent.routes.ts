@@ -11,7 +11,11 @@ const router = Router();
 router.post('/agent/chat', chatRateLimiter, requireAuth, validateBody(z.object({
   message: z.string().trim().min(1).max(4000),
   context: z.record(z.string(), z.unknown()).optional(),
-  conversationId: z.string().optional()
+  conversationId: z.string().optional(),
+  recentMessages: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string()
+  })).optional()
 })), AgentController.chat);
 
 // Persistent Conversation History & Sessions

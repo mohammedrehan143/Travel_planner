@@ -28,6 +28,7 @@ export interface ModifyItineraryRequest {
   user_prompt: string;
   context?: Record<string, unknown>;
   conversationId?: string;
+  recentMessages?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
 export interface ModifyItineraryResponse {
@@ -285,6 +286,7 @@ export const TripPilotAPI = {
           message: req.user_prompt,
           context: req.context || { destination: req.trip_id, dayNumber: req.day_number || 1 },
           conversationId: req.conversationId,
+          recentMessages: req.recentMessages,
         }),
       });
       if (res.ok) {

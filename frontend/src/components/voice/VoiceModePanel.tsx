@@ -33,6 +33,7 @@ interface VoiceModePanelProps {
   trip?: Trip | null;
   currentDay?: TripDay;
   conversationId?: string;
+  recentMessages?: Array<{ role: 'user' | 'assistant'; content: string }>;
   onConversationIdChange?: (id: string) => void;
   onSwitchToChat: () => void;
   onNewMessage: (msg: {
@@ -50,6 +51,7 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   trip,
   currentDay,
   conversationId,
+  recentMessages,
   onConversationIdChange,
   onSwitchToChat,
   onNewMessage,
@@ -222,6 +224,7 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
         day_number: currentDay?.day_number,
         user_prompt: recognizedText,
         conversationId: conversationId || undefined,
+        recentMessages,
         context: {
           destination: trip?.destination || 'Global Destinations',
           origin: trip?.origin || 'User Location',

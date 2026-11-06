@@ -114,6 +114,26 @@ describe('Context-Aware Conversational Memory Suite', () => {
       expect(res.isModification).toBe(true);
       expect(res.isFollowUp).toBe(true);
     });
+
+    it('enforces configurable recent history window and rolling summary for long chats', async () => {
+      const longConvId = `long-chat-${Date.now()}`;
+      const session = await ConversationMemoryService.getOrCreateSession(longConvId, TEST_USER_ID, [
+        { role: 'user', content: 'Plan a trip to Coorg' },
+        { role: 'assistant', content: 'I designed a trip to Coorg' },
+        { role: 'user', content: 'What about coffee plantations?' },
+        { role: 'assistant', content: 'Coorg has beautiful plantations' },
+        { role: 'user', content: 'What about waterfalls?' },
+        { role: 'assistant', content: 'Abbey Falls is great' },
+        { role: 'user', content: 'What about local food?' },
+        { role: 'assistant', content: 'Try Pandi Curry and Akki Roti' },
+        { role: 'user', content: 'Is it cold there?' },
+        { role: 'assistant', content: 'It is pleasantly cool' }
+      ]);
+
+      const payload = ConversationMemoryService.buildContextPayload(session, 'Can we make it cheaper?', 6);
+      expect(payload.recentHistory.length).toBeLessThanOrEqual(6);
+      expect(payload.context.conversationSummary).toBeDefined();
+    });
   });
 
   describe('Multi-Turn Conversational Memory REST API Flow', () => {
@@ -226,6 +246,25 @@ describe('Context-Aware Conversational Memory Suite', () => {
       expect(res.body.conversation.conversationId).toBeDefined();
       expect(res.body.conversation.messages).toEqual([]);
       expect(res.body.conversation.tripMemory).toEqual({});
+    });
+
+    it('handles fast in-memory follow-up directly from recentMessages payload without prior DB fetch', async () => {
+      const fastConvId = `fast-in-chat-${Date.now()}`;
+      const res = await request(app)
+        .post('/api/agent/chat')
+        .send({
+          conversationId: fastConvId,
+          message: 'What is the weather there?',
+          recentMessages: [
+            { role: 'user', content: 'Plan a 3-day trip to Manali' },
+            { role: 'assistant', content: 'I have designed your 3-day trip to Manali!' }
+          ]
+        })
+        .expect(200);
+
+      expect(res.body.status).toBe('success');
+      expect(res.body.action).toBe('chat');
+      expect(res.body.message.toLowerCase()).toMatch(/manali|himalayan|mountain/);
     });
   });
 });

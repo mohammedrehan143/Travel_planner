@@ -128,6 +128,15 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     setInput('');
     setIsThinking(true);
 
+    // Fast in-memory conversation context (configurable window of recent 6 messages)
+    const recentMessages = messages
+      .filter((m) => m.id !== '1')
+      .slice(-6)
+      .map((m) => ({
+        role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.text,
+      }));
+
     try {
       const response = await TripPilotAPI.modifyItinerary({
         trip_id: trip?.id || 'new-trip',
@@ -135,6 +144,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
         day_number: currentDay?.day_number,
         user_prompt: prompt,
         conversationId: conversationId || undefined,
+        recentMessages,
         context: {
           destination: trip?.destination || 'Global Destinations',
           origin: trip?.origin || 'User Location',
@@ -362,6 +372,13 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
           trip={trip}
           currentDay={currentDay}
           conversationId={conversationId}
+          recentMessages={messages
+            .filter((m) => m.id !== '1')
+            .slice(-6)
+            .map((m) => ({
+              role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+              content: m.text,
+            }))}
           onConversationIdChange={(id) => {
             setConversationId(id);
             localStorage.setItem('trippilot_active_conversation_id', id);

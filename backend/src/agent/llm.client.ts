@@ -164,7 +164,8 @@ export interface AgentChatResult {
  */
 export async function processAgentChat(
   prompt: string,
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
+  recentHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<AgentChatResult> {
   // 1. Agent Name & Identity Pre-check
   if (isAgentNameQuery(prompt)) {
@@ -198,9 +199,17 @@ export async function processAgentChat(
     return generateSemanticFallbackChat(prompt, context);
   }
 
+  const historyList = recentHistory || (context?.recentHistory as Array<{ role: 'user' | 'assistant'; content: string }>) || [];
+  const historySummary = historyList.length > 0
+    ? historyList.map(m => `${m.role === 'user' ? 'Traveler' : 'Pilot'}: "${m.content}"`).join('\n')
+    : (context?.conversationSummary ? String(context.conversationSummary) : 'No prior messages in active in-memory chat.');
+
   const systemInstructions = `You are Pilot, the multimodal AI travel assistant and autonomous travel architect for TripPilot AI.
 Context of traveler's current view (if any):
 ${JSON.stringify(context, null, 2)}
+
+### RECENT IN-CHAT CONVERSATION HISTORY (Lightweight In-Memory Context):
+${historySummary}
 
 Traveler's message:
 "${prompt}"
@@ -287,7 +296,12 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
                 role: 'system',
                 content: 'You are Tripolio, the AI agent for TripPilot. Return strictly valid JSON matching the requested schema with NO markdown code fences.'
               },
-              { role: 'user', content: systemInstructions }
+              { role: 'user', content: systemInstructions },
+              ...historyList.slice(-6).map((h) => ({
+                role: h.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+                content: h.content
+              })),
+              { role: 'user', content: prompt }
             ],
             temperature: 0.3,
             response_format: { type: 'json_object' }
@@ -400,7 +414,12 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
           model: config.model,
           messages: [
             { role: 'system', content: 'You are Tripolio, the AI agent for TripPilot. Return strictly valid JSON matching the requested schema.' },
-            { role: 'user', content: systemInstructions }
+            { role: 'user', content: systemInstructions },
+            ...historyList.slice(-6).map((h) => ({
+              role: h.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+              content: h.content
+            })),
+            { role: 'user', content: prompt }
           ],
           temperature: 0.4
         });
@@ -515,7 +534,17 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
 
   // 2. Contextual Follow-up: Weather query ("What is the weather there?", "weather in Manali")
   if (p.includes('weather') || p.includes('forecast') || p.includes('temperature') || p.includes('climate') || p.includes('rain')) {
-    const rawDest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+    let rawDest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+    if (!rawDest || rawDest === 'Global Destinations') {
+      const recent = (context?.recentHistory as Array<{ role: string; content: string }>) || [];
+      for (let i = recent.length - 1; i >= 0; i--) {
+        const m = recent[i].content.match(/\b(Manali|Goa|Coorg|Paris|Tokyo|Dubai|Jaipur|Rajasthan)\b/i);
+        if (m) {
+          rawDest = m[1];
+          break;
+        }
+      }
+    }
     const dest = rawDest && rawDest !== 'Global Destinations'
       ? rawDest
       : (p.includes('manali') ? 'Manali' : p.includes('goa') ? 'Goa' : p.includes('coorg') ? 'Coorg' : 'your destination');
@@ -537,7 +566,17 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
   // 3. Contextual Follow-up: Day schedule inquiry ("What about day two?", "second day")
   if (/\b(?:second day|day two|day 2|first day|day one|day 1|day 3|third day|day three)\b/i.test(p) || context?.targetDayNumber) {
     const dayNum = (context?.targetDayNumber as number) || (/\b(?:second day|day two|day 2)\b/i.test(p) ? 2 : /\b(?:first day|day one|day 1)\b/i.test(p) ? 1 : 3);
-    const rawDest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+    let rawDest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+    if (!rawDest || rawDest === 'Global Destinations') {
+      const recent = (context?.recentHistory as Array<{ role: string; content: string }>) || [];
+      for (let i = recent.length - 1; i >= 0; i--) {
+        const m = recent[i].content.match(/\b(Manali|Goa|Coorg|Paris|Tokyo|Dubai|Jaipur|Rajasthan)\b/i);
+        if (m) {
+          rawDest = m[1];
+          break;
+        }
+      }
+    }
     const dest = rawDest && rawDest !== 'Global Destinations' ? rawDest : (p.includes('manali') ? 'Manali' : p.includes('goa') ? 'Goa' : 'your destination');
 
     let dayDetails = `On Day ${dayNum} in ${dest}, your curated itinerary focuses on local exploration, scenic spots, and authentic regional dining.`;

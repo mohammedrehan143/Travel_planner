@@ -12,10 +12,11 @@ export class AgentController {
   /** POST /api/agent/chat — conversational endpoint usable with local or saved trips. */
   static async chat(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { message, context, conversationId } = req.body as {
+      const { message, context, conversationId, recentMessages } = req.body as {
         message: string;
         context?: Record<string, unknown>;
         conversationId?: string;
+        recentMessages?: Array<{ role: 'user' | 'assistant'; content: string }>;
       };
       const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
 
@@ -24,21 +25,21 @@ export class AgentController {
         return;
       }
 
-      // 1. Retrieve or initialize persistent conversation session
-      const session = await ConversationMemoryService.getOrCreateSession(conversationId, userId);
+      // 1. Retrieve or initialize lightweight in-memory conversation session (no DB fetch during active chat!)
+      const session = await ConversationMemoryService.getOrCreateSession(conversationId, userId, recentMessages);
 
       // 2. Resolve contextual references and build memory context payload
-      const { resolvedPrompt, context: memoryContext } = ConversationMemoryService.buildContextPayload(session, message);
-      const mergedContext = { ...memoryContext, ...(context || {}) };
+      const { resolvedPrompt, context: memoryContext, recentHistory } = ConversationMemoryService.buildContextPayload(session, message);
+      const mergedContext: Record<string, unknown> = { ...memoryContext, ...(context || {}), recentHistory };
 
-      // 3. Record user message into persistent conversation
+      // 3. Record user message into persistent in-memory session
       await ConversationMemoryService.recordMessage(session.conversationId, {
         role: 'user',
         content: message
       }, userId);
 
-      // 4. Process chat via LLM client with resolved prompt and memory context
-      const chatResult = await processAgentChat(resolvedPrompt, mergedContext);
+      // 4. Process chat via LLM client with resolved prompt, memory context, and in-memory history
+      const chatResult = await processAgentChat(resolvedPrompt, mergedContext, recentHistory);
 
       // If user requested to plan a new trip or outing
       if (chatResult.action === 'plan_new_trip' && chatResult.tripParams?.destination) {

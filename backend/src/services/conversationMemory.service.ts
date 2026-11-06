@@ -44,17 +44,47 @@ const memorySessions = new Map<string, ConversationSession>();
 
 export class ConversationMemoryService {
   /**
-   * Retrieves or creates a conversation session.
+   * Retrieves or creates a lightweight in-memory conversation session.
+   * Prioritizes in-memory active chat state without querying the database for every turn.
    */
-  static async getOrCreateSession(conversationId?: string, userId = '00000000-0000-0000-0000-000000000001'): Promise<ConversationSession> {
+  static async getOrCreateSession(
+    conversationId?: string,
+    userId = '00000000-0000-0000-0000-000000000001',
+    recentMessages?: Array<{ role: 'user' | 'assistant'; content: string }>
+  ): Promise<ConversationSession> {
     const validId = conversationId && conversationId.trim().length > 0 ? conversationId.trim() : crypto.randomUUID();
 
     if (memorySessions.has(validId)) {
       const existing = memorySessions.get(validId)!;
+      if (recentMessages && recentMessages.length > 0) {
+        this.syncRecentInChatMessages(existing, recentMessages);
+      }
       return existing;
     }
 
-    // Try loading from Supabase if available
+    // Fast in-memory session initialization if client provided active messages (No DB lookup needed!)
+    if (recentMessages && recentMessages.length > 0) {
+      const inMemorySession: ConversationSession = {
+        conversationId: validId,
+        userId,
+        title: 'Active Travel Chat',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messages: recentMessages.map((m) => ({
+          id: crypto.randomUUID(),
+          conversationId: validId,
+          role: m.role,
+          content: m.content,
+          timestamp: new Date().toISOString(),
+        })),
+        tripMemory: {},
+      };
+      this.inferTripMemoryFromMessages(inMemorySession);
+      memorySessions.set(validId, inMemorySession);
+      return inMemorySession;
+    }
+
+    // Only query database when loading persistent history across sessions/refreshes
     try {
       const supabase = getAdminSupabase();
       const { data: conv } = await (supabase.from('conversations') as any)
@@ -83,8 +113,8 @@ export class ConversationMemoryService {
             content: m.content,
             timestamp: m.created_at,
             action: m.action,
-            createdTrip: m.metadata?.createdTrip
-          }))
+            createdTrip: m.metadata?.createdTrip,
+          })),
         };
 
         memorySessions.set(validId, session);
@@ -102,25 +132,61 @@ export class ConversationMemoryService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       messages: [],
-      tripMemory: {}
+      tripMemory: {},
     };
 
     memorySessions.set(validId, newSession);
+    return newSession;
+  }
 
-    // Save to Supabase asynchronously
-    try {
-      const supabase = getAdminSupabase();
-      await (supabase.from('conversations') as any).insert({
-        id: validId,
-        user_id: userId,
-        title: 'New Travel Conversation',
-        trip_memory: {}
-      });
-    } catch (e) {
-      // ignore
+  /**
+   * Fast in-memory sync of messages supplied by the frontend state.
+   */
+  static syncRecentInChatMessages(
+    session: ConversationSession,
+    recentMessages: Array<{ role: 'user' | 'assistant'; content: string }>
+  ) {
+    if (!recentMessages || recentMessages.length === 0) return;
+
+    for (const m of recentMessages) {
+      const alreadyExists = session.messages.some((em) => em.role === m.role && em.content === m.content);
+      if (!alreadyExists) {
+        session.messages.push({
+          id: crypto.randomUUID(),
+          conversationId: session.conversationId,
+          role: m.role,
+          content: m.content,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+    this.inferTripMemoryFromMessages(session);
+  }
+
+  /**
+   * Infers structured trip memory (destination, days, budget) from in-memory conversation messages
+   */
+  static inferTripMemoryFromMessages(session: ConversationSession) {
+    if (!session.tripMemory.destination) {
+      for (let i = session.messages.length - 1; i >= 0; i--) {
+        const msg = session.messages[i].content;
+        const destMatch = msg.match(/\b(Manali|Goa|Coorg|Paris|Tokyo|Dubai|Jaipur|Rajasthan|Ooty|Shimla|Kashmir)\b/i);
+        if (destMatch) {
+          session.tripMemory.destination = destMatch[1];
+          break;
+        }
+      }
     }
 
-    return newSession;
+    if (!session.tripMemory.durationDays) {
+      for (let i = session.messages.length - 1; i >= 0; i--) {
+        const dayMatch = session.messages[i].content.match(/(\d+)\s*[- ]*(?:day|night)/i);
+        if (dayMatch) {
+          session.tripMemory.durationDays = parseInt(dayMatch[1], 10);
+          break;
+        }
+      }
+    }
   }
 
   /**
@@ -307,7 +373,11 @@ export class ConversationMemoryService {
     let targetDayNumber: number | undefined;
     let newBudget: number | undefined;
 
-    const currentDest = session.tripMemory.destination;
+    let currentDest = session.tripMemory.destination;
+    if (!currentDest) {
+      this.inferTripMemoryFromMessages(session);
+      currentDest = session.tripMemory.destination;
+    }
 
     // 1. Resolve destination pronouns: "there", "that place", "this destination", "the city"
     if (currentDest && /\b(?:there|that place|this destination|the city|that trip|the location)\b/i.test(p)) {
@@ -361,11 +431,12 @@ export class ConversationMemoryService {
   }
 
   /**
-   * Prepares complete contextual bundle for LLM execution
+   * Prepares complete contextual bundle for LLM execution with configurable history window and rolling summary
    */
   static buildContextPayload(
     session: ConversationSession,
-    userPrompt: string
+    userPrompt: string,
+    historyWindowSize = 6
   ): {
     resolvedPrompt: string;
     context: Record<string, unknown>;
@@ -373,11 +444,16 @@ export class ConversationMemoryService {
   } {
     const { resolvedPrompt, isFollowUp, isModification, targetDayNumber, newBudget } = this.resolveContextualReferences(userPrompt, session);
 
-    // Recent 6 messages for LLM conversational awareness
-    const recentHistory = session.messages.slice(-6).map((m) => ({
+    // Limit recent history sent to LLM to the configurable recent-message window
+    const recentHistory = session.messages.slice(-historyWindowSize).map((m) => ({
       role: m.role,
       content: m.content
     }));
+
+    // Trigger rolling summary when total conversation length exceeds the history window
+    if (session.messages.length > historyWindowSize) {
+      this.maintainRollingSummary(session);
+    }
 
     // Active itinerary summary
     let itineraryBrief = '';
