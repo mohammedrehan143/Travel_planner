@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   VoiceState,
   SUPPORTED_VOICE_LANGUAGES,
@@ -23,7 +23,8 @@ import {
   ArrowRight,
   Check,
   AlertCircle,
-  X
+  PlusCircle,
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTrips } from '../../context/TripContext';
@@ -31,6 +32,8 @@ import { useTrips } from '../../context/TripContext';
 interface VoiceModePanelProps {
   trip?: Trip | null;
   currentDay?: TripDay;
+  conversationId?: string;
+  onConversationIdChange?: (id: string) => void;
   onSwitchToChat: () => void;
   onNewMessage: (msg: {
     id: string;
@@ -40,13 +43,17 @@ interface VoiceModePanelProps {
     createdTrip?: Trip;
     suggestedAction?: { type: 'add_activity'; activity: Activity };
   }) => void;
+  onNewChat?: () => void;
 }
 
 export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   trip,
   currentDay,
+  conversationId,
+  onConversationIdChange,
   onSwitchToChat,
-  onNewMessage
+  onNewMessage,
+  onNewChat
 }) => {
   const { addActivity, addPlannedTrip, activeTripActivities, setActiveTripId } = useTrips();
   const navigate = useNavigate();
@@ -61,32 +68,100 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isAudioPaused, setIsAudioPaused] = useState<boolean>(false);
   const [voiceConfig, setVoiceConfig] = useState<VoiceConfigResponse | null>(null);
+  const [autoSubmitCountdown, setAutoSubmitCountdown] = useState<number | null>(null);
+
+  // Synchronization refs to prevent stale closure in timers
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const transcriptRef = useRef<string>('');
+  const stateRef = useRef<VoiceState>('idle');
+  const isProcessingRef = useRef<boolean>(false);
+
+  stateRef.current = state;
+  transcriptRef.current = transcript;
+
+  const clearSilenceTimers = () => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setAutoSubmitCountdown(null);
+  };
 
   // Initialize voice configuration and audio volume hooks
   useEffect(() => {
     TripPilotAPI.getVoiceConfig().then(setVoiceConfig).catch(() => {});
     globalVoiceController.setVolumeCallback((vol) => {
       setVolume(vol);
+
+      // If user is actively speaking (audio soundwaves), reset the silence timer
+      if (vol > 0.09 && stateRef.current === 'listening' && transcriptRef.current.trim().length > 0) {
+        restartSilenceTimer();
+      }
     });
 
     return () => {
+      clearSilenceTimers();
       globalVoiceController.stopPlayback();
       globalVoiceController.cancelRecording();
     };
   }, []);
 
+  const restartSilenceTimer = () => {
+    if (stateRef.current !== 'listening' || isProcessingRef.current) return;
+
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+
+    setAutoSubmitCountdown(2);
+    let secondsLeft = 2;
+
+    countdownIntervalRef.current = setInterval(() => {
+      secondsLeft -= 1;
+      if (secondsLeft > 0) {
+        setAutoSubmitCountdown(secondsLeft);
+      } else {
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+        setAutoSubmitCountdown(null);
+      }
+    }, 1000);
+
+    silenceTimerRef.current = setTimeout(() => {
+      clearSilenceTimers();
+      if (
+        stateRef.current === 'listening' &&
+        transcriptRef.current.trim().length > 0 &&
+        !isProcessingRef.current
+      ) {
+        handleStopAndProcess();
+      }
+    }, 2000);
+  };
+
   // Handle Start Recording
   const handleStartListening = async () => {
     try {
+      clearSilenceTimers();
       setErrorMessage(null);
       setState('listening');
       setTranscript('');
+      transcriptRef.current = '';
       setIsAudioPaused(false);
+      isProcessingRef.current = false;
 
       await globalVoiceController.startRecording({
         language: selectedLang,
         onInterimTranscript: (interim) => {
           setTranscript(interim);
+          transcriptRef.current = interim;
+          if (interim.trim().length > 0) {
+            restartSilenceTimer();
+          }
         }
       });
     } catch (err: any) {
@@ -98,13 +173,16 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
 
   // Handle Stop Recording and Send to Orchestrator Pipeline
   const handleStopAndProcess = async () => {
-    if (state !== 'listening') return;
+    if (stateRef.current !== 'listening' || isProcessingRef.current) return;
+
+    clearSilenceTimers();
+    isProcessingRef.current = true;
 
     try {
       setState('processing');
       const { audioBase64, format } = await globalVoiceController.stopRecording();
 
-      let recognizedText = transcript.trim();
+      let recognizedText = transcriptRef.current.trim();
 
       // Transcribe via backend STT service
       try {
@@ -117,11 +195,12 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
           recognizedText = sttRes.text.trim();
         }
       } catch (sttErr: any) {
-        console.warn('Backend STT failed, using interim transcript:', sttErr);
+        console.warn('Backend STT fallback:', sttErr);
       }
 
       if (!recognizedText) {
         setState('idle');
+        isProcessingRef.current = false;
         setErrorMessage('No speech was detected. Please tap the microphone and speak again.');
         return;
       }
@@ -142,6 +221,7 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
         day_id: currentDay?.id,
         day_number: currentDay?.day_number,
         user_prompt: recognizedText,
+        conversationId: conversationId || undefined,
         context: {
           destination: trip?.destination || 'Global Destinations',
           origin: trip?.origin || 'User Location',
@@ -160,6 +240,10 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
             : undefined
         }
       });
+
+      if (response.conversationId && onConversationIdChange) {
+        onConversationIdChange(response.conversationId);
+      }
 
       let newlyCreatedTrip: Trip | undefined;
       if (response.createdTrip) {
@@ -194,25 +278,32 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
         language: selectedLang,
         voice: voiceConfig?.defaultVoice || 'alloy',
         onStart: () => setState('speaking'),
-        onEnd: () => setState('idle'),
+        onEnd: () => {
+          setState('idle');
+          isProcessingRef.current = false;
+        },
         onError: (err) => {
           console.warn('Speech playback issue:', err);
           setState('idle');
+          isProcessingRef.current = false;
         }
       });
     } catch (err: any) {
       console.error('Processing voice query failed:', err);
       setState('error');
       setErrorMessage(err.message || 'Error executing travel request.');
+      isProcessingRef.current = false;
     }
   };
 
   // User Interrupts Pilot
   const handleInterrupt = () => {
+    clearSilenceTimers();
     globalVoiceController.stopPlayback();
     setState('interrupted');
     setTimeout(() => {
       setState('idle');
+      isProcessingRef.current = false;
     }, 600);
   };
 
@@ -239,6 +330,31 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
     }
   };
 
+  // Start fresh chat
+  const handleResetChat = () => {
+    clearSilenceTimers();
+    globalVoiceController.stopPlayback();
+    globalVoiceController.cancelRecording();
+    setState('idle');
+    setTranscript('');
+    setAssistantReply('');
+    setCreatedTrip(null);
+    setSuggestedActivity(null);
+    setErrorMessage(null);
+    isProcessingRef.current = false;
+    onNewChat?.();
+
+    // Friendly voice greeting
+    const welcomeText = `Hi! I am Pilot, your TripPilot AI travel assistant. Where would you like to travel next? Speak or type your request!`;
+    setAssistantReply(welcomeText);
+    globalVoiceController.speakText({
+      text: welcomeText,
+      language: selectedLang,
+      onStart: () => setState('speaking'),
+      onEnd: () => setState('idle')
+    });
+  };
+
   const handleOrbClick = () => {
     if (state === 'idle' || state === 'error' || state === 'interrupted') {
       handleStartListening();
@@ -251,9 +367,9 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
 
   return (
     <div className="flex-1 flex flex-col justify-between p-5 bg-gradient-to-b from-white via-blue-50/20 to-white text-[#171717] overflow-y-auto">
-      {/* Top Voice Header & Language Selector */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#E5E7EB]">
-        {/* Language selector */}
+      {/* Top Voice Header & Controls */}
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E5E7EB]">
+        {/* Language selector & New Chat */}
         <div className="flex items-center gap-2">
           <Globe className="w-4 h-4 text-[#1E60FF]" />
           <select
@@ -268,12 +384,23 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
               </option>
             ))}
           </select>
+
+          {/* New Chat Button */}
+          <button
+            type="button"
+            onClick={handleResetChat}
+            className="px-2.5 py-1 rounded-lg text-xs font-bold text-[#1E60FF] hover:bg-blue-50 border border-blue-200 transition-colors flex items-center gap-1 shadow-xs"
+            title="Start a fresh chat"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>New Chat</span>
+          </button>
         </div>
 
         {/* Provider badge */}
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded-full">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>One AI Brain • Voice Active</span>
+          <span>Pilot Voice Active</span>
         </div>
       </div>
 
@@ -305,12 +432,20 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
 
           <p className="text-xs text-slate-500">
             {state === 'listening'
-              ? 'Tap the orb again when you finish speaking.'
+              ? 'Speak naturally with pauses. Auto-submits after 2s of silence.'
               : state === 'speaking'
               ? 'Tap orb or "Interrupt" to stop audio anytime.'
               : 'Ask anything: "Plan 3 days in Coorg under ₹10,000", "Change tomorrow\'s plan", or "Weather in Manali".'}
           </p>
         </div>
+
+        {/* 2-Second Silence Auto-Submit Countdown Badge */}
+        {state === 'listening' && autoSubmitCountdown !== null && (
+          <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1E60FF] text-[11px] font-bold animate-pulse">
+            <Clock className="w-3 h-3" />
+            <span>Auto-submitting in {autoSubmitCountdown}s... (keep speaking to extend)</span>
+          </div>
+        )}
 
         {/* Error Banner */}
         {errorMessage && (
@@ -367,7 +502,7 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
                 </div>
               </div>
               <span className="text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                Ready
+                Booked & Ready
               </span>
             </div>
 
@@ -407,7 +542,12 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
           {state === 'listening' ? (
             <>
               <button
-                onClick={() => globalVoiceController.cancelRecording()}
+                onClick={() => {
+                  clearSilenceTimers();
+                  globalVoiceController.cancelRecording();
+                  setState('idle');
+                  isProcessingRef.current = false;
+                }}
                 className="px-3.5 py-2 rounded-xl border border-neutral-300 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors"
               >
                 Cancel

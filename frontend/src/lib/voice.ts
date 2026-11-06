@@ -143,12 +143,18 @@ export class VoiceControllerClient {
         this.speechRecognition.lang = langObj ? langObj.locale : 'en-US';
 
         this.speechRecognition.onresult = (event: any) => {
-          let interimText = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            interimText += event.results[i][0].transcript;
+          let fullTranscript = '';
+          for (let i = 0; i < event.results.length; ++i) {
+            const piece = event.results[i][0]?.transcript;
+            if (piece) {
+              const trimmed = piece.trim();
+              if (trimmed) {
+                fullTranscript += (fullTranscript.length > 0 ? ' ' : '') + trimmed;
+              }
+            }
           }
-          if (interimText.trim()) {
-            options.onInterimTranscript?.(interimText.trim());
+          if (fullTranscript.trim()) {
+            options.onInterimTranscript?.(fullTranscript.trim());
           }
         };
 

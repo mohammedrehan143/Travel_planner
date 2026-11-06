@@ -27,6 +27,7 @@ export interface ModifyItineraryRequest {
   day_number?: number;
   user_prompt: string;
   context?: Record<string, unknown>;
+  conversationId?: string;
 }
 
 export interface ModifyItineraryResponse {
@@ -37,6 +38,34 @@ export interface ModifyItineraryResponse {
   new_activity?: Activity;
   removed_activity_id?: string;
   regenerated_day?: TripDay;
+  conversationId?: string;
+  tripMemory?: any;
+}
+
+export interface ConversationItem {
+  conversationId: string;
+  title: string;
+  updatedAt: string;
+  messageCount: number;
+  destination?: string;
+}
+
+export interface ConversationDetail {
+  conversationId: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: Array<{
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+    action?: string;
+    createdTrip?: any;
+  }>;
+  tripMemory: Record<string, any>;
+  summary?: string;
 }
 
 export interface HangoutPlace {
@@ -244,7 +273,7 @@ export const TripPilotAPI = {
   },
 
   /**
-   * Modify itinerary using natural language AI chat
+   * Modify itinerary using natural language AI chat with conversational memory
    */
   async modifyItinerary(req: ModifyItineraryRequest): Promise<ModifyItineraryResponse> {
     try {
@@ -255,6 +284,7 @@ export const TripPilotAPI = {
         body: JSON.stringify({
           message: req.user_prompt,
           context: req.context || { destination: req.trip_id, dayNumber: req.day_number || 1 },
+          conversationId: req.conversationId,
         }),
       });
       if (res.ok) {
@@ -272,6 +302,8 @@ export const TripPilotAPI = {
           message: data.message || 'I have generated recommendations for you.',
           action: data.action,
           createdTrip: createdTripPlan,
+          conversationId: data.conversationId,
+          tripMemory: data.tripMemory,
         };
       }
       const error = await res.json().catch(() => ({}));
@@ -288,6 +320,60 @@ export const TripPilotAPI = {
         message: `I couldn't connect to the TripPilot backend at ${API_URL}. Check that the backend is running and Vercel's API URL is correct.`,
       };
     }
+  },
+
+  /**
+   * List user's persistent travel conversation threads
+   */
+  async getConversations(): Promise<ConversationItem[]> {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${API_URL}/api/agent/conversations`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        return data.conversations || [];
+      }
+    } catch (e) {
+      console.warn('Failed to load conversations:', e);
+    }
+    return [];
+  },
+
+  /**
+   * Retrieve a specific conversation thread with full message history and trip memory
+   */
+  async getConversation(conversationId: string): Promise<ConversationDetail | null> {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${API_URL}/api/agent/conversations/${encodeURIComponent(conversationId)}`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        return data.conversation || null;
+      }
+    } catch (e) {
+      console.warn('Failed to retrieve conversation:', e);
+    }
+    return null;
+  },
+
+  /**
+   * Create a fresh persistent conversation thread
+   */
+  async createConversation(): Promise<ConversationDetail | null> {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${API_URL}/api/agent/conversations`, {
+        method: 'POST',
+        headers,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.conversation || null;
+      }
+    } catch (e) {
+      console.warn('Failed to create new conversation:', e);
+    }
+    return null;
   },
 
   /**

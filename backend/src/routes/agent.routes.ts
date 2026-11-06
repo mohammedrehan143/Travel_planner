@@ -10,8 +10,14 @@ const router = Router();
 
 router.post('/agent/chat', chatRateLimiter, requireAuth, validateBody(z.object({
   message: z.string().trim().min(1).max(4000),
-  context: z.record(z.string(), z.unknown()).optional()
+  context: z.record(z.string(), z.unknown()).optional(),
+  conversationId: z.string().optional()
 })), AgentController.chat);
+
+// Persistent Conversation History & Sessions
+router.get('/agent/conversations', requireAuth, AgentController.listConversations);
+router.post('/agent/conversations', requireAuth, AgentController.createConversation);
+router.get('/agent/conversations/:id', requireAuth, AgentController.getConversationById);
 
 // POST /api/trips/plan
 router.post('/trips/plan', planningRateLimiter, requireAuth, validateBody(planTripSchema), AgentController.planTrip);

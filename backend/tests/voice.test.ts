@@ -143,5 +143,36 @@ describe('Voice Assistant (STT & TTS) Module Suite', () => {
       expect(res.body.cleanText).toContain('10,000 rupees');
       expect(res.body.provider).toBeDefined();
     });
+
+    it('POST /api/agent/chat responds warmly to farewell and bye messages', async () => {
+      const res = await request(app)
+        .post('/api/agent/chat')
+        .set('x-user-id', '00000000-0000-0000-0000-000000000001')
+        .send({
+          message: 'Thank you Pilot, bye bye!',
+          context: {}
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.action).toBe('chat');
+      expect(res.body.message).toMatch(/goodbye|safe travels|journey/i);
+    });
+
+    it('POST /api/agent/chat includes farewell/bye signoff when booking/planning a trip', async () => {
+      const res = await request(app)
+        .post('/api/agent/chat')
+        .set('x-user-id', '00000000-0000-0000-0000-000000000001')
+        .send({
+          message: 'Plan a 2-day trip to Coorg',
+          context: { currency: 'INR' }
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.action).toBe('plan_new_trip');
+      expect(res.body.createdTrip).toBeDefined();
+      expect(res.body.message).toMatch(/goodbye|wonderful and safe trip|safe journey/i);
+    });
   });
 });

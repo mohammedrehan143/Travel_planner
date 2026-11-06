@@ -12,7 +12,8 @@ import {
   Compass,
   Mic,
   Volume2,
-  MessageSquare
+  MessageSquare,
+  PlusCircle
 } from 'lucide-react';
 import { Trip, TripDay, Activity } from '../../types';
 import { TripPilotAPI } from '../../lib/api';
@@ -49,6 +50,9 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   const navigate = useNavigate();
 
   const [mode, setMode] = useState<'chat' | 'voice'>('chat');
+  const [conversationId, setConversationId] = useState<string>(() => {
+    return localStorage.getItem('trippilot_active_conversation_id') || '';
+  });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -62,6 +66,27 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [isDictating, setIsDictating] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Restore conversation thread from memory/backend if existing
+  useEffect(() => {
+    if (conversationId && isOpen) {
+      TripPilotAPI.getConversation(conversationId)
+        .then((session) => {
+          if (session && session.messages && session.messages.length > 0) {
+            setMessages(
+              session.messages.map((m) => ({
+                id: m.id,
+                sender: m.role === 'user' ? 'user' : 'ai',
+                text: m.content,
+                timestamp: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                createdTrip: m.createdTrip,
+              }))
+            );
+          }
+        })
+        .catch(() => {});
+    }
+  }, [conversationId, isOpen]);
 
   const samplePrompts = [
     'Plan a 3-day trip to Coorg under ₹10,000',
@@ -109,6 +134,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
         day_id: currentDay?.id,
         day_number: currentDay?.day_number,
         user_prompt: prompt,
+        conversationId: conversationId || undefined,
         context: {
           destination: trip?.destination || 'Global Destinations',
           origin: trip?.origin || 'User Location',
@@ -124,6 +150,11 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
           } : undefined,
         },
       });
+
+      if (response.conversationId) {
+        setConversationId(response.conversationId);
+        localStorage.setItem('trippilot_active_conversation_id', response.conversationId);
+      }
 
       let newlyCreatedTrip: Trip | undefined;
       if (response.createdTrip) {
@@ -212,6 +243,40 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     }
   };
 
+  // Start a fresh new chat session with agent greeting
+  const handleNewChat = async () => {
+    globalVoiceController.stopPlayback();
+    globalVoiceController.cancelRecording();
+    setSpeakingMessageId(null);
+    setIsDictating(false);
+    setInput('');
+    setIsThinking(false);
+
+    try {
+      const fresh = await TripPilotAPI.createConversation();
+      if (fresh) {
+        setConversationId(fresh.conversationId);
+        localStorage.setItem('trippilot_active_conversation_id', fresh.conversationId);
+      } else {
+        const fallbackId = crypto.randomUUID();
+        setConversationId(fallbackId);
+        localStorage.setItem('trippilot_active_conversation_id', fallbackId);
+      }
+    } catch {
+      const fallbackId = crypto.randomUUID();
+      setConversationId(fallbackId);
+      localStorage.setItem('trippilot_active_conversation_id', fallbackId);
+    }
+
+    const greetingMsg: Message = {
+      id: `msg-${Date.now()}`,
+      sender: 'ai',
+      text: `Hi! I am Pilot, your TripPilot AI travel assistant. Where would you like to travel next? Speak or type your request!`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages([greetingMsg]);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -233,6 +298,17 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* New Chat Button */}
+          <button
+            type="button"
+            onClick={handleNewChat}
+            className="px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1 text-neutral-300 hover:text-white bg-neutral-800/80 hover:bg-neutral-800 transition-colors border border-neutral-700/60 shadow-xs"
+            title="Start a fresh chat"
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden sm:inline">New</span>
+          </button>
+
           {/* Mode Switcher Tabs */}
           <div className="flex items-center bg-neutral-900 border border-neutral-700/80 rounded-lg p-0.5">
             <button
@@ -285,8 +361,14 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
         <VoiceModePanel
           trip={trip}
           currentDay={currentDay}
+          conversationId={conversationId}
+          onConversationIdChange={(id) => {
+            setConversationId(id);
+            localStorage.setItem('trippilot_active_conversation_id', id);
+          }}
           onSwitchToChat={() => setMode('chat')}
           onNewMessage={(msg) => setMessages((prev) => [...prev, msg])}
+          onNewChat={handleNewChat}
         />
       ) : (
         <>

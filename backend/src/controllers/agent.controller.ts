@@ -6,12 +6,17 @@ import { TripService } from '../services/trip.service.js';
 import { PlanTripRequest } from '../types/trip.types.js';
 import { processAgentChat, generateChatReply } from '../agent/llm.client.js';
 import { detectCurrencyForDestination, getDefaultBudgetForCurrency } from '../integrations/currency.adapter.js';
+import { ConversationMemoryService } from '../services/conversationMemory.service.js';
 
 export class AgentController {
   /** POST /api/agent/chat — conversational endpoint usable with local or saved trips. */
   static async chat(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { message, context } = req.body as { message: string; context?: Record<string, unknown> };
+      const { message, context, conversationId } = req.body as {
+        message: string;
+        context?: Record<string, unknown>;
+        conversationId?: string;
+      };
       const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
 
       if (!message || typeof message !== 'string') {
@@ -19,13 +24,27 @@ export class AgentController {
         return;
       }
 
-      const chatResult = await processAgentChat(message, context || {});
+      // 1. Retrieve or initialize persistent conversation session
+      const session = await ConversationMemoryService.getOrCreateSession(conversationId, userId);
+
+      // 2. Resolve contextual references and build memory context payload
+      const { resolvedPrompt, context: memoryContext } = ConversationMemoryService.buildContextPayload(session, message);
+      const mergedContext = { ...memoryContext, ...(context || {}) };
+
+      // 3. Record user message into persistent conversation
+      await ConversationMemoryService.recordMessage(session.conversationId, {
+        role: 'user',
+        content: message
+      }, userId);
+
+      // 4. Process chat via LLM client with resolved prompt and memory context
+      const chatResult = await processAgentChat(resolvedPrompt, mergedContext);
 
       // If user requested to plan a new trip or outing
       if (chatResult.action === 'plan_new_trip' && chatResult.tripParams?.destination) {
         const dest = chatResult.tripParams.destination.trim();
         const durationDays = Math.max(1, Math.min(30, Number(chatResult.tripParams.durationDays) || 1));
-        const origin = chatResult.tripParams.origin || (context?.origin as string) || dest;
+        const origin = chatResult.tripParams.origin || (mergedContext?.origin as string) || dest;
 
         const now = new Date();
         const startDateObj = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -33,7 +52,7 @@ export class AgentController {
         const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
         const detectedDestCurrency = detectCurrencyForDestination(dest);
-        const currency = (context?.currency as string) || chatResult.tripParams.currency || detectedDestCurrency || 'INR';
+        const currency = (mergedContext?.currency as string) || chatResult.tripParams.currency || detectedDestCurrency || 'INR';
         const isBudget = chatResult.tripParams.travelStyle === 'budget' || /budget|cheap/i.test(message);
         const baseDefault = getDefaultBudgetForCurrency(currency, durationDays);
         const defaultBudget = chatResult.tripParams.budget || (isBudget ? Math.round(baseDefault * 0.65) : baseDefault);
@@ -55,21 +74,69 @@ export class AgentController {
 
         const planned = await AgentOrchestrator.planTrip(planReq);
 
+        const byeSignoff = "Have a wonderful and safe trip! Goodbye for now, and let me know if you need any adjustments! 👋✨";
+        const baseMsg = chatResult.reply || `I have designed and booked your ${durationDays}-day trip to ${dest}! Your itinerary is ready on screen.`;
+        const messageWithBye = /bye|goodbye|farewell/i.test(baseMsg)
+          ? baseMsg
+          : `${baseMsg}\n\n${byeSignoff}`;
+
+        // 5. Update structured trip memory with new planned trip details
+        await ConversationMemoryService.updateTripMemory(session.conversationId, {
+          destination: dest,
+          origin,
+          startDate: planReq.startDate,
+          endDate: planReq.endDate,
+          durationDays,
+          travelerCount: planReq.travelerCount,
+          travelStyle: planReq.travelStyle,
+          budget: planReq.budget,
+          currency: planReq.currency,
+          activeItinerary: planned.itinerary
+        }, userId);
+
+        // 6. Record assistant response into persistent conversation
+        await ConversationMemoryService.recordMessage(session.conversationId, {
+          role: 'assistant',
+          content: messageWithBye,
+          action: 'plan_new_trip',
+          createdTrip: planned.itinerary
+        }, userId);
+
         res.status(200).json({
           status: 'success',
+          conversationId: session.conversationId,
           action: 'plan_new_trip',
-          message: chatResult.reply || `I have designed and planned an authentic ${durationDays}-day trip to ${dest} for you!`,
+          message: messageWithBye,
           createdTrip: planned.itinerary,
-          runId: planned.runId
+          runId: planned.runId,
+          tripMemory: session.tripMemory
         });
         return;
       }
 
+      // If modification adjusted budget or activities, update trip memory
+      if (memoryContext.isModification && memoryContext.budget) {
+        await ConversationMemoryService.updateTripMemory(session.conversationId, {
+          budget: Number(memoryContext.budget)
+        }, userId);
+      }
+
+      const finalReply = chatResult.reply || 'I am ready to help you plan or explore any destination!';
+
+      // Record conversational reply into persistent conversation
+      await ConversationMemoryService.recordMessage(session.conversationId, {
+        role: 'assistant',
+        content: finalReply,
+        action: 'chat'
+      }, userId);
+
       // Standard conversational response generated by LLM
       res.status(200).json({
         status: 'success',
+        conversationId: session.conversationId,
         action: 'chat',
-        message: chatResult.reply || 'I am ready to help you plan or explore any destination!'
+        message: finalReply,
+        tripMemory: session.tripMemory
       });
     } catch (err: any) {
       console.warn('AgentController.chat caught upstream error:', err?.message || err);
@@ -78,6 +145,44 @@ export class AgentController {
         ? 'The AI assistant is experiencing high request volume on the free tier. Please wait a moment and try again.'
         : (err.message || 'The AI assistant is temporarily unavailable. Please try again.');
       res.status(200).json({ status: 'success', action: 'chat', message: friendlyMessage });
+    }
+  }
+
+  /** GET /api/agent/conversations — list user's conversation sessions */
+  static async listConversations(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+      const conversations = await ConversationMemoryService.listUserSessions(userId);
+      res.status(200).json({ status: 'success', conversations });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to list conversations', message: err.message });
+    }
+  }
+
+  /** GET /api/agent/conversations/:id — retrieve full conversation history and trip memory */
+  static async getConversationById(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+      const session = await ConversationMemoryService.getSession(String(id), userId);
+      if (!session) {
+        res.status(404).json({ error: 'Not Found', message: `Conversation ${id} not found.` });
+        return;
+      }
+      res.status(200).json({ status: 'success', conversation: session });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to retrieve conversation', message: err.message });
+    }
+  }
+
+  /** POST /api/agent/conversations — create a fresh new conversation thread */
+  static async createConversation(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id || '00000000-0000-0000-0000-000000000001';
+      const session = await ConversationMemoryService.getOrCreateSession(undefined, userId);
+      res.status(201).json({ status: 'success', conversation: session });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to create conversation', message: err.message });
     }
   }
 

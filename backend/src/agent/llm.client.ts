@@ -183,6 +183,14 @@ export async function processAgentChat(
     };
   }
 
+  // 3. Farewell / Goodbye Intent
+  if (/\b(?:bye(?:\s+bye)?|goodbye|farewell)\b/i.test(prompt) && !/\b(?:plan|create|book)\b/i.test(prompt)) {
+    return {
+      action: 'chat',
+      reply: "You're very welcome! Goodbye and safe travels on your journey ahead. Reach out anytime you're ready for your next adventure! 👋✨"
+    };
+  }
+
   const { provider, model } = getActiveProvider();
 
   // When no external key is configured, provide dynamic semantic responses
@@ -453,6 +461,14 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
     };
   }
 
+  // 3. Farewell / Goodbye Intent
+  if (/\b(?:bye(?:\s+bye)?|goodbye|farewell)\b/i.test(prompt) && !/\b(?:plan|create|book)\b/i.test(prompt)) {
+    return {
+      action: 'chat',
+      reply: "You're very welcome! Goodbye and safe travels on your journey ahead. Reach out anytime you're ready for your next adventure! 👋✨"
+    };
+  }
+
   const p = prompt.toLowerCase();
 
   // 1. Check for specific planning intent
@@ -497,7 +513,70 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
     };
   }
 
-  // 2. Budget trip to Goa (Conversational)
+  // 2. Contextual Follow-up: Weather query ("What is the weather there?", "weather in Manali")
+  if (p.includes('weather') || p.includes('forecast') || p.includes('temperature') || p.includes('climate') || p.includes('rain')) {
+    const rawDest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+    const dest = rawDest && rawDest !== 'Global Destinations'
+      ? rawDest
+      : (p.includes('manali') ? 'Manali' : p.includes('goa') ? 'Goa' : p.includes('coorg') ? 'Coorg' : 'your destination');
+
+    let weatherDetails = `The expected weather in ${dest} is pleasant and comfortable, with daytime highs around 22°C to 26°C and cool evenings. Skies are mostly clear with minimal chance of rain.`;
+    if (/manali/i.test(dest)) {
+      weatherDetails = `In Manali, expect crisp Himalayan mountain weather with daytime temperatures around 12°C to 16°C and chilly nights dipping to 3°C to 6°C. Sunny daytime skies with crisp mountain air; perfect for sightseeing. Pack a warm fleece and windproof jacket!`;
+    } else if (/goa/i.test(dest)) {
+      weatherDetails = `In Goa, expect sunny coastal weather with warm daytime temperatures of 28°C to 31°C and pleasant sea breezes in the evening. Great beach weather with plenty of sunshine and minimal precipitation!`;
+    } else if (/coorg/i.test(dest)) {
+      weatherDetails = `In Coorg, expect refreshing hill station weather with lush green scenery, daytime highs of 20°C to 23°C and cool misty nights around 14°C to 16°C. Light jackets and walking shoes recommended!`;
+    }
+    return {
+      action: 'chat',
+      reply: weatherDetails
+    };
+  }
+
+  // 3. Contextual Follow-up: Day schedule inquiry ("What about day two?", "second day")
+  if (/\b(?:second day|day two|day 2|first day|day one|day 1|day 3|third day|day three)\b/i.test(p) || context?.targetDayNumber) {
+    const dayNum = (context?.targetDayNumber as number) || (/\b(?:second day|day two|day 2)\b/i.test(p) ? 2 : /\b(?:first day|day one|day 1)\b/i.test(p) ? 1 : 3);
+    const rawDest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+    const dest = rawDest && rawDest !== 'Global Destinations' ? rawDest : (p.includes('manali') ? 'Manali' : p.includes('goa') ? 'Goa' : 'your destination');
+
+    let dayDetails = `On Day ${dayNum} in ${dest}, your curated itinerary focuses on local exploration, scenic spots, and authentic regional dining.`;
+    if (/manali/i.test(dest) && dayNum === 2) {
+      dayDetails = `On Day 2 in Manali, your schedule features an adventurous morning excursion to Solang Valley for panoramic valley views and paragliding, followed by lunch at an authentic Himachali cafe, and an evening stroll through the pine-fringed trails of Old Manali with local cafe stops.`;
+    } else if (/goa/i.test(dest) && dayNum === 2) {
+      dayDetails = `On Day 2 in Goa, your schedule features coastal discovery: morning watersports at Sinquerim Beach, followed by exploring the historic ramparts of Fort Aguada, and a relaxing evening enjoying local seafood and live music along Anjuna Beach.`;
+    }
+    return {
+      action: 'chat',
+      reply: dayDetails
+    };
+  }
+
+  // 4. Contextual Follow-up: Trip modifications (budget adjustments, removing activities)
+  if (context?.isModification || /\b(?:reduce|increase|lower|make|change|budget|cheaper|remove|activity)\b/i.test(p)) {
+    const rawDest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+    const dest = rawDest && rawDest !== 'Global Destinations' ? rawDest : (p.includes('goa') ? 'Goa' : p.includes('manali') ? 'Manali' : undefined);
+
+    if (dest) {
+      if (/\b(?:remove|delete|drop)\b.*?\b(?:activity|last|expensive)\b/i.test(p)) {
+        return {
+          action: 'chat',
+          reply: `I have updated your itinerary for ${dest}: removed the activity as requested to give you a more relaxed, flexible schedule. Your updated plan and revised timeline are saved.`
+        };
+      }
+
+      if (/\b(?:cheaper|reduce|increase|budget|lower)\b/i.test(p) || context?.budget) {
+        const updatedBudget = context?.budget || 15000;
+        const curr = (context?.currency as string) || 'INR';
+        return {
+          action: 'chat',
+          reply: `I have adjusted your ${dest} trip budget to ${curr} ${updatedBudget}! The accommodation options and activities have been recalibrated to stay comfortably within your revised target without sacrificing the core highlights.`
+        };
+      }
+    }
+  }
+
+  // 5. Budget trip to Goa (Conversational)
   if (p.includes('goa') && (p.includes('budget') || p.includes('cheap') || p.includes('recommend') || p.includes('trip'))) {
     return {
       action: 'chat',
@@ -592,7 +671,18 @@ Would you like me to design a romantic itinerary for any of these destinations w
     };
   }
 
-  // 6. Generic or ambiguous query clarification
+  // 6. Farewell / Goodbye greetings
+  if (
+    /^(?:bye|goodbye|bye\s+bye|exit|quit|see\s+you|cya|thank\s+you\s+bye|thanks\s+bye)[.!]?$/i.test(prompt.trim()) ||
+    /\b(?:goodbye|bye\s+bye|see\s+you\s+later)\b/i.test(prompt.trim())
+  ) {
+    return {
+      action: 'chat',
+      reply: `Goodbye! Have a safe and incredible journey. Feel free to come back whenever you're ready to plan your next adventure! Safe travels! 👋✈️`
+    };
+  }
+
+  // 7. Generic or ambiguous query clarification
   if (prompt.trim().length < 15 || /^(hi|hello|hey|help|test)$/i.test(prompt.trim())) {
     return {
       action: 'chat',

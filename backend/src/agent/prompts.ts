@@ -63,10 +63,10 @@ export function isAgentNameQuery(prompt: string): boolean {
   if (/\b(?:do\s+you\s+have\s+a\s+name|what\s+do\s+they\s+call\s+you)\b/i.test(p)) {
     return true;
   }
-  if (/^(?:your\s+name\??|agent\s+name\??|agents?\s+name\??|name\??|who\s+are\s+you\??)$/i.test(p)) {
+  if (/^(?:your\s+name\??|agent\s+name\??|agents?\s+name\??|name\??|who\s+are\s+you\??|pilot\??|tripolio\??)$/i.test(p)) {
     return true;
   }
-  if (/\b(?:are\s+you\s+tripolio|who\s+is\s+tripolio|are\s+you\s+pilot|who\s+is\s+pilot|pilot|tripolio)\b/i.test(p)) {
+  if (/\b(?:are\s+you\s+tripolio|who\s+is\s+tripolio|are\s+you\s+pilot|who\s+is\s+pilot)\b/i.test(p)) {
     return true;
   }
   return false;
