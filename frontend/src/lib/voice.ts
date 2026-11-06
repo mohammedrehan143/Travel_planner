@@ -16,42 +16,49 @@ export const SUPPORTED_VOICE_LANGUAGES: VoiceLanguage[] = [
 ];
 
 /**
- * Detects whether the user articulated a completed travel intent or voice command
- * to trigger prompt submission without getting delayed by ambient background noise.
+ * Speech intent detector.
+ * NOTE: Keyword auto-stopping has been removed per user requirement.
+ * All submissions are strictly driven by 2-second silence after words are detected.
  */
-export function isCompleteSpeechIntent(text: string): boolean {
-  const t = text.toLowerCase().trim();
-  if (t.length < 5) return false;
-
-  // Direct stop / finish keywords
-  if (/\b(?:stop\s+listening|that(?:'s|\s+is)\s+all|i(?:'m|\s+am)\s+done|finish(?:ed)?|submit|done|over\s+and\s+out|that(?:'s|\s+is)\s+it)\b/i.test(t)) {
-    return true;
-  }
-
-  // Complete planning intent: e.g. "plan a trip to goa", "plan a 3-day trip to manali", "book a trip to coorg"
-  if (/\b(?:plan|create|build|book|schedule|organize)\b.*?\b(?:trip|itinerary|vacation|tour|holiday|getaway)\b.*?\b(?:to|in|for)\s+[a-z]{3,}/i.test(t)) {
-    return true;
-  }
-
-  // Specific inquiries with destination or day: e.g. "what is the weather there", "what about day two"
-  if (/\b(?:weather|temperature|forecast)\b.*?\b(?:in|at|for|there)\b/i.test(t)) {
-    return true;
-  }
-  if (/\b(?:what\s+about|show\s+me|tell\s+me\s+about)\b.*?\b(?:second\s+day|day\s+two|day\s+2|first\s+day|day\s+1|hotels|activities|food)\b/i.test(t)) {
-    return true;
-  }
-
-  // Modification commands: e.g. "make it cheaper", "remove the last activity"
-  if (/\b(?:make\s+(?:it|the\s+trip|this)\s+cheaper|reduce\s+(?:the\s+)?budget|remove\s+(?:the\s+)?last\s+activity)\b/i.test(t)) {
-    return true;
-  }
-
-  // Farewell commands
-  if (/\b(?:thank\s+you|thanks|bye(?:\s+bye)?|goodbye|see\s+you)\b/i.test(t)) {
-    return true;
-  }
-
+export function isCompleteSpeechIntent(_text: string): boolean {
   return false;
+}
+
+export function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+    (typeof window !== 'undefined' && 'ontouchstart' in window && window.innerWidth <= 820)
+  );
+}
+
+/**
+ * Cleans text for speech synthesis: strips emojis, markdown symbols, coordinates, URLs,
+ * and expands currencies into natural spoken words so the synthesizer never reads out
+ * emoji descriptions (e.g. "waving hand sign", "airplane", "sparkles") or formatting syntax.
+ */
+export function cleanSpokenText(rawText: string): string {
+  if (!rawText) return '';
+  return rawText
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\(\s*-?\d+\.\d+,\s*-?\d+\.\d+\s*\)/g, '')
+    .replace(/₹\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 rupees')
+    .replace(/\$\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 dollars')
+    .replace(/€\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 euros')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/^\s*[-*•]\s+/gm, ', ')
+    // Remove all unicode emojis, symbols, modifiers, variation selectors, and joiners
+    .replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\uFE00-\uFE0F\u200D\u20E3]/gu, '')
+    .replace(/\s+([.,!?;:])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export class VoiceControllerClient {
@@ -67,6 +74,7 @@ export class VoiceControllerClient {
   private onVolumeChange?: (volume: number) => void;
   private animFrameId: number | null = null;
   private availableVoices: SpeechSynthesisVoice[] = [];
+  private serverTTSAvailable: boolean | null = null;
 
   constructor() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -75,6 +83,10 @@ export class VoiceControllerClient {
         this.loadVoices();
       };
     }
+  }
+
+  public setServerTTSAvailable(available: boolean) {
+    this.serverTTSAvailable = available;
   }
 
   private loadVoices() {
@@ -117,33 +129,40 @@ export class VoiceControllerClient {
       if (kannada) return kannada;
     }
 
-    // Natural English voices prioritized for smooth, expressive, human-like prosody
+    // Explicitly filter out robotic synthesizers (e.g. SAPI5 Microsoft David Desktop)
+    const smoothCandidates = voices.filter(
+      (v) => v.lang.toLowerCase().startsWith('en') && !/david|mark|george|robotic/i.test(v.name)
+    );
+
+    // Prioritize silky, natural, human-prosody voices (Jenny, Aria, Sonia, Google UK Female, Google US, Samantha, Ava)
     const naturalPatterns = [
+      /jenny.*natural/i,
+      /aria.*natural/i,
+      /sonia.*natural/i,
+      /google\s+uk\s+english\s+female/i,
+      /google\s+us\s+english/i,
+      /ava.*natural/i,
+      /guy.*natural/i,
+      /christopher.*natural/i,
+      /michelle.*natural/i,
+      /samantha/i,
+      /serena/i,
       /natural.*english/i,
       /online.*natural/i,
-      /microsoft.*jenny.*natural/i,
-      /microsoft.*aria.*natural/i,
-      /microsoft.*guy.*natural/i,
-      /microsoft.*swara/i,
-      /google\s+us\s+english/i,
-      /google\s+uk\s+english/i,
-      /samantha/i,
-      /karen/i,
-      /serena/i,
       /neural/i,
-      /natural/i,
       /google/i,
+      /hazel/i,
+      /karen/i,
       /premium/i
     ];
 
     for (const pattern of naturalPatterns) {
-      const match = voices.find((v) => pattern.test(v.name) && v.lang.toLowerCase().startsWith('en'));
+      const match = smoothCandidates.find((v) => pattern.test(v.name));
       if (match) return match;
     }
 
-    // Filter out old robotic desktop synthesizers (e.g. SAPI5 Microsoft David Desktop)
-    const nonDesktop = voices.find((v) => v.lang.toLowerCase().startsWith('en') && !/desktop/i.test(v.name));
-    if (nonDesktop) return nonDesktop;
+    // Fall back to any non-robotic candidate
+    if (smoothCandidates.length > 0) return smoothCandidates[0];
 
     return voices.find((v) => v.lang.toLowerCase().startsWith('en')) || voices[0] || null;
   }
@@ -252,8 +271,11 @@ export class VoiceControllerClient {
 
     this.mediaRecorder.start(100);
 
-    // Optional browser speech recognition for instant live interim text preview
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // Optional browser speech recognition for instant live interim text preview (Desktop only)
+    // On mobile devices, webkitSpeechRecognition triggers Google Assistant/Voice Search app overlay
+    // and steals mic focus, so we only run in-page SpeechRecognition on desktop!
+    const isMobile = isMobileDevice();
+    const SpeechRecognition = !isMobile && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
     if (SpeechRecognition && options.onInterimTranscript) {
       try {
         this.speechRecognition = new SpeechRecognition();
@@ -287,6 +309,10 @@ export class VoiceControllerClient {
         // Fall back gracefully to backend STT
       }
     }
+  }
+
+  public isSpeechRecognitionActive(): boolean {
+    return Boolean(this.speechRecognition);
   }
 
   /**
@@ -401,26 +427,34 @@ export class VoiceControllerClient {
     onError?: (err: Error) => void;
   }): Promise<void> {
     this.stopPlayback();
-    this.lastSpokenText = options.text;
+    const cleanText = cleanSpokenText(options.text);
+    if (!cleanText) {
+      options.onEnd?.();
+      return;
+    }
+    this.lastSpokenText = cleanText;
 
-    try {
-      const ttsResult = await TripPilotAPI.textToSpeech({
-        text: options.text,
-        language: options.language,
-        voice: options.voice || 'alloy'
-      });
+    // Only call server TTS if server is explicitly known to support it
+    if (this.serverTTSAvailable !== false) {
+      try {
+        const ttsResult = await TripPilotAPI.textToSpeech({
+          text: cleanText,
+          language: options.language,
+          voice: options.voice || 'shimmer'
+        });
 
-      if (ttsResult.audioData) {
-        this.lastAudioUrl = ttsResult.audioData;
-        this.playAudioUrl(ttsResult.audioData, options.onStart, options.onEnd, options.onError);
-        return;
+        if (ttsResult.audioData) {
+          this.lastAudioUrl = ttsResult.audioData;
+          this.playAudioUrl(ttsResult.audioData, options.onStart, options.onEnd, options.onError);
+          return;
+        }
+      } catch (e) {
+        console.warn('Backend TTS call failed, using client speech synthesis fallback:', e);
       }
-    } catch (e) {
-      console.warn('Backend TTS call failed, using client speech synthesis fallback:', e);
     }
 
     // Client-side Web Speech Synthesis fallback with natural tuned voice selection
-    this.speakViaWebSpeech(options.text, options.language, options.onStart, options.onEnd, options.onError, options.voice);
+    this.speakViaWebSpeech(cleanText, options.language, options.onStart, options.onEnd, options.onError, options.voice);
   }
 
   private playAudioUrl(
@@ -470,22 +504,12 @@ export class VoiceControllerClient {
     try {
       window.speechSynthesis.cancel();
 
-      // Clean text for natural conversational cadence, removing markdown symbols, expanding currencies
-      const cleanSpoken = text
-        .replace(/```[\s\S]*?```/g, '')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/https?:\/\/\S+/gi, '')
-        .replace(/₹\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 rupees')
-        .replace(/\$\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 dollars')
-        .replace(/€\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 euros')
-        .replace(/^#{1,6}\s+/gm, '')
-        .replace(/\*\*([^*]+)\*\*/g, '$1')
-        .replace(/\*([^*]+)\*/g, '$1')
-        .replace(/_([^_]+)_/g, '$1')
-        .replace(/^\s*[-*•]\s+/gm, ', ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      // Clean text for natural conversational cadence, removing emojis, markdown symbols, expanding currencies
+      const cleanSpoken = cleanSpokenText(text);
+      if (!cleanSpoken) {
+        onEnd?.();
+        return;
+      }
 
       const utterance = new SpeechSynthesisUtterance(cleanSpoken);
       const langObj = SUPPORTED_VOICE_LANGUAGES.find((l) => l.code === language);
@@ -497,9 +521,10 @@ export class VoiceControllerClient {
         utterance.voice = naturalVoice;
       }
 
-      // Smooth conversational prosody: 0.96 rate and 1.02 pitch
-      utterance.rate = 0.96;
-      utterance.pitch = 1.02;
+      // Smooth conversational prosody: natural pace and tone
+      const isNatural = naturalVoice && /natural|neural|online|google/i.test(naturalVoice.name);
+      utterance.rate = isNatural ? 0.96 : 0.92;
+      utterance.pitch = isNatural ? 1.0 : 1.02;
 
       utterance.onstart = () => onStart?.();
       utterance.onend = () => onEnd?.();

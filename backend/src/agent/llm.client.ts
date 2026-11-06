@@ -157,6 +157,79 @@ export interface AgentChatResult {
 }
 
 /**
+ * Fast check for simple conversational courtesies (hello, hi, hey, how are you, thank you, ok, etc.)
+ * Responds in < 1ms to eliminate LLM network latency and free-tier 429 timeouts on small messages.
+ */
+export function isSimpleCourtesy(text: string): { isCourtesy: boolean; reply?: string } {
+  if (!text) return { isCourtesy: false };
+  const cleaned = text.trim().toLowerCase().replace(/[!?.,]+$/, '').replace(/\s+/g, ' ');
+
+  // If message contains concrete travel planning/query keywords, let the orchestrator handle it
+  if (/\b(?:plan|book|itinerary|days?|trip|flight|hotel|cost|budget|weather|pack|remove|modify|cheaper|places?|visit|go\s+to|fly|drive|stay|travel)\b/i.test(cleaned)) {
+    return { isCourtesy: false };
+  }
+
+  // Greetings: hi, hello, hey, good morning, etc.
+  if (/^(?:hi|hello|hey|hey\s+there|hiya|howdy|hola|namaste|greetings|good\s+(?:morning|afternoon|evening|day))(?:\s+(?:pilot|there|trippilot|ai|friend|buddy|traveler))?$/i.test(cleaned) ||
+      /^(?:pilot|trippilot)$/i.test(cleaned)) {
+    return {
+      isCourtesy: true,
+      reply: "Hello! I am Pilot, your AI travel assistant. Where would you like to travel next? Tell me a destination like Goa, Coorg, or Paris, or ask me for travel recommendations!"
+    };
+  }
+
+  // Well-being checks
+  if (/^(?:how\s+are\s+you|how's\s+it\s+going|how\s+are\s+things|how\s+r\s+u|how\s+do\s+you\s+do)(?:\s+(?:doing|today|pilot|there))?$/i.test(cleaned)) {
+    return {
+      isCourtesy: true,
+      reply: "I am doing great and excited to help you plan your travels! Where are you thinking of going?"
+    };
+  }
+
+  // Identity / Name queries
+  if (/^(?:who\s+are\s+you|who\s+r\s+u|what\s+is\s+your\s+name|what's\s+your\s+name|what\s+are\s+you\s+called|your\s+name|agent\s+name|agents?\s+name)(?:\s+(?:again|pilot|bot|ai))?$/i.test(cleaned)) {
+    return {
+      isCourtesy: true,
+      reply: AGENT_NAME_RESPONSE
+    };
+  }
+
+  // Capabilities / Help queries
+  if (/^(?:what\s+can\s+you\s+do|how\s+can\s+you\s+help|help(?:\s+me)?|what\s+do\s+you\s+do)$/i.test(cleaned)) {
+    return {
+      isCourtesy: true,
+      reply: "I can plan complete day-by-day trips, suggest attractions, cafes, and hotels, calculate budgets, check weather, and customize itineraries. You can speak or type your request, like: 'Plan a 3-day trip to Goa'!"
+    };
+  }
+
+  // Audibility / Mic checks
+  if (/^(?:can\s+you\s+hear\s+me|are\s+you\s+there|can\s+u\s+hear\s+me|am\s+i\s+audible|hello\s+are\s+you\s+there|test|testing|mic\s+test)$/i.test(cleaned)) {
+    return {
+      isCourtesy: true,
+      reply: "Yes, I can hear you loud and clear! How can I help you with your travel plans today?"
+    };
+  }
+
+  // Acknowledgements & Short Courtesies
+  if (/^(?:ok|okay|cool|great|nice|awesome|perfect|got\s+it|understood|sure|alright|sounds\s+good|yes|no)$/i.test(cleaned)) {
+    return {
+      isCourtesy: true,
+      reply: "Great! Whenever you're ready, let me know where you'd like to travel or what changes you'd like to make."
+    };
+  }
+
+  // Thanks / Appreciation
+  if (/^(?:thank\s+you|thanks|thanks\s+a\s+lot|thank\s+you\s+so\s+much)(?:\s+(?:pilot|trippilot|a\s+lot|very\s+much))?$/i.test(cleaned)) {
+    return {
+      isCourtesy: true,
+      reply: "You're very welcome! Let me know if you would like to explore any more destinations or adjust your itinerary."
+    };
+  }
+
+  return { isCourtesy: false };
+}
+
+/**
  * Intelligent Agent Chat Engine
  * Uses Gemini (or OpenAI) to converse with travelers and autonomously detects
  * when a user wants to plan a brand-new trip or outing anywhere in the world.
@@ -189,6 +262,15 @@ export async function processAgentChat(
     return {
       action: 'chat',
       reply: "You're very welcome! Goodbye and safe travels on your journey ahead. Reach out anytime you're ready for your next adventure! 👋✨"
+    };
+  }
+
+  // 4. Instant Simple Courtesies Intent (e.g. "hi", "hello", "hey", "how are you", "thank you")
+  const courtesyCheck = isSimpleCourtesy(prompt);
+  if (courtesyCheck.isCourtesy && courtesyCheck.reply) {
+    return {
+      action: 'chat',
+      reply: courtesyCheck.reply
     };
   }
 
@@ -485,6 +567,15 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
     return {
       action: 'chat',
       reply: "You're very welcome! Goodbye and safe travels on your journey ahead. Reach out anytime you're ready for your next adventure! 👋✨"
+    };
+  }
+
+  // 4. Instant Simple Courtesies Intent (e.g. "hi", "hello", "hey", "how are you", "thank you")
+  const courtesyCheck = isSimpleCourtesy(prompt);
+  if (courtesyCheck.isCourtesy && courtesyCheck.reply) {
+    return {
+      action: 'chat',
+      reply: courtesyCheck.reply
     };
   }
 

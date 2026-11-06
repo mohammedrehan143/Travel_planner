@@ -4,7 +4,7 @@ import { AgentOrchestrator } from '../agent/orchestrator.js';
 import { AgentRunService } from '../services/agentRun.service.js';
 import { TripService } from '../services/trip.service.js';
 import { PlanTripRequest } from '../types/trip.types.js';
-import { processAgentChat, generateChatReply } from '../agent/llm.client.js';
+import { processAgentChat, generateChatReply, isSimpleCourtesy } from '../agent/llm.client.js';
 import { detectCurrencyForDestination, getDefaultBudgetForCurrency } from '../integrations/currency.adapter.js';
 import { ConversationMemoryService } from '../services/conversationMemory.service.js';
 
@@ -22,6 +22,29 @@ export class AgentController {
 
       if (!message || typeof message !== 'string') {
         res.status(400).json({ error: 'Bad Request', message: 'Message string is required.' });
+        return;
+      }
+
+      // Fast-path simple courtesies (hello, hi, hey, how are you, etc.) with < 5ms instant response
+      const courtesyCheck = isSimpleCourtesy(message);
+      if (courtesyCheck.isCourtesy && courtesyCheck.reply) {
+        const reply = courtesyCheck.reply;
+        const validConvId = conversationId && conversationId.trim().length > 0 ? conversationId.trim() : crypto.randomUUID();
+
+        // Asynchronously update session and messages in memory/DB without blocking HTTP response
+        ConversationMemoryService.getOrCreateSession(validConvId, userId, recentMessages)
+          .then((session) => {
+            ConversationMemoryService.recordMessage(session.conversationId, { role: 'user', content: message }, userId).catch(() => {});
+            ConversationMemoryService.recordMessage(session.conversationId, { role: 'assistant', content: reply, action: 'chat' }, userId).catch(() => {});
+          })
+          .catch(() => {});
+
+        res.status(200).json({
+          status: 'success',
+          conversationId: validConvId,
+          action: 'chat',
+          message: reply
+        });
         return;
       }
 

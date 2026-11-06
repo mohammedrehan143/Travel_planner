@@ -66,6 +66,54 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [isDictating, setIsDictating] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const dictateSilenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lock background body scroll completely while the chat drawer is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyTouchAction = document.body.style.touchAction;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'contain';
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.touchAction = prevBodyTouchAction;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.documentElement.style.overscrollBehavior = prevHtmlOverscroll;
+    };
+  }, [isOpen]);
+
+  // Isolate wheel scrolling inside the messages container and prevent boundary chaining to the background
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el || !isOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.stopPropagation();
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      const deltaY = e.deltaY;
+      const isAtTop = scrollTop <= 0;
+      const isAtBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1;
+
+      // Prevent boundary wheel events from chaining to the window/hero section
+      if ((isAtTop && deltaY < 0) || (isAtBottom && deltaY > 0)) {
+        e.preventDefault();
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, [isOpen, mode, messages.length]);
 
   // Restore conversation thread from memory/backend if existing
   useEffect(() => {
@@ -103,9 +151,13 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     if (isOpen && mode === 'chat') scrollToBottom();
   }, [messages, isOpen, mode]);
 
-  // Clean up audio playback when closing the drawer
+  // Clean up audio playback and timers when closing the drawer
   useEffect(() => {
     if (!isOpen) {
+      if (dictateSilenceTimerRef.current) {
+        clearTimeout(dictateSilenceTimerRef.current);
+        dictateSilenceTimerRef.current = null;
+      }
       globalVoiceController.stopPlayback();
       globalVoiceController.cancelRecording();
       setSpeakingMessageId(null);
@@ -218,36 +270,75 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     await globalVoiceController.speakText({
       text,
       language: 'en',
+      voice: localStorage.getItem('trippilot_preferred_voice') || 'Jenny',
       onStart: () => setSpeakingMessageId(msgId),
       onEnd: () => setSpeakingMessageId(null),
       onError: () => setSpeakingMessageId(null),
     });
   };
 
-  // Quick dictation in text input
-  const handleQuickDictate = async () => {
-    if (isDictating) {
-      setIsDictating(false);
-      try {
-        const { audioBase64, format } = await globalVoiceController.stopRecording();
+  const stopDictation = async () => {
+    if (dictateSilenceTimerRef.current) {
+      clearTimeout(dictateSilenceTimerRef.current);
+      dictateSilenceTimerRef.current = null;
+    }
+    setIsDictating(false);
+    try {
+      const { audioBase64, format } = await globalVoiceController.stopRecording();
+      // Only call backend STT if speech recognition did not already provide text
+      if (!input.trim()) {
         const sttRes = await TripPilotAPI.speechToText({ audioBase64, format, language: 'en' });
         if (sttRes.text && sttRes.text.trim()) {
-          setInput((prev) => (prev ? `${prev} ${sttRes.text.trim()}` : sttRes.text.trim()));
+          setInput(sttRes.text.trim());
         }
-      } catch (e) {
-        console.warn('Dictation failed:', e);
       }
+    } catch (e) {
+      console.warn('Dictation failed:', e);
+    }
+  };
+
+  // Quick dictation in text input with 2-second silence auto-stop
+  const handleQuickDictate = async () => {
+    if (isDictating) {
+      await stopDictation();
     } else {
       try {
         setIsDictating(true);
+        if (dictateSilenceTimerRef.current) clearTimeout(dictateSilenceTimerRef.current);
+
+        // Auto-stop after 2 seconds of silence (only fallback to energy when speech recognition inactive)
+        globalVoiceController.setVolumeCallback((vol) => {
+          if (!globalVoiceController.isSpeechRecognitionActive()) {
+            if (vol > 0.22) {
+              if (dictateSilenceTimerRef.current) clearTimeout(dictateSilenceTimerRef.current);
+              dictateSilenceTimerRef.current = setTimeout(() => {
+                stopDictation();
+              }, 2000);
+            }
+          }
+        });
+
+        // 12-second safety ceiling
+        dictateSilenceTimerRef.current = setTimeout(() => {
+          stopDictation();
+        }, 12000);
+
         await globalVoiceController.startRecording({
           language: 'en',
           onInterimTranscript: (interim) => {
-            setInput(interim);
+            const trimmed = interim.trim();
+            if (trimmed) {
+              setInput(trimmed);
+              if (dictateSilenceTimerRef.current) clearTimeout(dictateSilenceTimerRef.current);
+              dictateSilenceTimerRef.current = setTimeout(() => {
+                stopDictation();
+              }, 2000);
+            }
           },
         });
       } catch (err: any) {
         setIsDictating(false);
+        if (dictateSilenceTimerRef.current) clearTimeout(dictateSilenceTimerRef.current);
         alert(err.message || 'Microphone access failed.');
       }
     }
@@ -290,8 +381,27 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl border-l border-[#E5E7EB] flex flex-col animate-in slide-in-from-right duration-200">
-      {/* Header with Dual Mode Toggle (Chat / Voice) */}
+    <>
+      {/* Semi-transparent Backdrop: locks background and closes drawer on outside click */}
+      <div
+        className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] animate-in fade-in duration-200"
+        onClick={() => {
+          globalVoiceController.stopPlayback();
+          onClose();
+        }}
+        onWheel={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        aria-hidden="true"
+      />
+
+      <div
+        className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl border-l border-[#E5E7EB] flex flex-col animate-in slide-in-from-right duration-200 overscroll-contain"
+        style={{ overscrollBehavior: 'contain' }}
+        onWheel={(e) => e.stopPropagation()}
+      >
+        {/* Header with Dual Mode Toggle (Chat / Voice) */}
       <div className="px-5 py-3.5 border-b border-neutral-800 flex items-center justify-between bg-[#171717] text-white">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-blue-400/40 shadow-xs shrink-0 bg-white">
@@ -409,7 +519,12 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
           </div>
 
           {/* Messages Thread */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+          <div
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-white overscroll-contain"
+            style={{ overscrollBehavior: 'contain' }}
+            onWheel={(e) => e.stopPropagation()}
+          >
             {messages.map((m) => {
               const isAi = m.sender === 'ai';
               return (
@@ -577,5 +692,6 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
         </>
       )}
     </div>
+    </>
   );
 };

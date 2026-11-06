@@ -69,7 +69,11 @@ export class TTSService {
     text = text.replace(/^\s*[-*•]\s+/gm, '. ');
     text = text.replace(/^\s*\d+\.\s+/gm, '. ');
 
-    // 8. Collapse whitespace and repeated punctuation
+    // 8. Remove ALL emojis, pictographs, emoji modifiers, variation selectors, and joiners
+    // to prevent speech synthesizers from reading out emoji names like "waving hand sign", "airplane", "sparkles"
+    text = text.replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\uFE00-\uFE0F\u200D\u20E3]/gu, '');
+
+    // 9. Collapse whitespace and repeated punctuation
     text = text.replace(/\s+/g, ' ');
     text = text.replace(/\.{2,}/g, '.');
     text = text.replace(/\s+([.,!?;:])/g, '$1');
@@ -93,7 +97,7 @@ export class TTSService {
       throw new Error('Text to synthesize is empty after preprocessing.');
     }
 
-    const voice = options.voice || env.TTS_VOICE || 'alloy';
+    const voice = options.voice || env.TTS_VOICE || 'nova';
     const speed = Math.max(0.5, Math.min(2.0, options.speed || 1.0));
 
     // 1. ElevenLabs if configured

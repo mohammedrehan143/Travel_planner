@@ -73,6 +73,16 @@ describe('Voice Assistant (STT & TTS) Module Suite', () => {
       expect(cleaned).toContain('Visit Abbey Falls');
       expect(cleaned).toContain('Tour Coffee Plantation');
     });
+
+    it('strips emojis and pictographs so synthesizers do not speak emoji names', () => {
+      const input = 'All the best for the trip! Have a wonderful and safe journey, goodbye for now! 👋✈️✨🎉';
+      const cleaned = TTSService.cleanTextForSpeech(input);
+      expect(cleaned).toBe('All the best for the trip! Have a wonderful and safe journey, goodbye for now!');
+      expect(cleaned).not.toContain('👋');
+      expect(cleaned).not.toContain('✈️');
+      expect(cleaned).not.toContain('✨');
+      expect(cleaned).not.toContain('🎉');
+    });
   });
 
   describe('Voice REST API Endpoints', () => {
@@ -142,6 +152,35 @@ describe('Voice Assistant (STT & TTS) Module Suite', () => {
       expect(res.body.cleanText).toContain('Welcome to Coorg');
       expect(res.body.cleanText).toContain('10,000 rupees');
       expect(res.body.provider).toBeDefined();
+    });
+
+    it('POST /api/agent/chat responds instantly to simple courtesies (hello, hi, how are you)', async () => {
+      const resHello = await request(app)
+        .post('/api/agent/chat')
+        .set('x-user-id', '00000000-0000-0000-0000-000000000001')
+        .send({ message: 'hello' });
+
+      expect(resHello.status).toBe(200);
+      expect(resHello.body.status).toBe('success');
+      expect(resHello.body.action).toBe('chat');
+      expect(resHello.body.message).toMatch(/hello|pilot|travel/i);
+
+      const resHi = await request(app)
+        .post('/api/agent/chat')
+        .set('x-user-id', '00000000-0000-0000-0000-000000000001')
+        .send({ message: 'hi!' });
+
+      expect(resHi.status).toBe(200);
+      expect(resHi.body.status).toBe('success');
+      expect(resHi.body.message).toMatch(/hello|pilot|travel/i);
+
+      const resHearing = await request(app)
+        .post('/api/agent/chat')
+        .set('x-user-id', '00000000-0000-0000-0000-000000000001')
+        .send({ message: 'can you hear me?' });
+
+      expect(resHearing.status).toBe(200);
+      expect(resHearing.body.message).toMatch(/hear you/i);
     });
 
     it('POST /api/agent/chat responds warmly to farewell and bye messages', async () => {

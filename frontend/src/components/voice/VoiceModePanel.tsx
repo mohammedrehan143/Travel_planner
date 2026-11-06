@@ -3,8 +3,7 @@ import {
   VoiceState,
   SUPPORTED_VOICE_LANGUAGES,
   VoiceLanguage,
-  globalVoiceController,
-  isCompleteSpeechIntent
+  globalVoiceController
 } from '../../lib/voice';
 import { TripPilotAPI, VoiceConfigResponse } from '../../lib/api';
 import { VoiceVisualizerOrb } from './VoiceVisualizerOrb';
@@ -72,14 +71,19 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   const [isAudioPaused, setIsAudioPaused] = useState<boolean>(false);
   const [voiceConfig, setVoiceConfig] = useState<VoiceConfigResponse | null>(null);
   const [autoSubmitCountdown, setAutoSubmitCountdown] = useState<number | null>(null);
-  const [intentDetected, setIntentDetected] = useState<boolean>(false);
+  const [selectedVoice, setSelectedVoice] = useState<string>(() => {
+    return localStorage.getItem('trippilot_preferred_voice') || 'Jenny';
+  });
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   // Synchronization refs to prevent stale closure in timers
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transcriptRef = useRef<string>('');
   const stateRef = useRef<VoiceState>('idle');
   const isProcessingRef = useRef<boolean>(false);
+  const hasSpokenRef = useRef<boolean>(false);
   const lastTranscriptChangeTimeRef = useRef<number>(Date.now());
   const recordingStartTimeRef = useRef<number>(Date.now());
 
@@ -95,66 +99,91 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
     }
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
     setAutoSubmitCountdown(null);
   };
 
-  const triggerQuickAutoSubmit = () => {
-    if (stateRef.current !== 'listening' || isProcessingRef.current) return;
-    clearSilenceTimers();
-    setIntentDetected(true);
-    setAutoSubmitCountdown(1);
+  // Curated list of smooth voices + detected system voices
+  const voiceOptions = React.useMemo(() => {
+    const list: Array<{ id: string; label: string }> = [
+      { id: 'Jenny', label: 'Jenny (Smooth & Natural Female)' },
+      { id: 'Aria', label: 'Aria (Soft & Clear Natural)' },
+      { id: 'Google UK English Female', label: 'Google UK (Silky & Warm)' },
+      { id: 'Google US English', label: 'Google US (Conversational)' },
+      { id: 'Sonia', label: 'Sonia (Melodic British)' },
+      { id: 'Guy', label: 'Guy (Smooth Warm Male)' },
+      { id: 'Christopher', label: 'Christopher (Calm Natural Male)' },
+      { id: 'shimmer', label: 'Shimmer (Soft & Gentle)' },
+      { id: 'nova', label: 'Nova (Warm & Friendly)' },
+    ];
 
-    silenceTimerRef.current = setTimeout(() => {
-      clearSilenceTimers();
+    // Append extra non-robotic system voices detected on client machine
+    for (const v of availableVoices) {
       if (
-        stateRef.current === 'listening' &&
-        transcriptRef.current.trim().length > 0 &&
-        !isProcessingRef.current
+        /natural|neural|online|google/i.test(v.name) &&
+        !list.some((item) => v.name.toLowerCase().includes(item.id.toLowerCase()))
       ) {
-        handleStopAndProcess();
+        list.push({ id: v.name, label: `${v.name.replace(/microsoft|google|desktop/gi, '').trim()} (System Smooth)` });
       }
-    }, 700);
-  };
+    }
+
+    return list;
+  }, [availableVoices]);
 
   // Initialize voice configuration and audio volume hooks
   useEffect(() => {
-    TripPilotAPI.getVoiceConfig().then(setVoiceConfig).catch(() => {});
+    TripPilotAPI.getVoiceConfig().then((cfg) => {
+      setVoiceConfig(cfg);
+      globalVoiceController.setServerTTSAvailable(cfg.serverTTSAvailable);
+    }).catch(() => {});
+
+    const updateVoices = () => {
+      const vList = globalVoiceController.getAvailableVoices();
+      if (vList && vList.length > 0) {
+        setAvailableVoices(vList);
+      }
+    };
+    updateVoices();
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+
     globalVoiceController.setVolumeCallback((vol) => {
       setVolume(vol);
 
-      const timeSinceLastWord = Date.now() - lastTranscriptChangeTimeRef.current;
+      if (stateRef.current !== 'listening' || isProcessingRef.current) return;
+
       const totalRecTime = Date.now() - recordingStartTimeRef.current;
 
-      // Hard max listening cap (9s if text exists) to prevent runaway listening from ambient noise
-      if (
-        stateRef.current === 'listening' &&
-        transcriptRef.current.trim().length > 0 &&
-        totalRecTime > 9000 &&
-        !isProcessingRef.current
-      ) {
+      // Hard max listening cap (30s) to prevent runaway listening if mic is left on
+      if (totalRecTime > 30000 && !isProcessingRef.current) {
         handleStopAndProcess();
         return;
       }
 
-      // If user articulated a recognized intent keyword, don't let ambient noise prolong listening
-      if (isCompleteSpeechIntent(transcriptRef.current)) {
-        return;
-      }
-
-      // Filter background noise: only reset silence timer if volume is genuinely active voice (vol > 0.20)
-      // and new words were spoken within the last 1.2s. Stagnant ambient noise will expire and auto-submit.
-      if (
-        vol > 0.20 &&
-        stateRef.current === 'listening' &&
-        transcriptRef.current.trim().length > 0 &&
-        timeSinceLastWord < 1200
-      ) {
-        restartSilenceTimer();
+      // If speech recognition is NOT active in this browser (e.g. mobile Safari),
+      // use voice activity detection energy as fallback
+      if (!globalVoiceController.isSpeechRecognitionActive()) {
+        if (vol > 0.22) {
+          hasSpokenRef.current = true;
+          if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+            idleTimerRef.current = null;
+          }
+          restartSilenceTimer();
+        }
       }
     });
 
     return () => {
       clearSilenceTimers();
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
       globalVoiceController.stopPlayback();
       globalVoiceController.cancelRecording();
     };
@@ -184,7 +213,7 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
       clearSilenceTimers();
       if (
         stateRef.current === 'listening' &&
-        transcriptRef.current.trim().length > 0 &&
+        (transcriptRef.current.trim().length > 0 || hasSpokenRef.current) &&
         !isProcessingRef.current
       ) {
         handleStopAndProcess();
@@ -202,28 +231,37 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
       transcriptRef.current = '';
       setIsAudioPaused(false);
       isProcessingRef.current = false;
-      setIntentDetected(false);
+      hasSpokenRef.current = false;
       recordingStartTimeRef.current = Date.now();
       lastTranscriptChangeTimeRef.current = Date.now();
+
+      // 12s idle timeout if no words are spoken at all after clicking mic
+      idleTimerRef.current = setTimeout(() => {
+        if (stateRef.current === 'listening' && !transcriptRef.current.trim() && !hasSpokenRef.current) {
+          clearSilenceTimers();
+          globalVoiceController.cancelRecording();
+          setState('idle');
+          setErrorMessage('No speech detected. Please tap the microphone and speak your request.');
+        }
+      }, 12000);
 
       await globalVoiceController.startRecording({
         language: selectedLang,
         onInterimTranscript: (interim) => {
           const trimmed = interim.trim();
-          if (trimmed !== transcriptRef.current) {
+          if (trimmed && trimmed !== transcriptRef.current) {
             transcriptRef.current = trimmed;
             setTranscript(trimmed);
+            hasSpokenRef.current = true;
             lastTranscriptChangeTimeRef.current = Date.now();
 
-            // Keyword Intent Detection: Auto-stop if user completed a full travel command
-            if (isCompleteSpeechIntent(trimmed)) {
-              triggerQuickAutoSubmit();
-              return;
+            if (idleTimerRef.current) {
+              clearTimeout(idleTimerRef.current);
+              idleTimerRef.current = null;
             }
 
-            if (trimmed.length > 0) {
-              restartSilenceTimer();
-            }
+            // Exactly 2 seconds after no new words detected, automatically stop and process
+            restartSilenceTimer();
           }
         }
       });
@@ -247,18 +285,20 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
 
       let recognizedText = transcriptRef.current.trim();
 
-      // Transcribe via backend STT service
-      try {
-        const sttRes = await TripPilotAPI.speechToText({
-          audioBase64,
-          format,
-          language: selectedLang
-        });
-        if (sttRes.text && sttRes.text.trim()) {
-          recognizedText = sttRes.text.trim();
+      // Fast STT optimization: Only upload audio if browser speech recognition did not already transcribe text
+      if (!recognizedText) {
+        try {
+          const sttRes = await TripPilotAPI.speechToText({
+            audioBase64,
+            format,
+            language: selectedLang
+          });
+          if (sttRes.text && sttRes.text.trim()) {
+            recognizedText = sttRes.text.trim();
+          }
+        } catch (sttErr: any) {
+          console.warn('Backend STT fallback:', sttErr);
         }
-      } catch (sttErr: any) {
-        console.warn('Backend STT fallback:', sttErr);
       }
 
       if (!recognizedText) {
@@ -335,12 +375,12 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
           : undefined
       });
 
-      // Convert response into speech and speak aloud
+      // Convert response into speech and speak aloud with smooth natural voice
       setState('speaking');
       await globalVoiceController.speakText({
         text: replyText,
         language: selectedLang,
-        voice: voiceConfig?.defaultVoice || 'alloy',
+        voice: selectedVoice,
         onStart: () => setState('speaking'),
         onEnd: () => {
           setState('idle');
@@ -375,8 +415,24 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   const handleReplay = () => {
     if (!assistantReply) return;
     setState('speaking');
-    globalVoiceController.replayLast({
+    globalVoiceController.speakText({
+      text: assistantReply,
       language: selectedLang,
+      voice: selectedVoice,
+      onStart: () => setState('speaking'),
+      onEnd: () => setState('idle'),
+      onError: () => setState('idle')
+    });
+  };
+
+  // Preview selected voice
+  const handleTestVoice = () => {
+    globalVoiceController.stopPlayback();
+    setState('speaking');
+    globalVoiceController.speakText({
+      text: 'Hi! I am Pilot, speaking in your selected smooth voice. Ready whenever you are!',
+      language: selectedLang,
+      voice: selectedVoice,
       onStart: () => setState('speaking'),
       onEnd: () => setState('idle'),
       onError: () => setState('idle')
@@ -414,6 +470,7 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
     globalVoiceController.speakText({
       text: welcomeText,
       language: selectedLang,
+      voice: selectedVoice,
       onStart: () => setState('speaking'),
       onEnd: () => setState('idle')
     });
@@ -430,7 +487,11 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-5 bg-gradient-to-b from-white via-blue-50/20 to-white text-[#171717] overflow-y-auto">
+    <div
+      className="flex-1 flex flex-col justify-between p-5 bg-gradient-to-b from-white via-blue-50/20 to-white text-[#171717] overflow-y-auto overscroll-contain"
+      style={{ overscrollBehavior: 'contain' }}
+      onWheel={(e) => e.stopPropagation()}
+    >
       {/* Top Voice Header & Controls */}
       <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E5E7EB]">
         {/* Language selector & New Chat */}
@@ -461,13 +522,38 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
           </button>
         </div>
 
-        {/* Natural Tuned Voice badge */}
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-600 bg-neutral-100/90 border border-neutral-200/60 px-2.5 py-1 rounded-full shadow-xs">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="flex items-center gap-1">
-            <Volume2 className="w-3 h-3 text-[#1E60FF]" />
-            <span>Pilot Natural Voice (Smooth)</span>
-          </span>
+        {/* Voice Selector & Preview */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 text-[11px] font-semibold bg-white border border-[#E5E7EB] px-2 py-1 rounded-lg shadow-xs">
+            <Volume2 className="w-3.5 h-3.5 text-[#1E60FF] shrink-0" />
+            <select
+              value={selectedVoice}
+              onChange={(e) => {
+                setSelectedVoice(e.target.value);
+                localStorage.setItem('trippilot_preferred_voice', e.target.value);
+              }}
+              disabled={state === 'listening' || state === 'processing'}
+              className="bg-transparent text-xs font-semibold text-[#171717] focus:outline-none cursor-pointer max-w-[155px] truncate"
+              title="Select AI speaking voice"
+            >
+              {voiceOptions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleTestVoice}
+            disabled={state === 'listening' || state === 'processing'}
+            className="px-2 py-1 rounded-lg text-xs font-bold text-[#1E60FF] hover:bg-blue-50 border border-blue-200 transition-colors flex items-center gap-1 shadow-xs"
+            title="Preview selected voice"
+          >
+            <Play className="w-3 h-3 text-[#1E60FF]" />
+            <span>Preview</span>
+          </button>
         </div>
       </div>
 
@@ -499,26 +585,19 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
 
           <p className="text-xs text-slate-500">
             {state === 'listening'
-              ? 'Speak naturally. Ambient noise is filtered; auto-stops on keyword or pause.'
+              ? 'Speak naturally. Auto-submits after 2 seconds of no words detected.'
               : state === 'speaking'
               ? 'Tap orb or "Interrupt" to stop audio anytime.'
               : 'Ask anything: "Plan 3 days in Coorg under ₹10,000", "Change tomorrow\'s plan", or "Weather in Manali".'}
           </p>
         </div>
 
-        {/* Keyword Intent Detected or 2-Second Silence Auto-Submit Badge */}
-        {state === 'listening' && (
-          intentDetected ? (
-            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[11px] font-bold animate-pulse shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Keyword intent detected • Auto-processing...</span>
-            </div>
-          ) : autoSubmitCountdown !== null ? (
-            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1E60FF] text-[11px] font-bold animate-pulse">
-              <Clock className="w-3 h-3" />
-              <span>Auto-submitting in {autoSubmitCountdown}s... (noise filtered)</span>
-            </div>
-          ) : null
+        {/* 2-Second Silence Auto-Submit Badge */}
+        {state === 'listening' && autoSubmitCountdown !== null && (
+          <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1E60FF] text-[11px] font-bold animate-pulse">
+            <Clock className="w-3 h-3" />
+            <span>Submitting in {autoSubmitCountdown}s of no words detected...</span>
+          </div>
         )}
 
         {/* Error Banner */}

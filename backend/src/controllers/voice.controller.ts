@@ -11,12 +11,12 @@ export const SUPPORTED_LANGUAGES = [
 ];
 
 export const AVAILABLE_VOICES = [
+  { id: 'nova', name: 'Nova (Smooth & Warm)', gender: 'female' },
+  { id: 'shimmer', name: 'Shimmer (Soft & Gentle)', gender: 'female' },
+  { id: 'fable', name: 'Fable (British/Melodic)', gender: 'neutral' },
   { id: 'alloy', name: 'Alloy (Balanced)', gender: 'neutral' },
   { id: 'echo', name: 'Echo (Warm)', gender: 'male' },
-  { id: 'fable', name: 'Fable (British/Expressive)', gender: 'neutral' },
-  { id: 'onyx', name: 'Onyx (Deep/Authoritative)', gender: 'male' },
-  { id: 'nova', name: 'Nova (Energetic/Friendly)', gender: 'female' },
-  { id: 'shimmer', name: 'Shimmer (Clear/Bright)', gender: 'female' }
+  { id: 'onyx', name: 'Onyx (Deep/Authoritative)', gender: 'male' }
 ];
 
 export class VoiceController {
@@ -139,7 +139,7 @@ export class VoiceController {
       status: 'success',
       supportedLanguages: SUPPORTED_LANGUAGES,
       availableVoices: AVAILABLE_VOICES,
-      defaultVoice: env.TTS_VOICE || 'alloy',
+      defaultVoice: env.TTS_VOICE || 'shimmer',
       sttProvider: sttActive,
       ttsProvider: ttsActive,
       serverSTTAvailable: hasOpenAI || hasDeepgram,

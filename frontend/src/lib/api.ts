@@ -1003,7 +1003,44 @@ async function simulateAgenticTripPlanning(
 }
 
 function simulateNaturalLanguageModification(req: ModifyItineraryRequest): ModifyItineraryResponse {
-  const p = req.user_prompt.toLowerCase().trim();
+  const p = req.user_prompt.toLowerCase().trim().replace(/[!?.,]+$/, '');
+
+  // Instant simple courtesies (hello, hi, how are you, can you hear me)
+  if (/^(?:hi|hello|hey|hey\s+there|hiya|howdy|hola|namaste|good\s+(?:morning|afternoon|evening|day))(?:\s+(?:pilot|there|trippilot|ai|friend|buddy|traveler))?$/i.test(p) ||
+      /^(?:pilot|trippilot)$/i.test(p)) {
+    return {
+      message: "Hello! I am Pilot, your AI travel assistant. Where would you like to travel next? Tell me a destination like Goa, Coorg, or Paris, or ask me for travel ideas!",
+      action: 'chat'
+    };
+  }
+
+  if (/^(?:how\s+are\s+you|how's\s+it\s+going|how\s+are\s+things|how\s+r\s+u|how\s+do\s+you\s+do)(?:\s+(?:doing|today|pilot|there))?$/i.test(p)) {
+    return {
+      message: "I am doing great and excited to help you plan your travels! Where are you thinking of going?",
+      action: 'chat'
+    };
+  }
+
+  if (/^(?:can\s+you\s+hear\s+me|are\s+you\s+there|can\s+u\s+hear\s+me|am\s+i\s+audible|hello\s+are\s+you\s+there|test|testing|mic\s+test)$/i.test(p)) {
+    return {
+      message: "Yes, I can hear you loud and clear! How can I help you with your travel plans today?",
+      action: 'chat'
+    };
+  }
+
+  if (/^(?:thank\s+you|thanks|thanks\s+a\s+lot|thank\s+you\s+so\s+much)(?:\s+(?:pilot|trippilot|a\s+lot|very\s+much))?$/i.test(p)) {
+    return {
+      message: "You're very welcome! Let me know if you would like to explore any more destinations or adjust your itinerary.",
+      action: 'chat'
+    };
+  }
+
+  if (/^(?:ok|okay|cool|great|nice|awesome|perfect|got\s+it|understood|sure|alright|sounds\s+good|yes|no)$/i.test(p)) {
+    return {
+      message: "Great! Whenever you're ready, let me know where you'd like to travel or what changes you'd like to make.",
+      action: 'chat'
+    };
+  }
 
   // Agent name & identity query
   if (

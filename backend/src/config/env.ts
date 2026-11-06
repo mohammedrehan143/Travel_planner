@@ -29,7 +29,7 @@ const envSchema = z.object({
   TTS_PROVIDER: z.enum(['openai', 'elevenlabs', 'auto']).default('auto'),
   DEEPGRAM_API_KEY: z.string().optional(),
   ELEVENLABS_API_KEY: z.string().optional(),
-  TTS_VOICE: z.string().default('alloy'),
+  TTS_VOICE: z.string().default('nova'),
   ELEVENLABS_VOICE_ID: z.string().optional()
 });
 
