@@ -15,6 +15,45 @@ export const SUPPORTED_VOICE_LANGUAGES: VoiceLanguage[] = [
   { code: 'kn', name: 'ಕನ್ನಡ (Kannada)', locale: 'kn-IN', flag: '🇮🇳' }
 ];
 
+/**
+ * Detects whether the user articulated a completed travel intent or voice command
+ * to trigger prompt submission without getting delayed by ambient background noise.
+ */
+export function isCompleteSpeechIntent(text: string): boolean {
+  const t = text.toLowerCase().trim();
+  if (t.length < 5) return false;
+
+  // Direct stop / finish keywords
+  if (/\b(?:stop\s+listening|that(?:'s|\s+is)\s+all|i(?:'m|\s+am)\s+done|finish(?:ed)?|submit|done|over\s+and\s+out|that(?:'s|\s+is)\s+it)\b/i.test(t)) {
+    return true;
+  }
+
+  // Complete planning intent: e.g. "plan a trip to goa", "plan a 3-day trip to manali", "book a trip to coorg"
+  if (/\b(?:plan|create|build|book|schedule|organize)\b.*?\b(?:trip|itinerary|vacation|tour|holiday|getaway)\b.*?\b(?:to|in|for)\s+[a-z]{3,}/i.test(t)) {
+    return true;
+  }
+
+  // Specific inquiries with destination or day: e.g. "what is the weather there", "what about day two"
+  if (/\b(?:weather|temperature|forecast)\b.*?\b(?:in|at|for|there)\b/i.test(t)) {
+    return true;
+  }
+  if (/\b(?:what\s+about|show\s+me|tell\s+me\s+about)\b.*?\b(?:second\s+day|day\s+two|day\s+2|first\s+day|day\s+1|hotels|activities|food)\b/i.test(t)) {
+    return true;
+  }
+
+  // Modification commands: e.g. "make it cheaper", "remove the last activity"
+  if (/\b(?:make\s+(?:it|the\s+trip|this)\s+cheaper|reduce\s+(?:the\s+)?budget|remove\s+(?:the\s+)?last\s+activity)\b/i.test(t)) {
+    return true;
+  }
+
+  // Farewell commands
+  if (/\b(?:thank\s+you|thanks|bye(?:\s+bye)?|goodbye|see\s+you)\b/i.test(t)) {
+    return true;
+  }
+
+  return false;
+}
+
 export class VoiceControllerClient {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -27,6 +66,87 @@ export class VoiceControllerClient {
   private lastSpokenText: string | null = null;
   private onVolumeChange?: (volume: number) => void;
   private animFrameId: number | null = null;
+  private availableVoices: SpeechSynthesisVoice[] = [];
+
+  constructor() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      this.loadVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        this.loadVoices();
+      };
+    }
+  }
+
+  private loadVoices() {
+    try {
+      this.availableVoices = window.speechSynthesis.getVoices();
+    } catch {
+      this.availableVoices = [];
+    }
+  }
+
+  public getAvailableVoices(): SpeechSynthesisVoice[] {
+    if (this.availableVoices.length === 0 && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      this.availableVoices = window.speechSynthesis.getVoices();
+    }
+    return this.availableVoices;
+  }
+
+  /**
+   * Discovers the highest fidelity, natural, human-tuned voice available in the environment.
+   */
+  public findBestNaturalVoice(language: string, preferredVoiceName?: string): SpeechSynthesisVoice | null {
+    const voices = this.getAvailableVoices();
+    if (!voices || voices.length === 0) return null;
+
+    if (preferredVoiceName) {
+      const direct = voices.find((v) => v.name.toLowerCase().includes(preferredVoiceName.toLowerCase()));
+      if (direct) return direct;
+    }
+
+    const langCode = language.toLowerCase();
+
+    if (langCode === 'hi') {
+      const hindi = voices.find((v) => /hi[-_]in|hindi/i.test(v.lang) && /natural|online|swara|google|kalpana/i.test(v.name))
+        || voices.find((v) => /hi[-_]in|hindi/i.test(v.lang));
+      if (hindi) return hindi;
+    }
+
+    if (langCode === 'kn') {
+      const kannada = voices.find((v) => /kn[-_]in|kannada/i.test(v.lang));
+      if (kannada) return kannada;
+    }
+
+    // Natural English voices prioritized for smooth, expressive, human-like prosody
+    const naturalPatterns = [
+      /natural.*english/i,
+      /online.*natural/i,
+      /microsoft.*jenny.*natural/i,
+      /microsoft.*aria.*natural/i,
+      /microsoft.*guy.*natural/i,
+      /microsoft.*swara/i,
+      /google\s+us\s+english/i,
+      /google\s+uk\s+english/i,
+      /samantha/i,
+      /karen/i,
+      /serena/i,
+      /neural/i,
+      /natural/i,
+      /google/i,
+      /premium/i
+    ];
+
+    for (const pattern of naturalPatterns) {
+      const match = voices.find((v) => pattern.test(v.name) && v.lang.toLowerCase().startsWith('en'));
+      if (match) return match;
+    }
+
+    // Filter out old robotic desktop synthesizers (e.g. SAPI5 Microsoft David Desktop)
+    const nonDesktop = voices.find((v) => v.lang.toLowerCase().startsWith('en') && !/desktop/i.test(v.name));
+    if (nonDesktop) return nonDesktop;
+
+    return voices.find((v) => v.lang.toLowerCase().startsWith('en')) || voices[0] || null;
+  }
 
   /**
    * Request microphone permission and initialize MediaStream
@@ -299,8 +419,8 @@ export class VoiceControllerClient {
       console.warn('Backend TTS call failed, using client speech synthesis fallback:', e);
     }
 
-    // Client-side Web Speech Synthesis fallback
-    this.speakViaWebSpeech(options.text, options.language, options.onStart, options.onEnd, options.onError);
+    // Client-side Web Speech Synthesis fallback with natural tuned voice selection
+    this.speakViaWebSpeech(options.text, options.language, options.onStart, options.onEnd, options.onError, options.voice);
   }
 
   private playAudioUrl(
@@ -339,7 +459,8 @@ export class VoiceControllerClient {
     language: string,
     onStart?: () => void,
     onEnd?: () => void,
-    onError?: (err: Error) => void
+    onError?: (err: Error) => void,
+    preferredVoice?: string
   ) {
     if (!('speechSynthesis' in window)) {
       onEnd?.();
@@ -348,11 +469,37 @@ export class VoiceControllerClient {
 
     try {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Clean text for natural conversational cadence, removing markdown symbols, expanding currencies
+      const cleanSpoken = text
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/https?:\/\/\S+/gi, '')
+        .replace(/₹\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 rupees')
+        .replace(/\$\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 dollars')
+        .replace(/€\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, '$1 euros')
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/_([^_]+)_/g, '$1')
+        .replace(/^\s*[-*•]\s+/gm, ', ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const utterance = new SpeechSynthesisUtterance(cleanSpoken);
       const langObj = SUPPORTED_VOICE_LANGUAGES.find((l) => l.code === language);
       utterance.lang = langObj ? langObj.locale : 'en-US';
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
+
+      // Assign highest fidelity natural / neural voice
+      const naturalVoice = this.findBestNaturalVoice(language, preferredVoice);
+      if (naturalVoice) {
+        utterance.voice = naturalVoice;
+      }
+
+      // Smooth conversational prosody: 0.96 rate and 1.02 pitch
+      utterance.rate = 0.96;
+      utterance.pitch = 1.02;
 
       utterance.onstart = () => onStart?.();
       utterance.onend = () => onEnd?.();

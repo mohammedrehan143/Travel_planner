@@ -172,6 +172,7 @@ describe('Voice Assistant (STT & TTS) Module Suite', () => {
       expect(res.body.status).toBe('success');
       expect(res.body.action).toBe('plan_new_trip');
       expect(res.body.createdTrip).toBeDefined();
+      expect(res.body.message).toMatch(/all the best for the trip/i);
       expect(res.body.message).toMatch(/goodbye|wonderful and safe trip|safe journey/i);
     });
   });

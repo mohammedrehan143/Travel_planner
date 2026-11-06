@@ -245,7 +245,7 @@ Determine whether the traveler is asking to PLAN / CREATE / SCHEDULE A NEW TRIP 
     * "travelStyle": "budget" | "balanced" | "luxury".
     * "interests": Keywords such as ["sightseeing", "food", "culture"].
     * "dietaryPreference": "veg" | "non-veg" | "any".
-  - "reply": An enthusiastic, 2-sentence confirmation acknowledging the destination, days, and special features you are orchestrating.
+  - "reply": An enthusiastic, 2-sentence confirmation acknowledging the destination, days, and special features you are orchestrating, concluding with: "All the best for the trip!".
 
 2. CONVERSATIONAL INTENT:
 - If the traveler asks about dining, sightseeing, hangout spots, transit, tips, recommendations, or questions:
@@ -514,7 +514,7 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
 
     return {
       action: 'plan_new_trip',
-      reply: `I have customized a ${duration}-day ${isBudget ? 'budget-friendly' : 'curated'} travel plan for ${dest} for you!`,
+      reply: `I have customized a ${duration}-day ${isBudget ? 'budget-friendly' : 'curated'} travel plan for ${dest} for you! All the best for the trip!`,
       tripParams: {
         destination: dest,
         durationDays: Math.min(30, Math.max(1, duration)),

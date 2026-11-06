@@ -75,11 +75,14 @@ export class AgentController {
 
         const planned = await AgentOrchestrator.planTrip(planReq);
 
-        const byeSignoff = "Have a wonderful and safe trip! Goodbye for now, and let me know if you need any adjustments! 👋✨";
         const baseMsg = chatResult.reply || `I have designed and booked your ${durationDays}-day trip to ${dest}! Your itinerary is ready on screen.`;
-        const messageWithBye = /bye|goodbye|farewell/i.test(baseMsg)
-          ? baseMsg
-          : `${baseMsg}\n\n${byeSignoff}`;
+        let messageWithBye = baseMsg;
+        if (!/all the best for the trip/i.test(messageWithBye)) {
+          messageWithBye = `${messageWithBye}\n\nAll the best for the trip!`;
+        }
+        if (!/goodbye|bye|safe journey|safe travels|safe trip/i.test(messageWithBye)) {
+          messageWithBye = `${messageWithBye} Have a wonderful and safe journey, goodbye for now, and let me know if you need any adjustments! 👋✈️`;
+        }
 
         // 5. Update structured trip memory with new planned trip details
         await ConversationMemoryService.updateTripMemory(session.conversationId, {

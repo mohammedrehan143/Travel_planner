@@ -3,7 +3,8 @@ import {
   VoiceState,
   SUPPORTED_VOICE_LANGUAGES,
   VoiceLanguage,
-  globalVoiceController
+  globalVoiceController,
+  isCompleteSpeechIntent
 } from '../../lib/voice';
 import { TripPilotAPI, VoiceConfigResponse } from '../../lib/api';
 import { VoiceVisualizerOrb } from './VoiceVisualizerOrb';
@@ -71,6 +72,7 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   const [isAudioPaused, setIsAudioPaused] = useState<boolean>(false);
   const [voiceConfig, setVoiceConfig] = useState<VoiceConfigResponse | null>(null);
   const [autoSubmitCountdown, setAutoSubmitCountdown] = useState<number | null>(null);
+  const [intentDetected, setIntentDetected] = useState<boolean>(false);
 
   // Synchronization refs to prevent stale closure in timers
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -78,6 +80,8 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
   const transcriptRef = useRef<string>('');
   const stateRef = useRef<VoiceState>('idle');
   const isProcessingRef = useRef<boolean>(false);
+  const lastTranscriptChangeTimeRef = useRef<number>(Date.now());
+  const recordingStartTimeRef = useRef<number>(Date.now());
 
   stateRef.current = state;
   transcriptRef.current = transcript;
@@ -94,14 +98,57 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
     setAutoSubmitCountdown(null);
   };
 
+  const triggerQuickAutoSubmit = () => {
+    if (stateRef.current !== 'listening' || isProcessingRef.current) return;
+    clearSilenceTimers();
+    setIntentDetected(true);
+    setAutoSubmitCountdown(1);
+
+    silenceTimerRef.current = setTimeout(() => {
+      clearSilenceTimers();
+      if (
+        stateRef.current === 'listening' &&
+        transcriptRef.current.trim().length > 0 &&
+        !isProcessingRef.current
+      ) {
+        handleStopAndProcess();
+      }
+    }, 700);
+  };
+
   // Initialize voice configuration and audio volume hooks
   useEffect(() => {
     TripPilotAPI.getVoiceConfig().then(setVoiceConfig).catch(() => {});
     globalVoiceController.setVolumeCallback((vol) => {
       setVolume(vol);
 
-      // If user is actively speaking (audio soundwaves), reset the silence timer
-      if (vol > 0.09 && stateRef.current === 'listening' && transcriptRef.current.trim().length > 0) {
+      const timeSinceLastWord = Date.now() - lastTranscriptChangeTimeRef.current;
+      const totalRecTime = Date.now() - recordingStartTimeRef.current;
+
+      // Hard max listening cap (9s if text exists) to prevent runaway listening from ambient noise
+      if (
+        stateRef.current === 'listening' &&
+        transcriptRef.current.trim().length > 0 &&
+        totalRecTime > 9000 &&
+        !isProcessingRef.current
+      ) {
+        handleStopAndProcess();
+        return;
+      }
+
+      // If user articulated a recognized intent keyword, don't let ambient noise prolong listening
+      if (isCompleteSpeechIntent(transcriptRef.current)) {
+        return;
+      }
+
+      // Filter background noise: only reset silence timer if volume is genuinely active voice (vol > 0.20)
+      // and new words were spoken within the last 1.2s. Stagnant ambient noise will expire and auto-submit.
+      if (
+        vol > 0.20 &&
+        stateRef.current === 'listening' &&
+        transcriptRef.current.trim().length > 0 &&
+        timeSinceLastWord < 1200
+      ) {
         restartSilenceTimer();
       }
     });
@@ -155,14 +202,28 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
       transcriptRef.current = '';
       setIsAudioPaused(false);
       isProcessingRef.current = false;
+      setIntentDetected(false);
+      recordingStartTimeRef.current = Date.now();
+      lastTranscriptChangeTimeRef.current = Date.now();
 
       await globalVoiceController.startRecording({
         language: selectedLang,
         onInterimTranscript: (interim) => {
-          setTranscript(interim);
-          transcriptRef.current = interim;
-          if (interim.trim().length > 0) {
-            restartSilenceTimer();
+          const trimmed = interim.trim();
+          if (trimmed !== transcriptRef.current) {
+            transcriptRef.current = trimmed;
+            setTranscript(trimmed);
+            lastTranscriptChangeTimeRef.current = Date.now();
+
+            // Keyword Intent Detection: Auto-stop if user completed a full travel command
+            if (isCompleteSpeechIntent(trimmed)) {
+              triggerQuickAutoSubmit();
+              return;
+            }
+
+            if (trimmed.length > 0) {
+              restartSilenceTimer();
+            }
           }
         }
       });
@@ -400,10 +461,13 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
           </button>
         </div>
 
-        {/* Provider badge */}
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded-full">
+        {/* Natural Tuned Voice badge */}
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-600 bg-neutral-100/90 border border-neutral-200/60 px-2.5 py-1 rounded-full shadow-xs">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Pilot Voice Active</span>
+          <span className="flex items-center gap-1">
+            <Volume2 className="w-3 h-3 text-[#1E60FF]" />
+            <span>Pilot Natural Voice (Smooth)</span>
+          </span>
         </div>
       </div>
 
@@ -435,19 +499,26 @@ export const VoiceModePanel: React.FC<VoiceModePanelProps> = ({
 
           <p className="text-xs text-slate-500">
             {state === 'listening'
-              ? 'Speak naturally with pauses. Auto-submits after 2s of silence.'
+              ? 'Speak naturally. Ambient noise is filtered; auto-stops on keyword or pause.'
               : state === 'speaking'
               ? 'Tap orb or "Interrupt" to stop audio anytime.'
               : 'Ask anything: "Plan 3 days in Coorg under ₹10,000", "Change tomorrow\'s plan", or "Weather in Manali".'}
           </p>
         </div>
 
-        {/* 2-Second Silence Auto-Submit Countdown Badge */}
-        {state === 'listening' && autoSubmitCountdown !== null && (
-          <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1E60FF] text-[11px] font-bold animate-pulse">
-            <Clock className="w-3 h-3" />
-            <span>Auto-submitting in {autoSubmitCountdown}s... (keep speaking to extend)</span>
-          </div>
+        {/* Keyword Intent Detected or 2-Second Silence Auto-Submit Badge */}
+        {state === 'listening' && (
+          intentDetected ? (
+            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-[11px] font-bold animate-pulse shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Keyword intent detected • Auto-processing...</span>
+            </div>
+          ) : autoSubmitCountdown !== null ? (
+            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1E60FF] text-[11px] font-bold animate-pulse">
+              <Clock className="w-3 h-3" />
+              <span>Auto-submitting in {autoSubmitCountdown}s... (noise filtered)</span>
+            </div>
+          ) : null
         )}
 
         {/* Error Banner */}
