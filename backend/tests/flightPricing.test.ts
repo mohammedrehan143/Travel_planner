@@ -39,6 +39,29 @@ describe('Accurate Flight Pricing Engine Suite', () => {
       expect(delhiTrip.cost).toBeGreaterThanOrEqual(5000);
       expect(delhiTrip.cost).toBeLessThanOrEqual(8000);
       expect(delhiTrip.isInternational).toBe(false);
+
+      // Bangalore to Delhi realistic airfare
+      const blrDel = getAccurateFlightEstimate('Bangalore', 'Delhi', 'INR');
+      expect(blrDel.cost).toBe(11500);
+
+      // Mumbai to Goa realistic airfare
+      const bomGoa = getAccurateFlightEstimate('Mumbai', 'Goa', 'INR');
+      expect(bomGoa.cost).toBe(4500);
+    });
+
+    it('identifies road transit / hill stations without commercial flights as zero flight cost', () => {
+      const coorg = getAccurateFlightEstimate('Bangalore', 'Coorg', 'INR');
+      expect(coorg.cost).toBe(0);
+      expect(coorg.airlines).toContain('Road Transit');
+      expect(coorg.description).toContain('highway road trip');
+
+      const ooty = getAccurateFlightEstimate('Bengaluru', 'Ooty', 'INR');
+      expect(ooty.cost).toBe(0);
+      expect(ooty.airlines).toContain('Road Transit');
+
+      const pune = getAccurateFlightEstimate('Mumbai', 'Pune', 'INR');
+      expect(pune.cost).toBe(0);
+      expect(pune.airlines).toContain('Expressway');
     });
 
     it('estimates realistic domestic airfare for US routes in USD', () => {

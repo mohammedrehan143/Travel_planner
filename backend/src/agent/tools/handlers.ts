@@ -4,7 +4,7 @@ import { RoutesAdapter } from '../../integrations/routes.adapter.js';
 import { AccommodationAdapter } from '../../integrations/accommodation.adapter.js';
 import { CurrencyAdapter } from '../../integrations/currency.adapter.js';
 import { generateItineraryWithGemini } from '../gemini.generator.js';
-import { getAccurateFlightEstimate } from '../flightPricing.js';
+import { getAccurateFlightEstimate, isDestinationIndia, convertFromINR, convertFromUSD } from '../flightPricing.js';
 import { ItineraryValidator } from '../validator.js';
 import { getAdminSupabase } from '../../db/supabase.js';
 import {
@@ -574,6 +574,49 @@ export class ToolHandlers {
       };
     };
 
+    // Helper to compute realistic place cost respecting free attractions & regional base prices
+    const computeActivityCost = (
+      placeCost: number | undefined,
+      defaultUSD: number
+    ): number => {
+      const isIndia = isDestinationIndia(params.destination);
+      const curr = (params.currency || 'INR').toUpperCase();
+
+      // Check if place explicitly defined a cost (0 means FREE, must not be replaced!)
+      if (typeof placeCost === 'number') {
+        if (placeCost === 0) return 0;
+        if (isIndia) {
+          if (curr === 'INR') return Math.round(placeCost);
+          return Math.round(convertFromINR(placeCost, curr));
+        } else {
+          if (curr === 'USD') return Math.round(placeCost);
+          return Math.round(convertFromUSD(placeCost, curr));
+        }
+      }
+
+      // Default fallback
+      if (isIndia) {
+        const defaultINR = defaultUSD <= 5 ? 0 : Math.round(defaultUSD * 25);
+        if (curr === 'INR') return defaultINR;
+        return Math.round(convertFromINR(defaultINR, curr));
+      } else {
+        if (curr === 'USD') return Math.round(defaultUSD);
+        return Math.round(convertFromUSD(defaultUSD, curr));
+      }
+    };
+
+    const computeDiningCost = (diningCost: number): number => {
+      const isIndia = isDestinationIndia(params.destination);
+      const curr = (params.currency || 'INR').toUpperCase();
+      if (isIndia) {
+        if (curr === 'INR') return Math.round(diningCost);
+        return Math.round(convertFromINR(diningCost, curr));
+      } else {
+        if (curr === 'USD') return Math.round(diningCost);
+        return Math.round(convertFromUSD(diningCost, curr));
+      }
+    };
+
     for (let dayIdx = 0; dayIdx < params.durationDays; dayIdx++) {
       const currentDayDate = new Date(startDateObj);
       currentDayDate.setDate(startDateObj.getDate() + dayIdx);
@@ -620,7 +663,7 @@ export class ToolHandlers {
           locationAddress: morningPlace.address || `Central District, ${params.destination}`,
           latitude: morningPlace.lat || coords.lat,
           longitude: morningPlace.lng || coords.lng,
-          estimatedCost: Math.round((morningPlace.estimatedCost || 30) * currencyRate),
+          estimatedCost: computeActivityCost(morningPlace.estimatedCost, 15),
           currency: params.currency,
           speciality: 'Iconic Architecture & Heritage Grounds',
           bookingRequired: false,
@@ -640,7 +683,7 @@ export class ToolHandlers {
           locationAddress: diningInfo.location,
           latitude: coords.lat + 0.002,
           longitude: coords.lng + 0.003,
-          estimatedCost: Math.round(diningInfo.cost * (params.currency === 'INR' ? 1 : currencyRate)),
+          estimatedCost: computeDiningCost(diningInfo.cost),
           currency: params.currency,
           dietaryTag: (dietaryChoice === 'veg' ? 'veg' : dietaryChoice === 'non_veg' ? 'non-veg' : 'both') as any,
           speciality: diningInfo.speciality,
@@ -665,7 +708,7 @@ export class ToolHandlers {
           locationAddress: afternoonPlace.address || `Parkway, ${params.destination}`,
           latitude: afternoonPlace.lat || coords.lat - 0.003,
           longitude: afternoonPlace.lng || coords.lng + 0.004,
-          estimatedCost: Math.round((afternoonPlace.estimatedCost || 25) * currencyRate),
+          estimatedCost: computeActivityCost(afternoonPlace.estimatedCost, 15),
           currency: params.currency,
           speciality: 'Scenic Panoramas & Exhibitions',
           bookingRequired: false,
@@ -689,7 +732,7 @@ export class ToolHandlers {
           locationAddress: hangoutInfo.location,
           latitude: coords.lat + 0.003,
           longitude: coords.lng - 0.002,
-          estimatedCost: Math.round(25 * currencyRate),
+          estimatedCost: computeActivityCost(0, 0),
           currency: params.currency,
           speciality: hangoutInfo.speciality,
           bookingRequired: false,
@@ -713,7 +756,7 @@ export class ToolHandlers {
           locationAddress: `Promenade District, ${params.destination}`,
           latitude: coords.lat - 0.002,
           longitude: coords.lng + 0.002,
-          estimatedCost: Math.round(35 * currencyRate),
+          estimatedCost: computeDiningCost(isDestinationIndia(params.destination) ? 380 : 35),
           currency: params.currency,
           dietaryTag: (dietaryChoice === 'veg' ? 'veg' : 'both') as any,
           speciality: 'Evening Street Specialties & Twilight Views',

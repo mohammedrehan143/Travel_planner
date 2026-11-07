@@ -430,11 +430,220 @@ export function getAccurateFlightEstimate(
     }
   }
 
+interface DomesticCityPair {
+  match: (orig: string, dest: string) => boolean;
+  costINR: number;
+  airlines: string;
+  description: string;
+  isGround?: boolean;
+}
+
+const DOMESTIC_INDIAN_ROUTES: DomesticCityPair[] = [
+  // Ground / Road Transit / Hill station corridors (no commercial flight needed)
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru') || o.includes('mysore')) &&
+                     (d.includes('coorg') || d.includes('kodagu') || d.includes('madikeri')),
+    costINR: 0,
+    airlines: 'Road Transit / Outstation Cab / KSRTC (No Flight Needed)',
+    description: 'Scenic highway road trip via Mysore expressway (~250 km, 5 hrs) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru') || o.includes('mysore')) &&
+                     (d.includes('ooty') || d.includes('nilgiris') || d.includes('udhagamandalam')),
+    costINR: 0,
+    airlines: 'Road Transit / Outstation Cab (No Flight Needed)',
+    description: 'Scenic highway drive through Bandipur forest (~270 km, 6 hrs) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) &&
+                     (d.includes('mysore') || d.includes('mysuru')),
+    costINR: 0,
+    airlines: 'Vande Bharat Express / Highway Cab (No Flight Needed)',
+    description: 'Direct expressway drive or 1.5-hr Vande Bharat train (~140 km) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) &&
+                     (d.includes('chikmagalur') || d.includes('chikkamagaluru')),
+    costINR: 0,
+    airlines: 'Road Transit / Outstation Cab (No Flight Needed)',
+    description: 'Scenic Western Ghats road trip (~240 km, 4.5 hrs) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) &&
+                     (d.includes('wayanad')),
+    costINR: 0,
+    airlines: 'Road Transit / Outstation Cab (No Flight Needed)',
+    description: 'Scenic drive via Bandipur & Sulthan Bathery (~280 km) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) &&
+                     (d.includes('pondicherry') || d.includes('puducherry')),
+    costINR: 0,
+    airlines: 'Highway Cab / KSRTC Express Bus (No Flight Needed)',
+    description: 'Direct highway drive via NH 77 (~310 km, 6 hrs) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => (o.includes('mumbai') || o.includes('pune')) &&
+                     (d.includes('lonavala') || d.includes('khandala') || d.includes('alibaug') || d.includes('mahabaleshwar')),
+    costINR: 0,
+    airlines: 'Expressway Cab / Intercity Train (No Flight Needed)',
+    description: 'Scenic Western Ghats expressway drive — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => (o.includes('mumbai') && d.includes('pune')) || (o.includes('pune') && d.includes('mumbai')),
+    costINR: 0,
+    airlines: 'Expressway Cab / Deccan Queen Express (No Flight Needed)',
+    description: 'Direct Mumbai-Pune expressway or 3-hr express train — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => o.includes('delhi') && (d.includes('agra') || d.includes('mathura')),
+    costINR: 0,
+    airlines: 'Gatimaan Express / Yamuna Expressway (No Flight Needed)',
+    description: '1.5-hr Gatimaan Express or Yamuna Expressway drive (~210 km) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => o.includes('delhi') && (d.includes('rishikesh') || d.includes('haridwar') || d.includes('dehradun')),
+    costINR: 0,
+    airlines: 'Vande Bharat Express / Highway Cab (No Flight Needed)',
+    description: 'Direct expressway drive or 4-hr Vande Bharat train (~240 km) — zero flight required',
+    isGround: true,
+  },
+  {
+    match: (o, d) => o.includes('delhi') && (d.includes('shimla') || d.includes('chandigarh')),
+    costINR: 0,
+    airlines: 'Shatabdi Express / Highway Cab (No Flight Needed)',
+    description: 'Direct highway drive or Shatabdi Express train — zero flight required',
+    isGround: true,
+  },
+
+  // Verified Real Commercial Flight Routes in India
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) && d.includes('goa'),
+    costINR: 5200,
+    airlines: 'IndiGo / Air India Express / Akasa Air',
+    description: 'Estimated round-trip domestic airfare per passenger (BLR ⇄ GOI/GOX)',
+  },
+  {
+    match: (o, d) => o.includes('mumbai') && d.includes('goa'),
+    costINR: 4500,
+    airlines: 'IndiGo / Air India / Akasa Air',
+    description: 'Estimated round-trip domestic airfare per passenger (BOM ⇄ GOI/GOX)',
+  },
+  {
+    match: (o, d) => o.includes('delhi') && d.includes('goa'),
+    costINR: 10500,
+    airlines: 'IndiGo / Air India / Vistara',
+    description: 'Estimated round-trip domestic airfare per passenger (DEL ⇄ GOI/GOX)',
+  },
+  {
+    match: (o, d) => (o.includes('mumbai') && d.includes('delhi')) || (o.includes('delhi') && d.includes('mumbai')),
+    costINR: 7200,
+    airlines: 'IndiGo / Air India / Akasa Air',
+    description: 'Estimated round-trip domestic airfare per passenger (BOM ⇄ DEL)',
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) && d.includes('delhi'),
+    costINR: 11500,
+    airlines: 'IndiGo / Air India / Akasa Air',
+    description: 'Estimated round-trip domestic airfare per passenger (BLR ⇄ DEL)',
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) && d.includes('mumbai'),
+    costINR: 7600,
+    airlines: 'IndiGo / Air India / Akasa Air',
+    description: 'Estimated round-trip domestic airfare per passenger (BLR ⇄ BOM)',
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) && (d.includes('kolkata') || d.includes('calcutta')),
+    costINR: 11200,
+    airlines: 'IndiGo / Air India',
+    description: 'Estimated round-trip domestic airfare per passenger (BLR ⇄ CCU)',
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) && (d.includes('jaipur') || d.includes('rajasthan')),
+    costINR: 10800,
+    airlines: 'IndiGo / Air India Express',
+    description: 'Estimated round-trip domestic airfare per passenger (BLR ⇄ JAI)',
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) && (d.includes('kochi') || d.includes('cochin') || d.includes('kerala')),
+    costINR: 5200,
+    airlines: 'IndiGo / Air India Express / Akasa Air',
+    description: 'Estimated round-trip domestic airfare per passenger (BLR ⇄ COK)',
+  },
+  {
+    match: (o, d) => (o.includes('bangalore') || o.includes('bengaluru')) && d.includes('hyderabad'),
+    costINR: 4800,
+    airlines: 'IndiGo / Air India / Alliance Air',
+    description: 'Estimated round-trip domestic airfare per passenger (BLR ⇄ HYD)',
+  },
+  {
+    match: (o, d) => o.includes('delhi') && (d.includes('srinagar') || d.includes('kashmir')),
+    costINR: 11000,
+    airlines: 'IndiGo / Air India / SpiceJet',
+    description: 'Estimated round-trip domestic airfare per passenger (DEL ⇄ SXR)',
+  },
+  {
+    match: (o, d) => (o.includes('kolkata') || o.includes('calcutta')) && d.includes('delhi'),
+    costINR: 9800,
+    airlines: 'IndiGo / Air India',
+    description: 'Estimated round-trip domestic airfare per passenger (CCU ⇄ DEL)',
+  },
+  {
+    match: (o, d) => o.includes('chennai') && d.includes('delhi'),
+    costINR: 11400,
+    airlines: 'IndiGo / Air India',
+    description: 'Estimated round-trip domestic airfare per passenger (MAA ⇄ DEL)',
+  },
+  {
+    match: (o, d) => (o.includes('chennai') && (d.includes('bangalore') || d.includes('bengaluru'))) ||
+                     ((o.includes('bangalore') || o.includes('bengaluru')) && d.includes('chennai')),
+    costINR: 3800,
+    airlines: 'IndiGo / Vande Bharat Train / Outstation Cab',
+    description: 'Estimated round-trip intercity transit per passenger (BLR ⇄ MAA)',
+  },
+];
+
   // 3. Domestic Route Estimation
   if (!tripIsInternational) {
     const isIndia = isOriginIndia(orig, curr) || isDestinationIndia(dest);
     if (isIndia) {
-      const cost = convertFromINR(6200, curr);
+      const origLower = orig.toLowerCase();
+      const destLower = dest.toLowerCase();
+      const matchedDomestic = DOMESTIC_INDIAN_ROUTES.find(r => r.match(origLower, destLower));
+
+      if (matchedDomestic) {
+        if (matchedDomestic.costINR === 0) {
+          return {
+            cost: 0,
+            currency: curr,
+            airlines: matchedDomestic.airlines,
+            description: matchedDomestic.description,
+            isInternational: false,
+            isIntraCity: false,
+          };
+        }
+        const cost = convertFromINR(matchedDomestic.costINR, curr);
+        return {
+          cost,
+          currency: curr,
+          airlines: matchedDomestic.airlines,
+          description: matchedDomestic.description,
+          isInternational: false,
+          isIntraCity: false,
+        };
+      }
+
+      const cost = convertFromINR(6500, curr);
       return {
         cost,
         currency: curr,

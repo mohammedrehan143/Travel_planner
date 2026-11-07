@@ -782,7 +782,7 @@ async function simulateAgenticTripPlanning(
         location_address: isBlr ? 'Vasanth Nagar, Bengaluru' : isSaudi ? 'Al Olaya, Riyadh, Saudi Arabia' : `Central District, ${input.destination}`,
         latitude: lat + 0.005,
         longitude: lng + 0.004,
-        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.04)),
+        estimated_cost: isBlr ? 250 : isSaudi ? 69 : (input.currency === 'INR' ? 250 : 25),
         currency: input.currency,
         speciality: isBlr ? 'Tudor Architecture & Royal Durbar Woodcarvings' : isSaudi ? '300m Curved Glass Skybridge' : 'Heritage Architecture & Exhibits',
         booking_required: false,
@@ -824,7 +824,7 @@ async function simulateAgenticTripPlanning(
           : isSaudi ? 'Al Olaya, Riyadh, Saudi Arabia' : `Culinary Quarter, ${input.destination}`,
         latitude: lat + 0.008,
         longitude: lng + 0.006,
-        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.05)),
+        estimated_cost: isBlr ? (dietary === 'veg' ? 160 : 320) : isSaudi ? 65 : (input.currency === 'INR' ? 280 : 30),
         currency: input.currency,
         dietary_tag: isBlr ? (dietary === 'veg' ? 'veg' : 'non_veg') : 'both',
         speciality: isBlr
@@ -861,7 +861,7 @@ async function simulateAgenticTripPlanning(
         location_address: isBlr ? 'Mavalli, Bengaluru' : isSaudi ? 'Diriyah, Riyadh, Saudi Arabia' : `Museum Promenade, ${input.destination}`,
         latitude: lat - 0.003,
         longitude: lng + 0.002,
-        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.03)),
+        estimated_cost: isBlr ? 30 : isSaudi ? 50 : (input.currency === 'INR' ? 100 : 15),
         currency: input.currency,
         speciality: isBlr ? '1889 Crystal Glass House & Century-Old Trees' : isSaudi ? 'Najdi Mud-Brick Citadel & UNESCO Alleys' : 'Art Collections',
         booking_required: false,
@@ -895,7 +895,7 @@ async function simulateAgenticTripPlanning(
         location_address: isBlr ? 'Church Street, Shanthala Nagar, Bengaluru' : isSaudi ? 'Hittin, Riyadh, Saudi Arabia' : `Promenade, ${input.destination}`,
         latitude: lat + 0.003,
         longitude: lng - 0.003,
-        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.03)),
+        estimated_cost: 0,
         currency: input.currency,
         speciality: isBlr ? 'Vintage Books & Bangalore Indie Coffee Culture' : isSaudi ? 'Illuminated Dancing Fountains & The Groves Cafes' : 'Local Artisan Coffee',
         booking_required: false,
@@ -937,7 +937,7 @@ async function simulateAgenticTripPlanning(
           : isSaudi ? 'Al Dirah, Riyadh, Saudi Arabia' : `Waterfront Boulevard, ${input.destination}`,
         latitude: lat + 0.002,
         longitude: lng - 0.005,
-        estimated_cost: Math.max(0, Math.round(input.total_budget * 0.05)),
+        estimated_cost: isBlr ? (dietary === 'veg' ? 200 : 350) : isSaudi ? 50 : (input.currency === 'INR' ? 350 : 35),
         currency: input.currency,
         dietary_tag: isBlr ? (dietary === 'veg' ? 'veg' : 'non_veg') : 'both',
         speciality: isBlr
@@ -1056,6 +1056,41 @@ function simulateNaturalLanguageModification(req: ModifyItineraryRequest): Modif
     return {
       message: "I am Tripolio, the AI agent! I'm here to help you plan trips, discover exciting destinations, craft day-by-day itineraries, and optimize travel budgets. Where would you like to travel next?",
     };
+  }
+
+  // Flight pricing inquiry
+  if (/\b(?:flight|airfare|airline|plane\s+ticket|flying|fly\s+to|flight\s+cost|flight\s+price|ticket\s+price|flight\s+fare|flights)\b/i.test(p)) {
+    const dest = (req.context?.destination as string) || (p.includes('goa') ? 'Goa' : p.includes('paris') ? 'Paris' : p.includes('tokyo') ? 'Tokyo' : p.includes('dubai') ? 'Dubai' : p.includes('coorg') ? 'Coorg' : 'Goa');
+    const orig = (req.context?.origin as string) || 'Bangalore';
+    const curr = (req.context?.currency as string) || 'INR';
+    const flightEst = getAccurateFlightEstimate(orig, dest, curr);
+
+    if (flightEst.cost === 0) {
+      return {
+        message: `Travel between ${orig} and ${dest} is a ground transit / road trip (${flightEst.airlines}). Direct flights are not needed. You can take an outstation cab, self-drive, or express bus — ${flightEst.description}. Estimated cab fare is around ₹2,500–₹3,500.`,
+        action: 'chat'
+      };
+    }
+    return {
+      message: `Real round-trip flight fares between ${orig} and ${dest} are estimated at ${curr} ${flightEst.cost.toLocaleString()} per passenger on ${flightEst.airlines}. Route details: ${flightEst.description}.`,
+      action: 'chat'
+    };
+  }
+
+  // Place & Ticket Pricing inquiry
+  if (/\b(?:place\s+price|places\s+price|entrance\s+fee|entry\s+fee|ticket\s+price|monument\s+ticket|how\s+much\s+does.*?cost|entry\s+free|free\s+entry)\b/i.test(p)) {
+    if (p.includes('goa')) {
+      return {
+        message: `Here are verified, authentic entry fees and costs for popular attractions and dining in Goa:\n- Aguada Fort & Portuguese Lighthouse: ₹50 per person (foreigners ₹300)\n- Reis Magos Fort: ₹50 per person\n- Chapora Fort & Cabo de Rama: Free entry (₹0)\n- Basilica of Bom Jesus & Se Cathedral: Free entry (₹0)\n- Public Beaches (Baga, Anjuna, Palolem, Calangute): Free public access (₹0)\n- Fontainhas Latin Quarter: Free walking exploration (₹0)\n- Authentic Fish Thali (Vinayak / Ritz Classic): ₹250–₹380\n- Pure Veg Thali (Navtara / Bhakti): ₹180–₹260`,
+        action: 'chat'
+      };
+    }
+    if (p.includes('bangalore') || p.includes('bengaluru')) {
+      return {
+        message: `Here are verified real entry fees and costs for popular places in Bangalore:\n- Bangalore Palace: ₹250 per person\n- Lalbagh Botanical Garden: ₹30 per adult\n- Cubbon Park: Free entry (₹0)\n- Church Street & Blossoms Book House: Free entry (₹0)\n- Vidyarthi Bhavan Ghee Masala Dosa: ₹160\n- Meghana Foods Andhra Dum Biryani: ₹320\n- VV Puram Food Street Night Crawl: ₹150–₹250`,
+        action: 'chat'
+      };
+    }
   }
   
   if (p.includes('sushi') || p.includes('dinner') || p.includes('food') || p.includes('restaurant') || p.includes('ramen')) {

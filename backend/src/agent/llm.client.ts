@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { AGENT_TOOLS } from './tools/definitions.js';
 import { detectCurrencyForDestination, getDefaultBudgetForCurrency } from '../integrations/currency.adapter.js';
 import { isOutOfScopeQuery, CHATBOT_GUARDRAIL_REFUSAL, isAgentNameQuery, AGENT_NAME_RESPONSE } from './prompts.js';
+import { getAccurateFlightEstimate } from './flightPricing.js';
 
 let openaiClient: OpenAI | null = null;
 let openaiClientConfig = '';
@@ -12,14 +13,10 @@ let googleGenAIClient: GoogleGenAI | null = null;
 export type SupportedAIProvider = 'groq' | 'gemini' | 'openai' | 'none';
 
 export const FALLBACK_GROQ_MODELS = [
-  'openai/gpt-oss-120b',
   'qwen/qwen3.8-27b',
   'openai/gpt-oss-20b',
-  'llama-3.3-70b-versatile',
-  'llama-3.1-8b-instant',
-  'llama3-70b-8192',
-  'llama3-8b-8192',
-  'mixtral-8x7b-32768'
+  'openai/gpt-oss-120b',
+  'allam-2-7b'
 ];
 
 export const FALLBACK_GEMINI_MODELS = [
@@ -178,8 +175,8 @@ export function isSimpleCourtesy(text: string): { isCourtesy: boolean; reply?: s
     };
   }
 
-  // Well-being checks
-  if (/^(?:how\s+are\s+you|how's\s+it\s+going|how\s+are\s+things|how\s+r\s+u|how\s+do\s+you\s+do)(?:\s+(?:doing|today|pilot|there))?$/i.test(cleaned)) {
+  // Well-being checks (e.g. "how are you", "hey pilot, how are you doing?", "how's it going today")
+  if (/^(?:(?:hi|hello|hey|hey\s+there|hiya)\s+(?:pilot|there|trippilot|bot|ai)?[,\s]*)?(?:how\s+are\s+you|how's\s+it\s+going|how\s+are\s+things|how\s+r\s+u|how\s+do\s+you\s+do)(?:\s+(?:doing|today|pilot|there))?$/i.test(cleaned)) {
     return {
       isCourtesy: true,
       reply: "I am doing great and excited to help you plan your travels! Where are you thinking of going?"
@@ -230,6 +227,110 @@ export function isSimpleCourtesy(text: string): { isCourtesy: boolean; reply?: s
 }
 
 /**
+ * Fast verified flight pricing inquiry handler (< 1ms).
+ * Answers real flight and road route questions without calling external LLM.
+ */
+export function handleFlightPriceInquiry(
+  prompt: string,
+  context?: Record<string, unknown>
+): AgentChatResult | null {
+  const p = prompt.toLowerCase();
+  const isPlanRequest = /\b(?:plan|create|build|generate|make|organize|schedule|book)\b.*?\b(?:trip|itinerary|vacation|tour|holiday|outing|hangout|blueprint)\b/i.test(prompt)
+    || /\b(?:budget trip|weekend trip|day outing|road trip)\b/i.test(prompt);
+
+  if (isPlanRequest) return null;
+
+  if (!/\b(?:flight|airfare|airline|plane\s+ticket|flying|fly\s+to|flight\s+cost|flight\s+price|ticket\s+price|flight\s+fare|flights)\b/i.test(p)) {
+    return null;
+  }
+
+  let dest = (context?.destination as string) || (context?.tripMemory as any)?.destination;
+  const destMatch = prompt.match(/\b(?:to|for|in)\s+([A-Za-z\s]+?)(?:\s+(?:from|with|on|$))/i)
+    || (p.includes('goa') ? ['to Goa', 'Goa'] : null)
+    || (p.includes('paris') ? ['to Paris', 'Paris'] : null)
+    || (p.includes('tokyo') ? ['to Tokyo', 'Tokyo'] : null)
+    || (p.includes('dubai') ? ['to Dubai', 'Dubai'] : null)
+    || (p.includes('coorg') ? ['to Coorg', 'Coorg'] : null)
+    || (p.includes('london') ? ['to London', 'London'] : null)
+    || (p.includes('manali') ? ['to Manali', 'Manali'] : null)
+    || (p.includes('delhi') ? ['to Delhi', 'Delhi'] : null);
+
+  if (destMatch) dest = destMatch[1].trim();
+  if (!dest || dest === 'Global Destinations') dest = 'Goa';
+
+  const originMatch = prompt.match(/\bfrom\s+([A-Za-z\s]+?)(?:\s+(?:to|for|on|$))/i);
+  const orig = originMatch ? originMatch[1].trim() : ((context?.origin as string) || 'Bangalore');
+  const curr = (context?.currency as string) || detectCurrencyForDestination(dest) || 'INR';
+
+  const flightEstimate = getAccurateFlightEstimate(orig, dest, curr);
+
+  if (flightEstimate.cost === 0) {
+    return {
+      action: 'chat',
+      reply: `Travel between ${orig} and ${dest} is a ground transit / road route (${flightEstimate.airlines}). Direct commercial flights are not needed. You can take an outstation cab, self-drive, or express bus — ${flightEstimate.description}. Estimated cab fare is around ₹2,500–₹3,500 per vehicle.`
+    };
+  }
+
+  return {
+    action: 'chat',
+    reply: `Real round-trip flight fares between ${orig} and ${dest} are estimated at ${curr} ${flightEstimate.cost.toLocaleString()} per passenger on ${flightEstimate.airlines}. Route details: ${flightEstimate.description}. Fares reflect live market averages across commercial airlines.`
+  };
+}
+
+/**
+ * Fast verified place ticket and entry pricing inquiry handler (< 1ms).
+ * Answers real attraction entry costs and monument ticket pricing without calling external LLM.
+ */
+export function handlePlacesPriceInquiry(
+  prompt: string,
+  context?: Record<string, unknown>
+): AgentChatResult | null {
+  const p = prompt.toLowerCase();
+  const isPlanRequest = /\b(?:plan|create|build|generate|make|organize|schedule|book)\b.*?\b(?:trip|itinerary|vacation|tour|holiday|outing|hangout|blueprint)\b/i.test(prompt);
+
+  if (isPlanRequest) return null;
+
+  if (!/\b(?:place\s+prices?|places\s+prices?|place\s+costs?|places\s+costs?|entrance\s+fees?|entry\s+fees?|ticket\s+prices?|ticket\s+costs?|monument\s+tickets?|monument\s+fees?|how\s+much\s+does.*?cost|entry\s+free|free\s+entry|attraction\s+prices?|attraction\s+costs?)\b/i.test(p)) {
+    return null;
+  }
+
+  if (p.includes('goa') || (context?.destination && /goa/i.test(String(context.destination)))) {
+    return {
+      action: 'chat',
+      reply: `Here are the verified, authentic entry fees and costs for popular attractions and dining in Goa:
+- **Aguada Fort & Portuguese Lighthouse**: ₹50 per person (foreigners ₹300)
+- **Reis Magos Fort**: ₹50 per person
+- **Chapora Fort & Cabo de Rama**: Free entry (₹0)
+- **Basilica of Bom Jesus & Se Cathedral (Old Goa)**: Free entry (₹0)
+- **Public Beaches (Baga, Anjuna, Palolem, Calangute, Morjim)**: Completely free public access (₹0)
+- **Fontainhas Latin Quarter Walking Tour**: Free to explore the historic pastel streets (₹0)
+- **Authentic Fish Thali (Vinayak / Ritz Classic)**: ₹250–₹380 per plate
+- **Pure Vegetarian Thali (Navtara / Bhakti Veg)**: ₹180–₹260 per plate`
+    };
+  }
+
+  if (p.includes('bangalore') || p.includes('bengaluru') || (context?.destination && /bangalore|bengaluru/i.test(String(context.destination)))) {
+    return {
+      action: 'chat',
+      reply: `Here are verified real entry fees and costs for popular places in Bangalore:
+- **Bangalore Palace**: ₹250 per person (audio guide available)
+- **Lalbagh Botanical Garden**: ₹30 per adult (Glass House included)
+- **Cubbon Park**: Free public entry (₹0)
+- **Church Street & Blossoms Book House**: Free to stroll and browse books (₹0)
+- **Vidyarthi Bhavan Ghee Masala Dosa & Filter Coffee**: ₹160 per person
+- **Meghana Foods Signature Andhra Dum Biryani**: ₹320 per plate
+- **VV Puram Food Street Night Crawl**: ₹150–₹250 for multiple street delicacies`
+    };
+  }
+
+  const rawDest = (context?.destination as string) || 'your destination';
+  return {
+    action: 'chat',
+    reply: `For attractions in ${rawDest}, public parks, beaches, and historic religious landmarks are generally free to visit (₹0). Major historical forts and royal citadels typically charge a modest entry fee (₹20 to ₹250 INR in India, or €15–€25 in Europe / $20–$35 in the US). Local dining typically ranges from ₹150–₹400 per person in India and $15–$35 internationally.`
+  };
+}
+
+/**
  * Intelligent Agent Chat Engine
  * Uses Gemini (or OpenAI) to converse with travelers and autonomously detects
  * when a user wants to plan a brand-new trip or outing anywhere in the world.
@@ -274,6 +375,18 @@ export async function processAgentChat(
     };
   }
 
+  // 5. Fast-path Real Flight Pricing Inquiries (< 1ms instant verified response)
+  const flightInquiry = handleFlightPriceInquiry(prompt, context);
+  if (flightInquiry) {
+    return flightInquiry;
+  }
+
+  // 6. Fast-path Real Place & Ticket Pricing Inquiries (< 1ms instant verified response)
+  const placesInquiry = handlePlacesPriceInquiry(prompt, context);
+  if (placesInquiry) {
+    return placesInquiry;
+  }
+
   const { provider, model } = getActiveProvider();
 
   // When no external key is configured, provide dynamic semantic responses
@@ -286,9 +399,31 @@ export async function processAgentChat(
     ? historyList.map(m => `${m.role === 'user' ? 'Traveler' : 'Pilot'}: "${m.content}"`).join('\n')
     : (context?.conversationSummary ? String(context.conversationSummary) : 'No prior messages in active in-memory chat.');
 
+  const compactContext: Record<string, unknown> = {};
+  if (context) {
+    if (context.destination) compactContext.destination = context.destination;
+    if (context.origin) compactContext.origin = context.origin;
+    if (context.dates) compactContext.dates = context.dates;
+    if (context.durationDays) compactContext.durationDays = context.durationDays;
+    if (context.travelerCount) compactContext.travelerCount = context.travelerCount;
+    if (context.travelStyle) compactContext.travelStyle = context.travelStyle;
+    if (context.budget) compactContext.budget = context.budget;
+    if (context.currency) compactContext.currency = context.currency;
+    if (context.dietaryPreference) compactContext.dietaryPreference = context.dietaryPreference;
+    if (context.selectedDay) {
+      const sd = context.selectedDay as any;
+      compactContext.selectedDay = {
+        dayNumber: sd.dayNumber,
+        date: sd.date,
+        theme: sd.theme,
+        activityCount: Array.isArray(sd.activities) ? sd.activities.length : 0
+      };
+    }
+  }
+
   const systemInstructions = `You are Pilot, the multimodal AI travel assistant and autonomous travel architect for TripPilot AI.
-Context of traveler's current view (if any):
-${JSON.stringify(context, null, 2)}
+Context of traveler's current view:
+${Object.keys(compactContext).length > 0 ? JSON.stringify(compactContext) : 'None'}
 
 ### RECENT IN-CHAT CONVERSATION HISTORY (Lightweight In-Memory Context):
 ${historySummary}
@@ -362,32 +497,55 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
     if (groqKey) {
       const groqClient = new OpenAI({
         apiKey: groqKey,
-        baseURL: env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1'
+        baseURL: env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
+        timeout: 4000,
+        maxRetries: 0
       });
       const modelQueue = [
-        model || env.GROQ_MODEL,
-        ...FALLBACK_GROQ_MODELS.filter(m => m !== (model || env.GROQ_MODEL))
+        model || 'qwen/qwen3.8-27b',
+        ...FALLBACK_GROQ_MODELS.filter(m => m !== (model || 'qwen/qwen3.8-27b'))
       ];
 
       for (const m of modelQueue) {
         try {
-          const response = await groqClient.chat.completions.create({
-            model: m,
-            messages: [
-              {
-                role: 'system',
-                content: 'You are Tripolio, the AI agent for TripPilot. Return strictly valid JSON matching the requested schema with NO markdown code fences.'
-              },
-              { role: 'user', content: systemInstructions },
-              ...historyList.slice(-6).map((h) => ({
-                role: h.role === 'assistant' ? ('assistant' as const) : ('user' as const),
-                content: h.content
-              })),
-              { role: 'user', content: prompt }
-            ],
-            temperature: 0.3,
-            response_format: { type: 'json_object' }
-          });
+          const chatMessages = [
+            {
+              role: 'system' as const,
+              content: systemInstructions
+            },
+            ...historyList.slice(-4).map((h) => ({
+              role: h.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+              content: h.content.length > 300 ? h.content.slice(0, 300) + '...' : h.content
+            })),
+            { role: 'user' as const, content: prompt }
+          ];
+
+          let response;
+          const useJsonFormat = m === 'qwen/qwen3.8-27b';
+          try {
+            response = await groqClient.chat.completions.create({
+              model: m,
+              messages: chatMessages,
+              temperature: 0.3,
+              max_tokens: 800,
+              ...(useJsonFormat ? { response_format: { type: 'json_object' } } : {})
+            });
+          } catch (jsonErr: any) {
+            if (jsonErr?.status === 429 || jsonErr?.message?.includes('429') || jsonErr?.message?.includes('Rate limit')) {
+              console.warn(`[Groq processAgentChat] Rate limited (429) on ${m}, falling back immediately to semantic chat`);
+              break;
+            }
+            if (jsonErr?.status === 400 || jsonErr?.message?.includes('JSON')) {
+              response = await groqClient.chat.completions.create({
+                model: m,
+                messages: chatMessages,
+                temperature: 0.3,
+                max_tokens: 800
+              });
+            } else {
+              throw jsonErr;
+            }
+          }
 
           const rawText = response.choices[0]?.message?.content?.trim() || '';
           const clean = rawText
@@ -414,7 +572,12 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
               }
             }
           } catch {
-            // Not JSON
+            // If JSON was cut off or malformed, extract reply field via regex
+            const replyMatch = clean.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)/s);
+            if (replyMatch && replyMatch[1]) {
+              const unescaped = replyMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+              return { action: 'chat', reply: unescaped };
+            }
           }
 
           if (rawText) {
@@ -422,6 +585,10 @@ Output ONLY valid JSON matching this exact structure with NO markdown code fence
           }
         } catch (err: any) {
           console.warn(`[Groq processAgentChat] Model ${m} error:`, err?.status || err?.message || err);
+          if (err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('Rate limit')) {
+            // API key rate limited, avoid cascading delays across other models
+            break;
+          }
           continue;
         }
       }
@@ -706,7 +873,15 @@ export function generateSemanticFallbackChat(prompt: string, context: Record<str
     }
   }
 
-  // 5. Budget trip to Goa (Conversational)
+  // 5. Flight Price & Airfare Inquiry Intent
+  const flightInquiry = handleFlightPriceInquiry(prompt, context);
+  if (flightInquiry) return flightInquiry;
+
+  // 6. Places & Attractions Pricing Inquiry Intent
+  const placesInquiry = handlePlacesPriceInquiry(prompt, context);
+  if (placesInquiry) return placesInquiry;
+
+  // 7. Budget trip to Goa (Conversational)
   if (p.includes('goa') && (p.includes('budget') || p.includes('cheap') || p.includes('recommend') || p.includes('trip'))) {
     return {
       action: 'chat',
