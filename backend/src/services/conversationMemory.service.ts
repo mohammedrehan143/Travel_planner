@@ -56,6 +56,11 @@ export class ConversationMemoryService {
 
     if (memorySessions.has(validId)) {
       const existing = memorySessions.get(validId)!;
+      // If the session belongs to a different user, isolate by generating a fresh session ID
+      if (userId && existing.userId && existing.userId !== userId) {
+        const freshId = crypto.randomUUID();
+        return this.getOrCreateSession(freshId, userId, recentMessages);
+      }
       if (recentMessages && recentMessages.length > 0) {
         this.syncRecentInChatMessages(existing, recentMessages);
       }
@@ -93,6 +98,11 @@ export class ConversationMemoryService {
         .single();
 
       if (conv) {
+        if (userId && conv.user_id && conv.user_id !== userId) {
+          const freshId = crypto.randomUUID();
+          return this.getOrCreateSession(freshId, userId, recentMessages);
+        }
+
         const { data: msgs } = await (supabase.from('conversation_messages') as any)
           .select('*')
           .eq('conversation_id', validId)
@@ -195,21 +205,67 @@ export class ConversationMemoryService {
   static async getSession(conversationId: string, userId?: string): Promise<ConversationSession | null> {
     if (memorySessions.has(conversationId)) {
       const s = memorySessions.get(conversationId)!;
-      if (!userId || s.userId === userId || userId === '00000000-0000-0000-0000-000000000001') {
-        return s;
+      if (userId && s.userId && s.userId !== userId) {
+        return null;
       }
+      return s;
     }
-    return this.getOrCreateSession(conversationId, userId);
+
+    try {
+      const supabase = getAdminSupabase();
+      let query = (supabase.from('conversations') as any).select('*').eq('id', conversationId);
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      const { data: conv } = await query.single();
+
+      if (conv) {
+        if (userId && conv.user_id && conv.user_id !== userId) {
+          return null;
+        }
+
+        const { data: msgs } = await (supabase.from('conversation_messages') as any)
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
+
+        const session: ConversationSession = {
+          conversationId: conv.id,
+          userId: conv.user_id || userId || '00000000-0000-0000-0000-000000000001',
+          title: conv.title || 'Trip Planning Conversation',
+          createdAt: conv.created_at || new Date().toISOString(),
+          updatedAt: conv.updated_at || new Date().toISOString(),
+          summary: conv.summary || undefined,
+          tripMemory: conv.trip_memory || {},
+          messages: (msgs || []).map((m: any) => ({
+            id: m.id,
+            conversationId: m.conversation_id,
+            role: m.role,
+            content: m.content,
+            timestamp: m.created_at,
+            action: m.action,
+            createdTrip: m.metadata?.createdTrip,
+          })),
+        };
+
+        memorySessions.set(conversationId, session);
+        return session;
+      }
+    } catch (e) {
+      // Supabase unavailable in local dev / tests
+    }
+
+    return null;
   }
 
   /**
-   * Lists all conversation sessions belonging to a user.
+   * Lists all conversation sessions belonging to a specific user.
    */
   static async listUserSessions(userId: string): Promise<Array<{ conversationId: string; title: string; updatedAt: string; messageCount: number; destination?: string }>> {
     const list: Array<{ conversationId: string; title: string; updatedAt: string; messageCount: number; destination?: string }> = [];
 
     for (const [id, session] of memorySessions.entries()) {
-      if (session.userId === userId || userId === '00000000-0000-0000-0000-000000000001') {
+      if (session.userId === userId) {
         list.push({
           conversationId: id,
           title: session.title,
@@ -222,6 +278,17 @@ export class ConversationMemoryService {
 
     list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     return list;
+  }
+
+  /**
+   * Clears in-memory sessions belonging to a specific user.
+   */
+  static clearUserSessions(userId: string): void {
+    for (const [id, session] of memorySessions.entries()) {
+      if (session.userId === userId) {
+        memorySessions.delete(id);
+      }
+    }
   }
 
   /**

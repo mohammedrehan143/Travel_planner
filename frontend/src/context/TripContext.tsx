@@ -203,9 +203,23 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
+  const previousUserIdRef = React.useRef<string | undefined>(user?.id);
 
   // Load state whenever auth user state stabilizes
   useEffect(() => {
+    // If the authenticated user changed, purge in-memory state immediately
+    if (previousUserIdRef.current !== user?.id) {
+      previousUserIdRef.current = user?.id;
+      setTrips([]);
+      setActiveTripIdState('');
+      setTripDays({});
+      setActivities({});
+      setAccommodations({});
+      setExpenses({});
+      setCollaborators({});
+      setSavedPlaces([]);
+      setChecklists({});
+    }
     loadData();
   }, [user?.id, profile?.phone]);
 
@@ -224,7 +238,23 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const { data: dbTrips, error: tripsErr } = await query;
 
-        if (!tripsErr && dbTrips && dbTrips.length > 0) {
+        if (!tripsErr && dbTrips) {
+          // If the authenticated user has zero trips, keep state clean and empty!
+          if (dbTrips.length === 0) {
+            setTrips([]);
+            setActiveTripIdState('');
+            setTripDays({});
+            setActivities({});
+            setAccommodations({});
+            setExpenses({});
+            setCollaborators({});
+            setSavedPlaces([]);
+            setChecklists({});
+            setIsCloudSynced(true);
+            setLoading(false);
+            return;
+          }
+
           setTrips(dbTrips as Trip[]);
           setActiveTripIdState(dbTrips[0].id);
 
@@ -306,19 +336,34 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loadLocalData = () => {
-    const storedTrips = LocalStore.getTrips();
+    // If user is authenticated with a real account, do NOT populate mock or other users' local trips!
+    if (user && !user.id.startsWith('demo-')) {
+      setTrips([]);
+      setActiveTripIdState('');
+      setTripDays({});
+      setActivities({});
+      setAccommodations({});
+      setExpenses({});
+      setCollaborators({});
+      setSavedPlaces([]);
+      setIsCloudSynced(false);
+      setLoading(false);
+      return;
+    }
+
+    const storedTrips = LocalStore.getTrips(user?.id);
     setTrips(storedTrips);
     if (storedTrips.length > 0) {
       setActiveTripIdState(storedTrips[0].id);
     } else {
       setActiveTripIdState('');
     }
-    setTripDays(LocalStore.getTripDays());
-    setActivities(LocalStore.getActivities());
-    setAccommodations(LocalStore.getAccommodations());
-    setExpenses(LocalStore.getExpenses());
-    setCollaborators(LocalStore.getCollaborators());
-    setSavedPlaces(LocalStore.getSavedPlaces());
+    setTripDays(LocalStore.getTripDays(user?.id));
+    setActivities(LocalStore.getActivities(user?.id));
+    setAccommodations(LocalStore.getAccommodations(user?.id));
+    setExpenses(LocalStore.getExpenses(user?.id));
+    setCollaborators(LocalStore.getCollaborators(user?.id));
+    setSavedPlaces(LocalStore.getSavedPlaces(user?.id));
     setIsCloudSynced(false);
     setLoading(false);
   };
@@ -457,15 +502,15 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updatedTrips = [newTrip, ...trips];
     setTrips(updatedTrips);
-    LocalStore.saveTrips(updatedTrips);
+    LocalStore.saveTrips(updatedTrips, user?.id);
 
     const updatedDays = { ...tripDays, [newTrip.id]: newDays };
     setTripDays(updatedDays);
-    LocalStore.saveTripDays(updatedDays);
+    LocalStore.saveTripDays(updatedDays, user?.id);
 
     const updatedActs = { ...activities, ...newActs };
     setActivities(updatedActs);
-    LocalStore.saveActivities(updatedActs);
+    LocalStore.saveActivities(updatedActs, user?.id);
 
     setActiveTripIdState(newTrip.id);
     return newTrip;
@@ -474,7 +519,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateTrip = async (tripId: string, updates: Partial<Trip>) => {
     const updated = trips.map((t) => (t.id === tripId ? { ...t, ...updates, updated_at: new Date().toISOString() } : t));
     setTrips(updated);
-    LocalStore.saveTrips(updated);
+    LocalStore.saveTrips(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       await supabase.from('trips').update(updates).eq('id', tripId);
@@ -484,7 +529,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteTrip = async (tripId: string) => {
     const updated = trips.filter((t) => t.id !== tripId);
     setTrips(updated);
-    LocalStore.saveTrips(updated);
+    LocalStore.saveTrips(updated, user?.id);
     if (activeTripId === tripId && updated.length > 0) {
       setActiveTripIdState(updated[0].id);
     }
@@ -511,7 +556,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatedDayActs = [...dayActs, newAct];
     const updated = { ...activities, [dayId]: updatedDayActs };
     setActivities(updated);
-    LocalStore.saveActivities(updated);
+    LocalStore.saveActivities(updated, user?.id);
 
     if (isSupabaseConfigured && user && activeTrip && !user.id.startsWith('demo-')) {
       const actPayload = sanitizeActivityForDb(newAct, activeTrip.id, dayId, updatedDayActs.length - 1);
@@ -534,9 +579,9 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActivities(nextActivities);
     setActiveTripIdState(safeTripId);
 
-    LocalStore.saveTrips(nextTrips);
-    LocalStore.saveTripDays(nextDays);
-    LocalStore.saveActivities(nextActivities);
+    LocalStore.saveTrips(nextTrips, user?.id);
+    LocalStore.saveTripDays(nextDays, user?.id);
+    LocalStore.saveActivities(nextActivities, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       (async () => {
@@ -589,9 +634,9 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTripDays(nextDays);
     setActivities(nextActivities);
     setActiveTripIdState(trip.id);
-    LocalStore.saveTrips(nextTrips);
-    LocalStore.saveTripDays(nextDays);
-    LocalStore.saveActivities(nextActivities);
+    LocalStore.saveTrips(nextTrips, user?.id);
+    LocalStore.saveTripDays(nextDays, user?.id);
+    LocalStore.saveActivities(nextActivities, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       supabase.from('trips').insert({
@@ -627,7 +672,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
     const updated = { ...activities, [dayId]: updatedDayActs };
     setActivities(updated);
-    LocalStore.saveActivities(updated);
+    LocalStore.saveActivities(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       await supabase.from('activities').update(updates).eq('id', activityId);
@@ -639,7 +684,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatedDayActs = dayActs.filter((a) => a.id !== activityId);
     const updated = { ...activities, [dayId]: updatedDayActs };
     setActivities(updated);
-    LocalStore.saveActivities(updated);
+    LocalStore.saveActivities(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       await supabase.from('activities').delete().eq('id', activityId);
@@ -653,7 +698,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
     const updated = { ...activities, [dayId]: reindexed };
     setActivities(updated);
-    LocalStore.saveActivities(updated);
+    LocalStore.saveActivities(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       for (const act of reindexed) {
@@ -669,7 +714,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newActs = await TripPilotAPI.regenerateDay(activeTrip.id, dayId, prompt, resolvedDayNumber);
     const updated = { ...activities, [dayId]: newActs };
     setActivities(updated);
-    LocalStore.saveActivities(updated);
+    LocalStore.saveActivities(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       for (let idx = 0; idx < newActs.length; idx++) {
@@ -689,7 +734,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const current = expenses[activeTrip.id] || [];
     const updated = { ...expenses, [activeTrip.id]: [...current, newExp] };
     setExpenses(updated);
-    LocalStore.saveExpenses(updated);
+    LocalStore.saveExpenses(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       await supabase.from('trip_expenses').insert({
@@ -711,7 +756,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const current = expenses[activeTrip.id] || [];
     const updated = { ...expenses, [activeTrip.id]: current.filter((e) => e.id !== expenseId) };
     setExpenses(updated);
-    LocalStore.saveExpenses(updated);
+    LocalStore.saveExpenses(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       await supabase.from('trip_expenses').delete().eq('id', expenseId);
@@ -731,7 +776,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const current = collaborators[activeTrip.id] || [];
     const updated = { ...collaborators, [activeTrip.id]: [...current, newCollab] };
     setCollaborators(updated);
-    LocalStore.saveCollaborators(updated);
+    LocalStore.saveCollaborators(updated, user?.id);
 
     if (isSupabaseConfigured && user && !user.id.startsWith('demo-')) {
       await supabase.from('trip_collaborators').insert({
@@ -745,15 +790,15 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const toggleChecklistItem = (itemId: string) => {
     if (!activeTrip) return;
-    const current = checklists[activeTrip.id] || LocalStore.getChecklist(activeTrip.id);
+    const current = checklists[activeTrip.id] || LocalStore.getChecklist(activeTrip.id, user?.id);
     const updated = current.map((i) => (i.id === itemId ? { ...i, completed: !i.completed } : i));
     setChecklists((prev) => ({ ...prev, [activeTrip.id]: updated }));
-    LocalStore.saveChecklist(activeTrip.id, updated);
+    LocalStore.saveChecklist(activeTrip.id, updated, user?.id);
   };
 
   const addChecklistItem = (text: string, category: ChecklistItem['category']) => {
     if (!activeTrip) return;
-    const current = checklists[activeTrip.id] || LocalStore.getChecklist(activeTrip.id);
+    const current = checklists[activeTrip.id] || LocalStore.getChecklist(activeTrip.id, user?.id);
     const newItem: ChecklistItem = {
       id: `chk-${Date.now()}`,
       text,
@@ -762,7 +807,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     const updated = [...current, newItem];
     setChecklists((prev) => ({ ...prev, [activeTrip.id]: updated }));
-    LocalStore.saveChecklist(activeTrip.id, updated);
+    LocalStore.saveChecklist(activeTrip.id, updated, user?.id);
   };
 
   return (

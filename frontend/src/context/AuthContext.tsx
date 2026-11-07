@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { normalizePhoneNumber, looksLikePhoneNumber } from '../lib/phone';
+import { LocalStore } from '../lib/storage';
 
 const API_URL = (
   import.meta.env.VITE_API_URL ||
@@ -86,14 +87,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      const nextUser = currentSession?.user ?? null;
+      const prevStoredUid = localStorage.getItem('trippilot_current_user_id');
+
+      // Detect account switch: if previous user ID existed and new user is different
+      if (prevStoredUid && nextUser?.id && prevStoredUid !== nextUser.id) {
+        console.log(`[Auth] Switched account from ${prevStoredUid} to ${nextUser.id}. Purging previous account cache.`);
+        LocalStore.resetAll();
+      }
+
+      if (nextUser?.id) {
+        localStorage.setItem('trippilot_current_user_id', nextUser.id);
+      } else {
+        localStorage.removeItem('trippilot_current_user_id');
+      }
+
       setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      if (currentSession?.user) {
+      setUser(nextUser);
+      if (nextUser) {
         setIsDemoMode(false);
-        fetchProfile(currentSession.user.id);
+        fetchProfile(nextUser.id);
         if (_event === 'SIGNED_IN') {
           const nowIso = new Date().toISOString();
-          supabase.from('profiles').update({ last_login_at: nowIso, updated_at: nowIso }).eq('id', currentSession.user.id).then();
+          supabase.from('profiles').update({ last_login_at: nowIso, updated_at: nowIso }).eq('id', nextUser.id).then();
         }
       } else {
         setProfile(null);
@@ -364,9 +380,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Completely purge all local storage cached data, conversations, and trip records
+    LocalStore.resetAll();
+    localStorage.removeItem('trippilot_current_user_id');
     localStorage.removeItem('trippilot_demo_user');
+    localStorage.removeItem('trippilot_active_conversation_id');
+    localStorage.removeItem('trippilot_user_location');
+
     if (isSupabaseConfigured) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('Supabase signOut error:', e);
+      }
     }
     setUser(null);
     setProfile(null);

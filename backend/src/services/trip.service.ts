@@ -124,7 +124,7 @@ export class TripService {
         .or(`user_id.eq.${userId}`)
         .order('created_at', { ascending: false });
 
-      if (data && !error && data.length > 0) {
+      if (!error && Array.isArray(data)) {
         return data;
       }
     } catch {
@@ -197,7 +197,11 @@ export class TripService {
     }
 
     if (mockTrips.has(tripId)) {
-      return mockTrips.get(tripId)!;
+      const mock = mockTrips.get(tripId)!;
+      if (mock.user_id === userId || mock.collaborators?.some((c: any) => c.userId === userId) || userId === '00000000-0000-0000-0000-000000000001') {
+        return mock;
+      }
+      return null;
     }
 
     return null;

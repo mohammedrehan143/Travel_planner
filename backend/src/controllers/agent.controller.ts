@@ -29,19 +29,14 @@ export class AgentController {
       const courtesyCheck = isSimpleCourtesy(message);
       if (courtesyCheck.isCourtesy && courtesyCheck.reply) {
         const reply = courtesyCheck.reply;
-        const validConvId = conversationId && conversationId.trim().length > 0 ? conversationId.trim() : crypto.randomUUID();
+        const session = await ConversationMemoryService.getOrCreateSession(conversationId, userId, recentMessages);
 
-        // Asynchronously update session and messages in memory/DB without blocking HTTP response
-        ConversationMemoryService.getOrCreateSession(validConvId, userId, recentMessages)
-          .then((session) => {
-            ConversationMemoryService.recordMessage(session.conversationId, { role: 'user', content: message }, userId).catch(() => {});
-            ConversationMemoryService.recordMessage(session.conversationId, { role: 'assistant', content: reply, action: 'chat' }, userId).catch(() => {});
-          })
-          .catch(() => {});
+        ConversationMemoryService.recordMessage(session.conversationId, { role: 'user', content: message }, userId).catch(() => {});
+        ConversationMemoryService.recordMessage(session.conversationId, { role: 'assistant', content: reply, action: 'chat' }, userId).catch(() => {});
 
         res.status(200).json({
           status: 'success',
-          conversationId: validConvId,
+          conversationId: session.conversationId,
           action: 'chat',
           message: reply
         });

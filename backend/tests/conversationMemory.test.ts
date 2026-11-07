@@ -267,4 +267,70 @@ describe('Context-Aware Conversational Memory Suite', () => {
       expect(res.body.message.toLowerCase()).toMatch(/manali|himalayan|mountain/);
     });
   });
+
+  describe('Cross-Account User Data Isolation', () => {
+    const USER_A = '11111111-aaaa-aaaa-aaaa-111111111111';
+    const USER_B = '22222222-bbbb-bbbb-bbbb-222222222222';
+
+    it('isolates conversation sessions across different user accounts', async () => {
+      const userAConvId = `conv-user-a-${Date.now()}`;
+      await ConversationMemoryService.getOrCreateSession(userAConvId, USER_A, [
+        { role: 'user', content: 'Secret plans for Paris' },
+        { role: 'assistant', content: 'Paris itinerary saved' }
+      ]);
+
+      // User A can access it
+      const sessionA = await ConversationMemoryService.getSession(userAConvId, USER_A);
+      expect(sessionA).not.toBeNull();
+      expect(sessionA?.messages[0].content).toContain('Paris');
+
+      // User B cannot access User A's session (returns null)
+      const sessionB = await ConversationMemoryService.getSession(userAConvId, USER_B);
+      expect(sessionB).toBeNull();
+
+      // User B listing sessions does not see User A's session
+      const userBSessions = await ConversationMemoryService.listUserSessions(USER_B);
+      expect(userBSessions.some((s) => s.conversationId === userAConvId)).toBe(false);
+
+      // User A listing sessions sees their session
+      const userASessions = await ConversationMemoryService.listUserSessions(USER_A);
+      expect(userASessions.some((s) => s.conversationId === userAConvId)).toBe(true);
+    });
+
+    it('rejects cross-user conversation retrieval via HTTP API with 404', async () => {
+      const userAConvId = `conv-api-a-${Date.now()}`;
+      await ConversationMemoryService.getOrCreateSession(userAConvId, USER_A, [
+        { role: 'user', content: 'Tokyo trip plans' }
+      ]);
+
+      // User B attempts to access User A's conversation via GET /api/agent/conversations/:id
+      const res = await request(app)
+        .get(`/api/agent/conversations/${userAConvId}`)
+        .set('x-user-id', USER_B)
+        .expect(404);
+
+      expect(res.body.error).toBe('Not Found');
+    });
+
+    it('generates a fresh isolated session if User B supplies User A conversationId to /api/agent/chat', async () => {
+      const userAConvId = `conv-leak-check-${Date.now()}`;
+      await ConversationMemoryService.getOrCreateSession(userAConvId, USER_A, [
+        { role: 'user', content: 'User A private booking details' }
+      ]);
+
+      // User B passes User A's conversationId
+      const res = await request(app)
+        .post('/api/agent/chat')
+        .set('x-user-id', USER_B)
+        .send({
+          conversationId: userAConvId,
+          message: 'Hello'
+        })
+        .expect(200);
+
+      // Backend must NOT reuse User A's conversationId; it must provide a fresh conversationId
+      expect(res.body.conversationId).toBeDefined();
+      expect(res.body.conversationId).not.toBe(userAConvId);
+    });
+  });
 });

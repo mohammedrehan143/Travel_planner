@@ -18,6 +18,7 @@ import {
 import { Trip, TripDay, Activity } from '../../types';
 import { TripPilotAPI } from '../../lib/api';
 import { useTrips } from '../../context/TripContext';
+import { useAuth } from '../../context/AuthContext';
 import { VoiceModePanel } from '../voice/VoiceModePanel';
 import { globalVoiceController } from '../../lib/voice';
 
@@ -47,20 +48,27 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   currentDay,
 }) => {
   const { addActivity, addPlannedTrip, activeTripActivities, setActiveTripId } = useTrips();
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  const getChatStorageKey = (uid?: string | null) => {
+    return uid && !uid.startsWith('demo-')
+      ? `trippilot_active_conversation_id_${uid}`
+      : 'trippilot_active_conversation_id_demo';
+  };
+
+  const DEFAULT_INITIAL_MESSAGE: Message = {
+    id: '1',
+    sender: 'ai',
+    text: `Hi! I am Pilot, your TripPilot AI travel assistant. Ask me by voice or text about local specialities, dining options, scenic hangout spots, or say "Plan a 3-day trip to Coorg under ₹10,000" and I will build an authentic itinerary!`,
+    timestamp: 'Just now',
+  };
 
   const [mode, setMode] = useState<'chat' | 'voice'>('chat');
   const [conversationId, setConversationId] = useState<string>(() => {
-    return localStorage.getItem('trippilot_active_conversation_id') || '';
+    return localStorage.getItem(getChatStorageKey(user?.id)) || '';
   });
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: `Hi! I am Pilot, your TripPilot AI travel assistant. Ask me by voice or text about local specialities, dining options, scenic hangout spots, or say "Plan a 3-day trip to Coorg under ₹10,000" and I will build an authentic itinerary!`,
-      timestamp: 'Just now',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([DEFAULT_INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
@@ -68,6 +76,24 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const dictateSilenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevUserIdRef = useRef<string | undefined>(user?.id);
+
+  // When user logs in with a different account or logs out, completely purge chat state
+  useEffect(() => {
+    if (prevUserIdRef.current !== user?.id) {
+      prevUserIdRef.current = user?.id;
+      const key = getChatStorageKey(user?.id);
+      const userActiveConvId = localStorage.getItem(key) || '';
+      setConversationId(userActiveConvId);
+      setMessages([DEFAULT_INITIAL_MESSAGE]);
+      setInput('');
+      setIsThinking(false);
+      globalVoiceController.stopPlayback();
+      globalVoiceController.cancelRecording();
+      setSpeakingMessageId(null);
+      setIsDictating(false);
+    }
+  }, [user?.id]);
 
   // Lock background body scroll completely while the chat drawer is open
   useEffect(() => {
@@ -121,6 +147,16 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       TripPilotAPI.getConversation(conversationId)
         .then((session) => {
           if (session && session.messages && session.messages.length > 0) {
+            // Check session ownership
+            if (session.userId && user?.id && session.userId !== user.id &&
+                !user.id.startsWith('demo-') && session.userId !== '00000000-0000-0000-0000-000000000001') {
+              // Session belongs to another account! Purge it!
+              localStorage.removeItem(getChatStorageKey(user?.id));
+              setConversationId('');
+              setMessages([DEFAULT_INITIAL_MESSAGE]);
+              return;
+            }
+
             setMessages(
               session.messages.map((m) => ({
                 id: m.id,
@@ -132,9 +168,14 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
             );
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          // Conversation not found or forbidden, clear it
+          localStorage.removeItem(getChatStorageKey(user?.id));
+          setConversationId('');
+          setMessages([DEFAULT_INITIAL_MESSAGE]);
+        });
     }
-  }, [conversationId, isOpen]);
+  }, [conversationId, isOpen, user?.id]);
 
   const samplePrompts = [
     'Plan a 3-day trip to Coorg under ₹10,000',
@@ -215,7 +256,8 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
 
       if (response.conversationId) {
         setConversationId(response.conversationId);
-        localStorage.setItem('trippilot_active_conversation_id', response.conversationId);
+        localStorage.setItem(getChatStorageKey(user?.id), response.conversationId);
+        localStorage.removeItem('trippilot_active_conversation_id');
       }
 
       let newlyCreatedTrip: Trip | undefined;
@@ -357,16 +399,16 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       const fresh = await TripPilotAPI.createConversation();
       if (fresh) {
         setConversationId(fresh.conversationId);
-        localStorage.setItem('trippilot_active_conversation_id', fresh.conversationId);
+        localStorage.setItem(getChatStorageKey(user?.id), fresh.conversationId);
       } else {
         const fallbackId = crypto.randomUUID();
         setConversationId(fallbackId);
-        localStorage.setItem('trippilot_active_conversation_id', fallbackId);
+        localStorage.setItem(getChatStorageKey(user?.id), fallbackId);
       }
     } catch {
       const fallbackId = crypto.randomUUID();
       setConversationId(fallbackId);
-      localStorage.setItem('trippilot_active_conversation_id', fallbackId);
+      localStorage.setItem(getChatStorageKey(user?.id), fallbackId);
     }
 
     const greetingMsg: Message = {
@@ -491,7 +533,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
             }))}
           onConversationIdChange={(id) => {
             setConversationId(id);
-            localStorage.setItem('trippilot_active_conversation_id', id);
+            localStorage.setItem(getChatStorageKey(user?.id), id);
           }}
           onSwitchToChat={() => setMode('chat')}
           onNewMessage={(msg) => setMessages((prev) => [...prev, msg])}
